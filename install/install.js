@@ -34,12 +34,6 @@ loadJSON("../game/config.json").then(async (CONFIG) => {
     let installed = false;
     window.onappinstalled = () => {
         installed = true;
-
-        let displayMode = 'browser tab';
-        if (window.matchMedia('(display-mode: standalone)').matches) {
-            displayMode = 'standalone';
-        }
-        alert(displayMode);
         document.getElementById("restartWindow").classList.replace("hidden", "flex");
     }
 
