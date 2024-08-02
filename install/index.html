@@ -1,0 +1,51 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Install</title>
+    <link rel="stylesheet" href="../css/output.css">
+    <link id="icon" rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+    <link rel="manifest" href="../game/manifest.json" crossorigin="use-credentials">
+</head>
+<body class="flex justify-center">
+    <section class=" lg:w-4/6 md:w-5/6 w-full h-full p-10 overflow-y-auto max-h-full bg-slate-950 bg-opacity-85 text-slate-100">
+        <div class=" w-full flex lg:flex-row md:flex-row flex-col gap-10 mb-10">
+            <div class=" flex flex-1 gap-5">
+                <img id="game-logo" src="" class=" h-24 aspect-square rounded-md" alt="Logo">
+                <div class=" flex flex-col justify-center gap-2">
+                    <p id="game-title" class=" text-4xl"></p>
+                    <div class=" flex lg:gap-3 md:gap-3 gap-1 items-center">
+                        <p id="game-author" class=" text-2xl"></p>
+                        <a id="game-author-email" href=""><img class=" w-6 aspect-square cursor-pointer" src="../assets/svgs/mail.svg"></a>
+                        <a id="game-about-url" href=""><img class=" w-6 aspect-square cursor-pointer" src="../assets/svgs/web.svg"></a>
+                        <a id="game-support-url" href=""><img class=" w-6 aspect-square cursor-pointer" src="../assets/svgs/help-circle.svg"></a>
+                    </div>
+                </div>
+            </div>
+            <div class=" flex justify-center items-center gap-2">
+                <button id="share-btn" class=" btn btn-circle btn-ghost p-2">
+                    <img src="../assets/svgs/share.svg" alt="">
+                </button>
+                <button id="install-btn" class="btn lg:w-52 md:w-52 flex-1 hover:bg-inherit rounded-full border-0 text-xl uppercase" style="background-color: orange; color: white;">
+                    Install
+                </button>
+            </div>
+        </div>
+        <div>
+            <p class="mb-3 text-2xl">Screenshots</p>
+            <div id="screenshots" class=" flex overflow-x-auto gap-5 mb-10 w-full"></div>
+        </div>
+        <div>
+            <p class="mb-3 text-2xl">Description</p>
+            <div id="game-description" class="p-5 rounded-md border-slate-700 border-2 text-xl bg-slate-800 text-slate-100"></div>
+        </div>
+    </section>
+
+    <section id="restartWindow" class="absolute top-0 left-0 w-full h-full bg-slate-900 text-slate-100 hidden justify-center items-center">
+        <p class="text-xl">Please close and restart the app!</p>
+    </section>
+
+    <script src="../vnsutra_modules/utils.js"></script>
+    <script src="./install.js"></script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+{
+  "name": "vnsutra",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon server.js",
+    "tailwindcss": "npx tailwindcss -i ./css/input.css -o ./css/output.css --watch",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Tejas Nayak",
+  "license": "ISC",
+  "dependencies": {
+    "archiver": "^7.0.1",
+    "daisyui": "^4.12.10",
+    "express": "^4.19.2"
+  }
+}

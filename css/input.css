@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@tailwind variants;
+
+@layer utilities {
+    .aspect-16\/5 {
+        aspect-ratio: 16/5;
+    }
+
+    .border-3 {
+        border-width: 3px;
+    }
+
+    .gap-0\.25 {
+        gap: 1px;
+    }
+
+    .w-18 {
+        width: 4.5rem;
+    }
+
+    .light .bg-default {
+        background-color: rgb(209 213 219);
+    }
+
+    .dark .bg-default {
+        background-color: oklch(0.25 0.02 252.42);
+    }
+
+    @media (prefers-color-scheme: dark) {
+        .bg-default {
+            background-color: oklch(0.25 0.02 252.42);
+        }
+    }
+}

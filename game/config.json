@@ -1,0 +1,89 @@
+{
+    "project-name": "vnsutra",
+    "version": "1.0.0.0",
+    "title": "VN-Sutra",
+    "subtitle": "An introduction",
+    "icon": "./assets/images/logo.png",
+    "poster": "./assets/images/poster.jpg",
+    "bgm": "./assets/music/bgm.mp3",
+    "support-url": "https://github.com/tejasnayak25/vnsutra",
+    "about-url": "https://github.com/tejasnayak25/vnsutra",
+    "author": "Tejas Nayak",
+    "author-email": "tejasnayak25@outlook.com",
+    "description": "An introduction to VN-Sutra, visual novel SDK",
+    "screenshots": [
+        "./assets/images/poster.jpg",
+        "./assets/images/poster2.jpg"
+    ],
+    "fonts": {
+        "title": { "name": "LavishlyYours", "url": "./assets/fonts/LavishlyYours/LavishlyYours-Regular.ttf" },
+        "other": { "name": "YanoneKaffeesatz", "url": "./assets/fonts/YanoneKaffeesatz/YanoneKaffeesatz-VariableFont_wght.ttf" }
+    },
+    "gui": {
+        "button": null,
+        "close-icon": "./assets/svgs/close-square.svg",
+        "check-icon": "./assets/svgs/yes.svg",
+        "back-icon": "./assets/svgs/back.svg",
+        "menu-icon": "./assets/svgs/menu-dots-square.svg",
+        "save-icon": "./assets/svgs/save.svg",
+        "remove-icon": "./assets/svgs/save-remove.svg",
+        "load-icon": "./assets/svgs/load-list-alt.svg",
+        "screenshot-icon": "./assets/svgs/screen-capture.svg",
+        "add-icon": "./assets/svgs/plus-square.svg"
+    },
+    "ui": {
+        "vnsutra-label": true,
+        "sidebar": {
+            "opacity": 1
+        },
+        "poster": {
+            "url": "./assets/images/poster.jpg",
+            "opacity": 0.8
+        },
+        "title": {
+            "align": "right",
+            "color": "white"
+        },
+        "mobile": {
+            "sidebar": {
+                "opacity": 1
+            },
+            "poster": {
+                "url": "./assets/images/poster.jpg",
+                "opacity": 0.8
+            },
+            "title": {
+                "scale": 1.5
+            },
+            "poster-offset": 0.33
+        }
+    },
+    "game-ui": {
+        "dialog": {
+            "title": {
+                "align": "center"
+            },
+            "speech": {
+                "align": "center"
+            }
+        }
+    },
+    "colors": {
+        "menu": "#020617",
+        "text": "white",
+        "menu-border": "grey",
+        "primary": "cornflowerblue",
+        "secondary": "cyan",
+        "primary-text": "white",
+        "button": "white",
+        "button-text": "black",
+        "timestamp-text": "white"
+    },
+    "credits": {
+        "Poster Design": "Image by vandesart from Pixabay",
+        "Poster-2 Design": "Image by qiaominxu 橋茗旭 from Pixabay",
+        "Background Music": "Oleksii Kaplunskyi from Pixabay",
+        "Background Artist": "Noraneko Games from \n https://noranekogames.itch.io/",
+        "Character Artist": "Noraneko Games from \n https://noranekogames.itch.io/"
+    }
+}
