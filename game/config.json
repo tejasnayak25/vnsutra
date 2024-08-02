@@ -11,9 +11,12 @@
     "author": "Tejas Nayak",
     "author-email": "tejasnayak25@outlook.com",
     "description": "An introduction to VN-Sutra, visual novel SDK",
+    "protocol": "web+vnsutra",
     "screenshots": [
-        "./assets/images/poster.jpg",
-        "./assets/images/poster2.jpg"
+        "./assets/screenshots/screenshot1.png",
+        "./assets/screenshots/screenshot2.png",
+        "./assets/screenshots/screenshot3.png",
+        "./assets/screenshots/screenshot4.png"
     ],
     "fonts": {
         "title": { "name": "LavishlyYours", "url": "./assets/fonts/LavishlyYours/LavishlyYours-Regular.ttf" },

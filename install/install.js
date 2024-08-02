@@ -16,7 +16,7 @@ loadJSON("../game/config.json").then(async (CONFIG) => {
 
     installBtn.innerText = "Open App";
     installBtn.onclick = () => {
-        location.href = "web+vnsutra://";
+        location.href = `${CONFIG.protocol}://`;
     }
 
     let shareData = {
