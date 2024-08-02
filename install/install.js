@@ -9,8 +9,15 @@ loadJSON("../game/config.json").then(async (CONFIG) => {
     document.getElementById("game-about-url").href = CONFIG['about-url'];
     document.getElementById("game-support-url").href = CONFIG['support-url'];
     document.getElementById("game-description").innerText = CONFIG.description;
-    document.getElementById("install-btn").style.backgroundColor = CONFIG.colors.primary;
-    document.getElementById("install-btn").style.color = CONFIG.colors['primary-text'];
+
+    let installBtn = document.getElementById("install-btn");
+    installBtn.style.backgroundColor = CONFIG.colors.primary;
+    installBtn.style.color = CONFIG.colors['primary-text'];
+
+    installBtn.innerText = "Open App";
+    installBtn.onclick = () => {
+        location.href = "web+vnsutra://";
+    }
 
     let shareData = {
         url: `${location.origin}/install`,
@@ -27,25 +34,23 @@ loadJSON("../game/config.json").then(async (CONFIG) => {
     let installed = false;
     window.onappinstalled = () => {
         installed = true;
+
+        let displayMode = 'browser tab';
+        if (window.matchMedia('(display-mode: standalone)').matches) {
+            displayMode = 'standalone';
+        }
+        alert(displayMode);
         document.getElementById("restartWindow").classList.replace("hidden", "flex");
     }
 
     window.onbeforeinstallprompt = (e) => {
         e.preventDefault();
         if(!installed) {
-            document.getElementById("install-btn").onclick = async () => {
+            installBtn.innerText = "Install";
+            installBtn.onclick = async () => {
                 const result = await e.prompt();
                 console.log(`Install prompt was: ${result.outcome}`);
             }
-        }
-    }
-
-    let related_apps = await navigator.getInstalledRelatedApps();
-
-    if(related_apps.length > 0) {
-        document.getElementById("install-btn").innerText = "Open App";
-        document.getElementById("install-btn").onclick = () => {
-            window.open(`web+${CONFIG['project-name']}://open`, "_blank");
         }
     }
 
