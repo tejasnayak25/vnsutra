@@ -104,46 +104,48 @@ loadspin = loadwin.querySelector("#loadspin");
     });
 
     window.addEventListener("resize", async (e) => {
-        let docRect = document.documentElement.getBoundingClientRect();
-        konvaStage.width(docRect.width);
-        konvaStage.height(docRect.height);
-
-        isMobile = checkMobile();
-
-        pages.home.ui.layer.destroy();
-        pages.game.ui.layer.destroy();
-
-        pages = {
-            home: { ui: await home(CONFIG, fonts, navigate), func: (data) => {
-                music.pause();
-                document.getElementById("sfx").pause();
-                if(gameSettings['settings-music'] === true) {
-                    music.src = CONFIG.bgm;
-                    music.onloadedmetadata = () => {
-                        bgm();
+        if(!isTyping) {
+            let docRect = document.documentElement.getBoundingClientRect();
+            konvaStage.width(docRect.width);
+            konvaStage.height(docRect.height);
+    
+            isMobile = checkMobile();
+    
+            pages.home.ui.layer.destroy();
+            pages.game.ui.layer.destroy();
+    
+            pages = {
+                home: { ui: await home(CONFIG, fonts, navigate), func: (data) => {
+                    music.pause();
+                    document.getElementById("sfx").pause();
+                    if(gameSettings['settings-music'] === true) {
+                        music.src = CONFIG.bgm;
+                        music.onloadedmetadata = () => {
+                            bgm();
+                        }
                     }
+                } },
+                game: { ui: await gameUI(CONFIG, fonts, navigate), func: (data) => {
+                    music.pause();
+                    music.src = "";
+                    if(data.scene) {
+                        activeScene = data.scene;
+                    } else {
+                        activeScene = "start"; 
+                    }
+                    story[activeScene]();
+                } }
+            };
+    
+            game.ui = pages.game.ui;
+    
+            setTimeout(() => {
+                navigate(activeLayer, { scene: activeScene ?? null });
+                if(!loadwin.classList.contains("hidden")) {
+                    loadwin.classList.add("hidden");
                 }
-            } },
-            game: { ui: await gameUI(CONFIG, fonts, navigate), func: (data) => {
-                music.pause();
-                music.src = "";
-                if(data.scene) {
-                    activeScene = data.scene;
-                } else {
-                    activeScene = "start"; 
-                }
-                story[activeScene]();
-            } }
-        };
-
-        game.ui = pages.game.ui;
-
-        setTimeout(() => {
-            navigate(activeLayer, { scene: activeScene ?? null });
-            if(!loadwin.classList.contains("hidden")) {
-                loadwin.classList.add("hidden");
-            }
-        }, 100);
+            }, 100);
+        }
     });
 
     window.addEventListener("load-game", (e) => {

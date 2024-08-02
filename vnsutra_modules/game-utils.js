@@ -112,6 +112,7 @@ function input(message, placeholder = undefined) {
                 if(inp.value !== "") {
                     alertwin.close();
                     alertwin.btns.classList.replace("justify-end", "justify-between");
+                    isTyping = false;
                     resolve(inp.value);
                 }
             }
@@ -121,12 +122,14 @@ function input(message, placeholder = undefined) {
             if(inp.value !== "") {
                 alertwin.close();
                 alertwin.btns.classList.replace("justify-end", "justify-between");
+                isTyping = false;
                 resolve(inp.value);
             }
         }
 
         alertwin.show();
 
+        isTyping = true;
         inp.select();
     });
 }
