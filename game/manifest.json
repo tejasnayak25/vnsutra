@@ -19,7 +19,7 @@
     "protocol_handlers": [
       {
         "protocol": "web+vnsutra",
-        "url": "/open?type=%s"
+        "url": "/?type=%s"
       }
     ]
   }
