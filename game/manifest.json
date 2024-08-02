@@ -12,6 +12,7 @@
       }
     ],
     "display": "standalone",
+    "prefer_related_applications": true,
     "related_applications": [{
       "platform": "webapp",
       "url": "https://vnsutra.onrender.com/game/manifest.json"
