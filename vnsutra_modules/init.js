@@ -10,51 +10,6 @@ loadspin = loadwin.querySelector("#loadspin");
         displayMode = 'standalone';
     }
 
-    window.matchMedia('(display-mode: standalone)').onchange = (e) => {
-        let displayMode = 'browser tab';
-        if (window.matchMedia('(display-mode: standalone)').matches) {
-            displayMode = 'standalone';
-        }
-        if(displayMode === "standalone") {
-            exitApp = () => {
-                window.close();
-            }
-            if ('wakeLock' in navigator && 'request' in navigator.wakeLock) {
-                let wakeLock = null;
-                const requestWakeLock = async () => {
-                  wakeLock = await navigator.wakeLock.request('screen');
-                  wakeLock.addEventListener('release', () => {
-                    console.log('Wake Lock was released');
-                  });
-                  console.log('Wake Lock is active');
-                };
-                
-                const handleVisibilityChange = () => {
-                  if (wakeLock !== null && document.visibilityState === 'visible') {
-                    requestWakeLock();
-                  }
-                };
-                
-                document.addEventListener('visibilitychange', handleVisibilityChange);
-                document.addEventListener('fullscreenchange', handleVisibilityChange);
-            }
-        } else {
-            let installed = false;
-            window.onappinstalled = () => {
-                installed = true;
-            }
-    
-            window.onbeforeinstallprompt = (e) => {
-                e.preventDefault();
-                if(!installed) {
-                    location.href = `${location.origin}/install/`;
-                }
-            }
-    
-            document.getElementById("restartWindow").classList.replace("hidden", "flex");
-        }
-    }
-
     if(displayMode === "standalone") {
         exitApp = () => {
             window.close();
