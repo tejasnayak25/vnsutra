@@ -7,6 +7,57 @@ loadstatus = loadwin.querySelector("#loadstatus"),
 loadspin = loadwin.querySelector("#loadspin");
 
 (async () => {
+    let displayMode = 'browser tab';
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+        displayMode = 'standalone';
+    }
+
+    window.matchMedia('(display-mode: standalone)').onchange = (e) => {
+        let displayMode = 'browser tab';
+        if (window.matchMedia('(display-mode: standalone)').matches) {
+            displayMode = 'standalone';
+        }
+        if(displayMode === "standalone") {
+            exitApp = () => {
+                window.close();
+            }
+        } else {
+            let installed = false;
+            window.onappinstalled = () => {
+                installed = true;
+            }
+    
+            window.onbeforeinstallprompt = (e) => {
+                e.preventDefault();
+                if(!installed) {
+                    location.href = `${location.origin}/install/`;
+                }
+            }
+    
+            document.getElementById("restartWindow").classList.replace("hidden", "flex");
+        }
+    }
+
+    if(displayMode === "standalone") {
+        exitApp = () => {
+            window.close();
+        }
+    } else {
+        let installed = false;
+        window.onappinstalled = () => {
+            installed = true;
+        }
+
+        window.onbeforeinstallprompt = (e) => {
+            e.preventDefault();
+            if(!installed) {
+                location.href = `${location.origin}/install/`;
+            }
+        }
+
+        document.getElementById("restartWindow").classList.replace("hidden", "flex");
+    }
+
     window.onload = () => {
         loadstatus.innerText = "Click To Start";
         loadspin.classList.add("hidden");
@@ -32,11 +83,6 @@ loadspin = loadwin.querySelector("#loadspin");
 
     loadtitle.style.fontFamily = fonts['title'];
     loadstatus.style.fontFamily = fonts['other'];
-
-    let displayMode = 'browser tab';
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-        displayMode = 'standalone';
-    }
 
     let closeBtn = document.createElement("button");
     closeBtn.innerText = "Cancel";
@@ -100,7 +146,17 @@ loadspin = loadwin.querySelector("#loadspin");
     window.addEventListener("orientationchange", (e) => {
         e.preventDefault();
 
-        window.dispatchEvent(new CustomEvent("resize"));
+        if(activeLayer === "home") {
+            window.location.reload();
+        } else {
+            alertWin.message = "Reload page? You may lose your progress!";
+            proceedBtn.innerText = "Reload";
+            proceedBtn.onclick = () => {
+                alertWin.close();
+                window.location.reload();
+            }
+            alertWin.show();
+        }
     });
 
     window.addEventListener("resize", async (e) => {
@@ -162,24 +218,6 @@ loadspin = loadwin.querySelector("#loadspin");
             konvaStage.add(pages[name].ui.layer);
             pages[name].func(data);
             activeLayer = name;
-        }
-    }
-
-    if(displayMode === "standalone") {
-        exitApp = () => {
-            window.close();
-        }
-    } else {
-        let installed = false;
-        window.onappinstalled = () => {
-            installed = true;
-        }
-
-        window.onbeforeinstallprompt = (e) => {
-            e.preventDefault();
-            if(!installed) {
-                location.href = `${location.origin}/install/`;
-            }
         }
     }
 })();

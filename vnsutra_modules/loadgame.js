@@ -243,7 +243,7 @@ async function loadgame(config, actionbar, title, fonts, remove_img, click = (de
             height: mainContainer.height() - actionbar.actionbar_title.height(),
             text: "Nothing Here!",
             fontFamily: fonts['other'],
-            fontSize: 23,
+            fontSize: isAndroid ? 20 : 23,
             fill: config.colors.text,
             opacity: 0.7,
             fillAfterStrokeEnabled: true,

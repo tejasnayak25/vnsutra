@@ -9,6 +9,7 @@ function credits(config, actionbar, fonts) {
         width: containerWidth
     });
 
+    let oddheight = 0, rowheight = 0;
     Object.entries(config.credits).forEach(([key, value], index, arr) => {
         let container = new Konva.Group({
             width: isMobile ? containerWidth : ((containerWidth/2) - 10),
@@ -25,10 +26,10 @@ function credits(config, actionbar, fonts) {
             width: container.width(),
             text: key,
             fontFamily: fonts['other'],
-            fontSize: 25,
+            fontSize: isAndroid ? 20 : 25,
             fill: config.colors.primary,
             fillAfterStrokeEnabled: true,
-            wrap: "none"
+            wrap: "word"
         });
 
         let value_text = new Konva.Text({
@@ -39,10 +40,10 @@ function credits(config, actionbar, fonts) {
             y: key_text.height() + gap,
             text: value,
             fontFamily: fonts['other'],
-            fontSize: 23,
+            fontSize: isAndroid ? 18 : 23,
             fill: config.colors.text,
             fillAfterStrokeEnabled: true,
-            wrap: "none"
+            wrap: "word"
         });
 
         container.height(value_text.y() + value_text.height());
@@ -55,7 +56,22 @@ function credits(config, actionbar, fonts) {
         mainContainer.add(container);
 
         let height = mainContainer.height() + containerHeight;
-        mainContainer.height(isMobile ? height : (index % 2 === 0 ? height : mainContainer.height()));
+        if(!isMobile) {
+            if(index % 2 === 0) {
+                height = mainContainer.height() + containerHeight;
+                oddheight = containerHeight;
+                rowheight = mainContainer.height();
+            } else {
+                if(containerHeight > oddheight) {
+                    height = rowheight + containerHeight;
+                } else {
+                    height = rowheight + oddheight;
+                }
+                oddheight = 0;
+                rowheight = 0;
+            }
+        }
+        mainContainer.height(isMobile ? height : height);
     });
 
     function render() {

@@ -22,17 +22,17 @@ function actionBar(config, siderect, width, height, fonts, close_square_img, add
     let actionbar_title = new Konva.Text({
         align: "left",
         verticalAlign: "middle",
-        padding: isMobile ? 30 : 60,
+        padding: isMobile ? 30 : (isAndroid ? 40 : 60),
         width: actionbar.width(),
-        height: isMobile ? 90 : 95,
+        height: isMobile ? 90 : (isAndroid ? 60 : 95),
         text: "Action Menu",
         fontFamily: fonts['other'],
-        fontSize: 30,
+        fontSize: isAndroid ? 25 : 30,
         fill: config.colors.text,
         fillAfterStrokeEnabled: true
     });
 
-    let borderPadding = 30;
+    let borderPadding = isAndroid ? 20 : 30;
 
     let actionbar_title_border = new Konva.Rect({
         x: borderPadding,
@@ -43,18 +43,18 @@ function actionBar(config, siderect, width, height, fonts, close_square_img, add
     });
 
     let closeActionMenuBtn = new Konva.Image({
-        width: isMobile ? 50 : 40,
-        height: isMobile ? 50 : 40,
-        x: actionrect.width() - (isMobile ? 70 : 90),
-        y: isMobile ? 15 : 25,
+        width: isMobile ? 50 : (isAndroid ? 30 : 40),
+        height: isMobile ? 50 : (isAndroid ? 30 : 40),
+        x: actionrect.width() - (isMobile ? 70 : (isAndroid ? 70 : 90)),
+        y: isMobile ? 15 : (isAndroid ? 15 : 25),
         image: close_square_img.cloneNode(true)
     });
 
     let addBtn = new Konva.Image({
-        width: isMobile ? 55 : 45,
-        height: isMobile ? 55 : 45,
-        x: actionrect.width() - closeActionMenuBtn.width() - (isMobile ? 70 : 90) - 15,
-        y: isMobile ? 13 : 23,
+        width: isMobile ? 55 : (isAndroid ? 35 : 45),
+        height: isMobile ? 55 : (isAndroid ? 35 : 45),
+        x: actionrect.width() - closeActionMenuBtn.width() - (isMobile ? 70 : (isAndroid ? 70 : 90)) - 15,
+        y: isMobile ? 13 : (isAndroid ? 13 : 23),
         image: add_img.cloneNode(true),
         visible: false
     });

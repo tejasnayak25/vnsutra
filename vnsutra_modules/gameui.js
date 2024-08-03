@@ -5,7 +5,7 @@ async function gameUI(config, fonts, navigate) {
 
     let topbar_container = new Konva.Group({
         width: width,
-        height: 50
+        height: isAndroid ? 40 : 50
     });
 
     let topbar_rect = new Konva.Rect({
@@ -211,12 +211,12 @@ async function gameUI(config, fonts, navigate) {
         
         let btn_text = new Konva.Text({
             align: "left",
-            padding: (topbarInnerHeight - 23)/2,
+            padding: (topbarInnerHeight - (isAndroid ? 20 : 23))/2,
             x: btn_img.width() + iconPadding,
             verticalAlign: "middle",
             text: element.name,
             fontFamily: fonts['other'],
-            fontSize: 23,
+            fontSize: isAndroid ? 20 : 23,
             fill: config.colors.text,
             fillAfterStrokeEnabled: true,
             wrap: "word"
@@ -344,12 +344,12 @@ async function gameUI(config, fonts, navigate) {
 
     let name_text = new Konva.Text({
         align: config["game-ui"].dialog.title.align,
-        padding: 20,
+        padding: isAndroid ? 10 : 20,
         verticalAlign: "middle",
         width: dialogContainer.width(),
         text: "Alex",
         fontFamily: fonts['other'],
-        fontSize: 23,
+        fontSize: isAndroid ? 20 : 23,
         fill: config.colors.text,
         fillAfterStrokeEnabled: true,
         wrap: "none",
@@ -362,13 +362,13 @@ async function gameUI(config, fonts, navigate) {
     let dialog_text = new Konva.Text({
         align: config["game-ui"].dialog.speech.align,
         verticalAlign: "middle",
-        padding: 10,
+        padding: isAndroid ? 5 : 10,
         width: isMobile ? (dialogContainerWidth - 30) : (dialogContainerWidth - 100),
         x: isMobile ? 15 : 50,
         y: name_text.height(),
         text: "",
         fontFamily: fonts['other'],
-        fontSize: 20,
+        fontSize: isAndroid ? 18 : 20,
         lineHeight: 1.5,
         fill: config.colors.text,
         fillAfterStrokeEnabled: true,

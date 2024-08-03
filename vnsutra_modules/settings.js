@@ -68,19 +68,19 @@ function settings(config, actionbar, fonts, credit_details) {
 
     let btns_holder = new Konva.Group({
         width: isMobile ? containerWidth - 60 : 200,
-        height: btns.length * 70,
+        height: btns.length * (isAndroid ? 50 : 70),
         x: isMobile ? 0 : (containerWidth - 200)/2,
         y: btny
     });
 
-    let btn_height = isMobile ? 70 : 80;
+    let btn_height = isMobile ? 70 : (isAndroid ? 60 : 80);
 
     for (let i = 0; i < btns.length; i++) {
         const btn = btns[i];
 
         let btn_group = new Konva.Group({
             width: btns_holder.width(),
-            height: 50,
+            height: (isAndroid ? 40 : 50),
             y: i * btn_height
         });
 
@@ -102,7 +102,7 @@ function settings(config, actionbar, fonts, credit_details) {
 
         let btn_rect = new Konva.Rect({
             width: btn_group.width(),
-            height: 50
+            height: btn_group.height()
         });
 
         let btn_img;
@@ -160,13 +160,28 @@ function settings(config, actionbar, fonts, credit_details) {
         padding: isMobile ? 60 : 30,
         verticalAlign: "middle",
         width: isMobile ? mainContainer.width() : containerWidth,
-        height: isMobile ? 80 : 70,
+        height: isMobile ? 80 : (isAndroid ? 60 : 70),
         y: btny + btns_holder.height() + (isMobile ? 0 : gap),
         text: `Version: ${config.version}`,
         fontFamily: fonts['other'],
-        fontSize: 27,
+        fontSize: isAndroid ? 25 : 27,
         fill: config.colors.text,
         fillAfterStrokeEnabled: true
+    });
+
+    let copyright_text = new Konva.Text({
+        align: "center",
+        padding: 30,
+        verticalAlign: "middle",
+        width: isMobile ? mainContainer.width() : containerWidth,
+        height: isMobile ? 80 : (isAndroid ? 60 : 70),
+        y: version_text.y() + version_text.height() - (isMobile ? 20 : 0),
+        text: config.copyright,
+        fontFamily: fonts['other'],
+        fontSize: isAndroid ? 25 : 30,
+        fill: config.colors.primary,
+        fillAfterStrokeEnabled: true,
+        wrap: "none"
     });
 
     let label_text = new Konva.Text({
@@ -174,18 +189,18 @@ function settings(config, actionbar, fonts, credit_details) {
         padding: 30,
         verticalAlign: "middle",
         width: isMobile ? mainContainer.width() : containerWidth,
-        height: isMobile ? 80 : 70,
-        y: version_text.y() + version_text.height() - (isMobile ? 20 : 0),
+        height: isMobile ? 80 : (isAndroid ? 60 : 70),
+        y:copyright_text.y() +copyright_text.height() - (isMobile ? 20 : 0),
         text: `Built with VN-Sutra`,
         fontFamily: fonts['other'],
-        fontSize: 30,
+        fontSize: isAndroid ? 25 : 30,
         fill: config.colors.primary,
         fillAfterStrokeEnabled: true,
         wrap: "none"
     });
 
 
-    mainContainer.add(textAnimation.container, music.container, sfx.container, btns_holder, version_text);
+    mainContainer.add(textAnimation.container, music.container, sfx.container, btns_holder, version_text, copyright_text);
 
     if(config.ui['vnsutra-label']) {
         mainContainer.add(label_text);

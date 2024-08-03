@@ -11,6 +11,7 @@
     "author": "Tejas Nayak",
     "author-email": "tejasnayak25@outlook.com",
     "description": "An introduction to VN-Sutra, visual novel SDK",
+    "copyright": "Copyright - 2024, Tejas Nayak",
     "protocol": "web+vnsutra",
     "screenshots": [
         "./assets/screenshots/screenshot1.png",

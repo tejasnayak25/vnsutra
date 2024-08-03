@@ -23,7 +23,7 @@ async function home(config, fonts, navigate) {
     home_layer.add(image);
 
     let siderect = new Konva.Group({
-        width: isMobile ? width : 250,
+        width: isMobile ? width : (isAndroid ? 180 : 250),
         height: height,
         visible: isMobile ? false : true
     });
@@ -35,8 +35,8 @@ async function home(config, fonts, navigate) {
         x: siderect.width() - 1
     });
 
-    let sidebar = new Konva.Image({
-        width: isMobile ? width : 250,
+    let sidebar = new Konva.Rect({
+        width: isMobile ? width : siderect.width(),
         height: height,
         fill: config.colors.menu,
         opacity: isMobile ? config.ui.mobile.sidebar.opacity : config.ui.sidebar.opacity
@@ -52,15 +52,15 @@ async function home(config, fonts, navigate) {
         align: "center",
         verticalAlign: "middle",
         width: sidebar.width(),
-        height: isMobile ? 90 : 95,
+        height: isMobile ? 90 : (isAndroid ? 60 : 95),
         text: "Menu",
         fontFamily: fonts['other'],
-        fontSize: 30,
+        fontSize: isAndroid ? 25 : 30,
         fill: config.colors.text,
         fillAfterStrokeEnabled: true
     });
 
-    let borderPadding = 30;
+    let borderPadding = isAndroid ? 20 : 30;
 
     let sidebar_title_border = new Konva.Rect({
         x: borderPadding,
@@ -172,19 +172,19 @@ async function home(config, fonts, navigate) {
 
         let opt_group = new Konva.Group({
             width: sidebar.width(),
-            height: isMobile ? 80 : 70,
-            y: j * (isMobile ? 80 : 70)
+            height: isMobile ? 80 : (isAndroid ? 55 : 70),
+            y: j * (isMobile ? 80 : (isAndroid ? 55 : 70))
         });
         
         let opt_text = new Konva.Text({
             align: "left",
-            padding: isMobile ? 60 : 30,
+            padding: isMobile ? 60 : (isAndroid ? 20 : 30),
             verticalAlign: "middle",
             width: sidebar.width(),
-            height: isMobile ? 80 : 70,
+            height: isMobile ? 80 : (isAndroid ? 55 : 70),
             text: opt.name,
             fontFamily: fonts['other'],
-            fontSize: 30,
+            fontSize: isAndroid ? 25 : 30,
             fill: config.colors.text,
             fillAfterStrokeEnabled: true
         });
@@ -246,10 +246,10 @@ async function home(config, fonts, navigate) {
     let title = new Konva.Text({
         align: isMobile ? "center" : config.ui.title.align,
         width: title_group.width(),
-        padding: 60,
+        padding: isAndroid ? 30 : 60,
         text: config.title,
         fontFamily: fonts['title'],
-        fontSize: isMobile ? 55 : 90,
+        fontSize: isMobile ? 50 : (isAndroid ? 50 : 90),
         fill: config.ui.title.color,
         fillAfterStrokeEnabled: true,
         x: isMobile ? -(title_group.width() * (config.ui.mobile.title.scale - 1))/2 : 0,
@@ -263,14 +263,18 @@ async function home(config, fonts, navigate) {
     let subtitle = new Konva.Text({
         align: isMobile ? "center" : config.ui.title.align,
         width: title_group.width(),
-        padding: 60,
-        y: isMobile ? (85 * config.ui.mobile.title.scale) : 120,
+        padding: isAndroid ? 30 : 60,
+        y: isMobile ? ((title.fontSize() + title.padding()) * config.ui.mobile.title.scale) : (title.y() + title.height() + 20 - (isAndroid ? 60 : 120)),
         text: config.subtitle || "",
         fontFamily: fonts['other'],
-        fontSize: 30,
+        fontSize: isAndroid ? 25 : 30,
         fill: config.ui.title.color,
         fillAfterStrokeEnabled: true
     });
+
+    if(!isMobile) {
+        title_group.y(height - (subtitle.y() + subtitle.height()));
+    }
 
     title_group.add(title, subtitle);
 

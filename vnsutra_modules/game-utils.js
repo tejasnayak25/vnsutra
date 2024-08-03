@@ -107,13 +107,23 @@ function input(message, placeholder = undefined) {
         let alertwin = new AlertWindow(message, [proceedBtn], configuration, "input", { input: inp });
         alertwin.btns.classList.replace("justify-between", "justify-end");
 
+        if(isMobile) {
+            inp.onblur = () => {
+                document.documentElement.requestFullscreen();
+            }
+        }
+
         inp.onkeydown = (e) => {
             if(e.key === "Enter") {
                 if(inp.value !== "") {
-                    alertwin.close();
-                    alertwin.btns.classList.replace("justify-end", "justify-between");
-                    isTyping = false;
-                    resolve(inp.value);
+                    if(isMobile) {
+                        inp.blur();
+                    } else {
+                        alertwin.close();
+                        alertwin.btns.classList.replace("justify-end", "justify-between");
+                        isTyping = false;
+                        resolve(inp.value);
+                    }
                 }
             }
         }
