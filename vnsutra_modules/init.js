@@ -21,6 +21,25 @@ loadspin = loadwin.querySelector("#loadspin");
             exitApp = () => {
                 window.close();
             }
+            if ('wakeLock' in navigator && 'request' in navigator.wakeLock) {
+                let wakeLock = null;
+                const requestWakeLock = async () => {
+                  wakeLock = await navigator.wakeLock.request('screen');
+                  wakeLock.addEventListener('release', () => {
+                    console.log('Wake Lock was released');
+                  });
+                  console.log('Wake Lock is active');
+                };
+                
+                const handleVisibilityChange = () => {
+                  if (wakeLock !== null && document.visibilityState === 'visible') {
+                    requestWakeLock();
+                  }
+                };
+                
+                document.addEventListener('visibilitychange', handleVisibilityChange);
+                document.addEventListener('fullscreenchange', handleVisibilityChange);
+            }
         } else {
             let installed = false;
             window.onappinstalled = () => {
@@ -41,6 +60,25 @@ loadspin = loadwin.querySelector("#loadspin");
     if(displayMode === "standalone") {
         exitApp = () => {
             window.close();
+        }
+        if ('wakeLock' in navigator && 'request' in navigator.wakeLock) {
+            let wakeLock = null;
+            const requestWakeLock = async () => {
+              wakeLock = await navigator.wakeLock.request('screen');
+              wakeLock.addEventListener('release', () => {
+                console.log('Wake Lock was released');
+              });
+              console.log('Wake Lock is active');
+            };
+            
+            const handleVisibilityChange = () => {
+              if (wakeLock !== null && document.visibilityState === 'visible') {
+                requestWakeLock();
+              }
+            };
+            
+            document.addEventListener('visibilitychange', handleVisibilityChange);
+            document.addEventListener('fullscreenchange', handleVisibilityChange);
         }
     } else {
         let installed = false;

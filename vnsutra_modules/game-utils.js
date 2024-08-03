@@ -111,6 +111,12 @@ function input(message, placeholder = undefined) {
             inp.onblur = () => {
                 document.documentElement.requestFullscreen();
             }
+
+            document.onclick = (e) => {
+                if(e.target.tagName !== "INPUT") {
+                    inp.blur();
+                }
+            }
         }
 
         inp.onkeydown = (e) => {
@@ -134,6 +140,7 @@ function input(message, placeholder = undefined) {
                 alertwin.btns.classList.replace("justify-end", "justify-between");
                 isTyping = false;
                 resolve(inp.value);
+                document.onclick = () => {};
             }
         }
 
