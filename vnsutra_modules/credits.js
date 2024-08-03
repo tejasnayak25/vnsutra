@@ -26,7 +26,7 @@ function credits(config, actionbar, fonts) {
             width: container.width(),
             text: key,
             fontFamily: fonts['other'],
-            fontSize: isAndroid ? 20 : 25,
+            fontSize: isMobile ? 25 : (isAndroid ? 20 : 25),
             fill: config.colors.primary,
             fillAfterStrokeEnabled: true,
             wrap: "word"
@@ -40,7 +40,7 @@ function credits(config, actionbar, fonts) {
             y: key_text.height() + gap,
             text: value,
             fontFamily: fonts['other'],
-            fontSize: isAndroid ? 18 : 23,
+            fontSize: isMobile ? 23 : (isAndroid ? 18 : 23),
             fill: config.colors.text,
             fillAfterStrokeEnabled: true,
             wrap: "word"

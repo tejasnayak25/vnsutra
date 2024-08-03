@@ -4,6 +4,7 @@
     "id": "vnsutra",
     "description": "An introduction to VN-Sutra, visual novel SDK",
     "start_url": "/",
+    "background_color": "#020617",
     "icons": [
       {
         "src": "../assets/images/logo.png",

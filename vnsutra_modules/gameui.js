@@ -5,7 +5,7 @@ async function gameUI(config, fonts, navigate) {
 
     let topbar_container = new Konva.Group({
         width: width,
-        height: isAndroid ? 40 : 50
+        height: isMobile ? 50 : (isAndroid ? 40 : 50)
     });
 
     let topbar_rect = new Konva.Rect({
@@ -211,12 +211,12 @@ async function gameUI(config, fonts, navigate) {
         
         let btn_text = new Konva.Text({
             align: "left",
-            padding: (topbarInnerHeight - (isAndroid ? 20 : 23))/2,
+            padding: (topbarInnerHeight - (isMobile ? 23 : (isAndroid ? 20 : 23)))/2,
             x: btn_img.width() + iconPadding,
             verticalAlign: "middle",
             text: element.name,
             fontFamily: fonts['other'],
-            fontSize: isAndroid ? 20 : 23,
+            fontSize: isMobile ? 23 : (isMobile ? 23 : (isAndroid ? 20 : 23)),
             fill: config.colors.text,
             fillAfterStrokeEnabled: true,
             wrap: "word"
@@ -344,12 +344,12 @@ async function gameUI(config, fonts, navigate) {
 
     let name_text = new Konva.Text({
         align: config["game-ui"].dialog.title.align,
-        padding: isAndroid ? 10 : 20,
+        padding: isMobile ? 20 : (isAndroid ? 10 : 20),
         verticalAlign: "middle",
         width: dialogContainer.width(),
         text: "Alex",
         fontFamily: fonts['other'],
-        fontSize: isAndroid ? 20 : 23,
+        fontSize: isMobile ? 23 : (isAndroid ? 20 : 23),
         fill: config.colors.text,
         fillAfterStrokeEnabled: true,
         wrap: "none",
@@ -362,13 +362,13 @@ async function gameUI(config, fonts, navigate) {
     let dialog_text = new Konva.Text({
         align: config["game-ui"].dialog.speech.align,
         verticalAlign: "middle",
-        padding: isAndroid ? 5 : 10,
+        padding: isMobile ? 10 : (isAndroid ? 5 : 10),
         width: isMobile ? (dialogContainerWidth - 30) : (dialogContainerWidth - 100),
         x: isMobile ? 15 : 50,
         y: name_text.height(),
         text: "",
         fontFamily: fonts['other'],
-        fontSize: isAndroid ? 18 : 20,
+        fontSize: isMobile ? 20 : (isAndroid ? 18 : 20),
         lineHeight: 1.5,
         fill: config.colors.text,
         fillAfterStrokeEnabled: true,

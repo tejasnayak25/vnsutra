@@ -55,12 +55,12 @@ async function home(config, fonts, navigate) {
         height: isMobile ? 90 : (isAndroid ? 60 : 95),
         text: "Menu",
         fontFamily: fonts['other'],
-        fontSize: isAndroid ? 25 : 30,
+        fontSize: isMobile ? 30 : (isAndroid ? 25 : 30),
         fill: config.colors.text,
         fillAfterStrokeEnabled: true
     });
 
-    let borderPadding = isAndroid ? 20 : 30;
+    let borderPadding = isMobile ? 30 : (isAndroid ? 20 : 30);
 
     let sidebar_title_border = new Konva.Rect({
         x: borderPadding,
@@ -184,7 +184,7 @@ async function home(config, fonts, navigate) {
             height: isMobile ? 80 : (isAndroid ? 55 : 70),
             text: opt.name,
             fontFamily: fonts['other'],
-            fontSize: isAndroid ? 25 : 30,
+            fontSize: isMobile ? 30 : (isAndroid ? 25 : 30),
             fill: config.colors.text,
             fillAfterStrokeEnabled: true
         });
@@ -246,7 +246,7 @@ async function home(config, fonts, navigate) {
     let title = new Konva.Text({
         align: isMobile ? "center" : config.ui.title.align,
         width: title_group.width(),
-        padding: isAndroid ? 30 : 60,
+        padding: isMobile ? 60 : (isAndroid ? 30 : 60),
         text: config.title,
         fontFamily: fonts['title'],
         fontSize: isMobile ? 50 : (isAndroid ? 50 : 90),
@@ -263,11 +263,11 @@ async function home(config, fonts, navigate) {
     let subtitle = new Konva.Text({
         align: isMobile ? "center" : config.ui.title.align,
         width: title_group.width(),
-        padding: isAndroid ? 30 : 60,
+        padding: isMobile ? 60 : (isAndroid ? 30 : 60),
         y: isMobile ? ((title.fontSize() + title.padding()) * config.ui.mobile.title.scale) : (title.y() + title.height() + 20 - (isAndroid ? 60 : 120)),
         text: config.subtitle || "",
         fontFamily: fonts['other'],
-        fontSize: isAndroid ? 25 : 30,
+        fontSize: isMobile ? 30 : (isAndroid ? 25 : 30),
         fill: config.ui.title.color,
         fillAfterStrokeEnabled: true
     });

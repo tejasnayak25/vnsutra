@@ -68,7 +68,7 @@ function settings(config, actionbar, fonts, credit_details) {
 
     let btns_holder = new Konva.Group({
         width: isMobile ? containerWidth - 60 : 200,
-        height: btns.length * (isAndroid ? 50 : 70),
+        height: btns.length * (isMobile ? 70 : (isAndroid ? 50 : 70)),
         x: isMobile ? 0 : (containerWidth - 200)/2,
         y: btny
     });
@@ -80,7 +80,7 @@ function settings(config, actionbar, fonts, credit_details) {
 
         let btn_group = new Konva.Group({
             width: btns_holder.width(),
-            height: (isAndroid ? 40 : 50),
+            height: (isMobile ? 50 : (isAndroid ? 40 : 50)),
             y: i * btn_height
         });
 
@@ -164,7 +164,7 @@ function settings(config, actionbar, fonts, credit_details) {
         y: btny + btns_holder.height() + (isMobile ? 0 : gap),
         text: `Version: ${config.version}`,
         fontFamily: fonts['other'],
-        fontSize: isAndroid ? 25 : 27,
+        fontSize: isMobile ? 27 : (isAndroid ? 25 : 27),
         fill: config.colors.text,
         fillAfterStrokeEnabled: true
     });
@@ -178,7 +178,7 @@ function settings(config, actionbar, fonts, credit_details) {
         y: version_text.y() + version_text.height() - (isMobile ? 20 : 0),
         text: config.copyright,
         fontFamily: fonts['other'],
-        fontSize: isAndroid ? 25 : 30,
+        fontSize: isMobile ? 30 : (isAndroid ? 25 : 30),
         fill: config.colors.primary,
         fillAfterStrokeEnabled: true,
         wrap: "none"
@@ -193,7 +193,7 @@ function settings(config, actionbar, fonts, credit_details) {
         y:copyright_text.y() +copyright_text.height() - (isMobile ? 20 : 0),
         text: `Built with VN-Sutra`,
         fontFamily: fonts['other'],
-        fontSize: isAndroid ? 25 : 30,
+        fontSize: isMobile ? 30 : (isAndroid ? 25 : 30),
         fill: config.colors.primary,
         fillAfterStrokeEnabled: true,
         wrap: "none"

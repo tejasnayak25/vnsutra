@@ -27,12 +27,12 @@ function actionBar(config, siderect, width, height, fonts, close_square_img, add
         height: isMobile ? 90 : (isAndroid ? 60 : 95),
         text: "Action Menu",
         fontFamily: fonts['other'],
-        fontSize: isAndroid ? 25 : 30,
+        fontSize: isMobile ? 30 : (isAndroid ? 25 : 30),
         fill: config.colors.text,
         fillAfterStrokeEnabled: true
     });
 
-    let borderPadding = isAndroid ? 20 : 30;
+    let borderPadding = isMobile ? 30 : (isAndroid ? 20 : 30);
 
     let actionbar_title_border = new Konva.Rect({
         x: borderPadding,

@@ -110,7 +110,7 @@ class Switch {
 
         let [switchWidth, switchHeight] = [23, 23];
         let diagonal = Math.sqrt(Math.pow(switchWidth, 2) + Math.pow(switchHeight, 2));
-        let padding = isAndroid ? 5 : 10;
+        let padding = isMobile ? 10 : (isAndroid ? 5 : 10);
 
         this.switchBox = new Konva.Rect({
             width: switchWidth,
@@ -157,7 +157,7 @@ class Switch {
             y: padding,
             text: label,
             fontFamily: fonts['other'],
-            fontSize: isAndroid ? 25 :  30,
+            fontSize: isMobile ? 30 : (isAndroid ? 25 :  30),
             fill: config.colors.text,
             fillAfterStrokeEnabled: true
         });
