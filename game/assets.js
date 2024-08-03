@@ -6,7 +6,7 @@ let apartment_ext = new Background("backgrounds/Noraneko_Background_Pack_1/Apart
 let mary = new Character({
     name: "Mary",
     folder: "characters/Rin",
-    scale: isMobile ? 0.5 : 1.5
+    scale: isMobile ? 1 : 1.5
 });
 
 let music = new Music("../assets/music/bgm.mp3");

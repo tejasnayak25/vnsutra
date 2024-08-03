@@ -3,13 +3,12 @@ import { dialog, next, input, choice, storage } from "../vnsutra_modules/game-ut
 
 export const story = {
     start: async function () {
+        game.background.reset();
+        mary.reset(["scale"]);
         game.background = futon_room;
         mary.outfit = mary.outfits['Casual'];
         mary.mood = "Rin_Casual_Smile";
         mary.x = -0.25;
-        if(isMobile) {
-            mary.y = 0.5;
-        }
         await mary.slideIn(0.5, 1);
         await dialog(mary, "Hello, developer!");
         await dialog(mary, "I have been tasked with introducing VN-Sutra to you");
@@ -35,15 +34,14 @@ export const story = {
         next(this.scene2);
     },
     scene2: async function () {
+        game.background.reset();
+        mary.reset(["scale"]);
         game.background = apartment_ext;
     
         mary.outfit = mary.outfits['Casual'];
         mary.mood = "Rin_Casual_OpenSmile";
 
         mary.x = 0.5;
-        if(isMobile) {
-            mary.y = 0.5;
-        }
 
         mary.show();
 

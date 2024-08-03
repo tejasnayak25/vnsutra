@@ -25,6 +25,9 @@ class Game {
         image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
     }
 
+    /**
+     * Properties
+     */
     get background() {
         let image = this.ui.game.bg;
         return {
@@ -36,7 +39,7 @@ class Game {
                 image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
             },
             /**
-             * @param {number} value 
+             * @param {number} value - Default: 1
              */
             set pixelSize (value) {
                 image.pixelSize(value);
@@ -231,6 +234,20 @@ class Game {
                         });
                     }
                 });
+            },
+            reset: (except = []) => {
+                let attrs = {};
+                if(!except.includes("blurRadius")) attrs.blurRadius = 0;
+                if(!except.includes("noise")) attrs.noise = 0;
+                if(!except.includes("pixelSize")) attrs.pixelSize = 1;
+                if(!except.includes("brightness")) attrs.brightness = 0;
+                if(!except.includes("contrast")) attrs.contrast = 0;
+                if(!except.includes("hue")) attrs.hue = 0;
+                if(!except.includes("saturation")) attrs.saturation = 0;
+                if(!except.includes("luminance")) attrs.luminance = 0;
+                image.setAttrs(attrs);
+                if(!except.includes("grayscale")) this.background.grayscale = false;
+                if(!except.includes("invert")) this.background.invert = false;
             }
         }
     }

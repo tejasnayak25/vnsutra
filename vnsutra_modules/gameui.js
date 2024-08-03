@@ -165,12 +165,15 @@ async function gameUI(config, fonts, navigate) {
             name: "Screenshot",
             icon: config.gui['screenshot-icon'],
             onclick: () => {
-                game_layer.toBlob({ imageSmoothingEnabled: true }).then(blob => {
-                    let a = document.createElement("a");
-                    a.href = URL.createObjectURL(blob);
-                    a.download = `${config.title}_screenshot_${Date.now()}`;
-                    a.click();
-                });
+                menuBtn.fire("click");
+                setTimeout(() => {
+                    game_layer.toBlob({ imageSmoothingEnabled: true }).then(blob => {
+                        let a = document.createElement("a");
+                        a.href = URL.createObjectURL(blob);
+                        a.download = `${config.title}_screenshot_${Date.now()}`;
+                        a.click();
+                    });
+                }, 500);
             }
         }
     ];

@@ -378,6 +378,28 @@ class Character {
         });
     }
 
+    reset(except = []) {
+        let attrs = {};
+        if(!except.includes("x")) attrs.x = 0;
+        if(!except.includes("y")) attrs.y = 0;
+        if(!except.includes("scale")) {
+            attrs.scaleX = 1;
+            attrs.scaleY = 1;
+        }
+        if(!except.includes("opacity")) attrs.opacity = 1;
+        if(!except.includes("blurRadius")) attrs.blurRadius = 0;
+        if(!except.includes("noise")) attrs.noise = 0;
+        if(!except.includes("pixelSize")) attrs.pixelSize = 1;
+        if(!except.includes("brightness")) attrs.brightness = 0;
+        if(!except.includes("contrast")) attrs.contrast = 0;
+        if(!except.includes("hue")) attrs.hue = 0;
+        if(!except.includes("saturation")) attrs.saturation = 0;
+        if(!except.includes("luminance")) attrs.luminance = 0;
+        this.img.setAttrs(attrs);
+        if(!except.includes("grayscale")) this.grayscale = false;
+        if(!except.includes("invert")) this.invert = false;
+    }
+
     /**
      * 
      * @param {'x' | 'y' | 'scale'} key 

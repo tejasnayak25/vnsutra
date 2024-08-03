@@ -1,5 +1,3 @@
-import { story } from "../game/story.js";
-
 let loadwin = document.getElementById("loadwin"),
 loadimg = loadwin.querySelector("#loadimg"),
 loadtitle = loadwin.querySelector("#loadtitle"),
@@ -89,11 +87,11 @@ loadspin = loadwin.querySelector("#loadspin");
         window.onbeforeinstallprompt = (e) => {
             e.preventDefault();
             if(!installed) {
-                location.href = `${location.origin}/install/`;
+                // location.href = `${location.origin}/install/`;
             }
         }
 
-        document.getElementById("restartWindow").classList.replace("hidden", "flex");
+        // document.getElementById("restartWindow").classList.replace("hidden", "flex");
     }
 
     window.onload = () => {
@@ -101,6 +99,7 @@ loadspin = loadwin.querySelector("#loadspin");
         loadspin.classList.add("hidden");
         document.onclick = () => {
             document.documentElement.requestFullscreen();
+            window.dispatchEvent(new CustomEvent("resize"))
             document.onclick = () => {};
         }
     }
@@ -155,6 +154,9 @@ loadspin = loadwin.querySelector("#loadspin");
 
     let music = document.getElementById("music");
     music.src = CONFIG.bgm;
+
+    let story_module = await import("../game/story.js");
+    let story = story_module.story;
 
     let pages = {
         home: { ui: await home(CONFIG, fonts, navigate), func: (data) => {
