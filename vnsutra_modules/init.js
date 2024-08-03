@@ -94,14 +94,14 @@ loadspin = loadwin.querySelector("#loadspin");
         document.getElementById("restartWindow").classList.replace("hidden", "flex");
     }
 
-    window.onload = () => {
+    window.addEventListener("data-loaded", () => {
         loadstatus.innerText = "Click To Start";
         loadspin.classList.add("hidden");
         document.onclick = () => {
             document.documentElement.requestFullscreen();
             document.onclick = () => {};
         }
-    }
+    });
     let CONFIG = await loadJSON("../game/config.json");
     configuration = CONFIG;
 
@@ -156,6 +156,8 @@ loadspin = loadwin.querySelector("#loadspin");
 
     let story_module = await import("../game/story.js");
     let story = story_module.story;
+
+    window.dispatchEvent(new CustomEvent("data-loaded"));
 
     let pages = {
         home: { ui: await home(CONFIG, fonts, navigate), func: (data) => {
