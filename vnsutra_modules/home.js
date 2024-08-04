@@ -246,6 +246,7 @@ async function home(config, fonts, navigate) {
     let title = new Konva.Text({
         align: isMobile ? "center" : config.ui.title.align,
         width: title_group.width(),
+        padding: isMobile ? 0 : (isAndroid ? 30 : 60),
         text: config.title,
         fontFamily: fonts['title'],
         fontSize: isMobile ? 50 : (isAndroid ? 50 : 90),
