@@ -166,7 +166,8 @@ function settings(config, actionbar, fonts, credit_details) {
         fontFamily: fonts['other'],
         fontSize: isMobile ? 27 : (isAndroid ? 25 : 27),
         fill: config.colors.text,
-        fillAfterStrokeEnabled: true
+        fillAfterStrokeEnabled: true,
+        wrap: "word"
     });
 
     let copyright_text = new Konva.Text({
@@ -174,14 +175,14 @@ function settings(config, actionbar, fonts, credit_details) {
         padding: 30,
         verticalAlign: "middle",
         width: isMobile ? mainContainer.width() : containerWidth,
-        height: isMobile ? 80 : (isAndroid ? 60 : 70),
         y: version_text.y() + version_text.height() - (isMobile ? 20 : 0),
         text: config.copyright,
         fontFamily: fonts['other'],
         fontSize: isMobile ? 30 : (isAndroid ? 25 : 30),
         fill: config.colors.primary,
         fillAfterStrokeEnabled: true,
-        wrap: "none"
+        lineHeight: 1.5,
+        wrap: "word"
     });
 
     let label_text = new Konva.Text({
@@ -189,14 +190,13 @@ function settings(config, actionbar, fonts, credit_details) {
         padding: 30,
         verticalAlign: "middle",
         width: isMobile ? mainContainer.width() : containerWidth,
-        height: isMobile ? 80 : (isAndroid ? 60 : 70),
         y:copyright_text.y() +copyright_text.height() - (isMobile ? 20 : 0),
         text: `Built with VN-Sutra`,
         fontFamily: fonts['other'],
         fontSize: isMobile ? 30 : (isAndroid ? 25 : 30),
         fill: config.colors.primary,
         fillAfterStrokeEnabled: true,
-        wrap: "none"
+        wrap: "word"
     });
 
 

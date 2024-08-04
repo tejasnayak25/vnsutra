@@ -127,7 +127,6 @@ function input(message, placeholder = undefined) {
                     } else {
                         alertwin.close();
                         alertwin.btns.classList.replace("justify-end", "justify-between");
-                        isTyping = false;
                         resolve(inp.value);
                     }
                 }
@@ -138,15 +137,12 @@ function input(message, placeholder = undefined) {
             if(inp.value !== "") {
                 alertwin.close();
                 alertwin.btns.classList.replace("justify-end", "justify-between");
-                isTyping = false;
                 resolve(inp.value);
                 document.onclick = () => {};
             }
         }
 
         alertwin.show();
-
-        isTyping = true;
         inp.select();
     });
 }
@@ -199,4 +195,8 @@ const storage = {
     },
 }
 
-export { dialog, next, input, choice, storage };
+function end() {
+    game.ui.game.end.visible(true);
+}
+
+export { dialog, next, input, choice, storage, end };

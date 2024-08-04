@@ -28,7 +28,7 @@ async function loadgame(config, actionbar, title, fonts, remove_img, click = (de
     let i = 0, imgHeight = 0;
 
     let data = await dataStore.getItem("saved-games");
-    if(data) {
+    if(data && data.length > 0) {
         i = data.length;
 
         let currentIndex = 0, j=0;

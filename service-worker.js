@@ -1,8 +1,9 @@
-const CACHE_NAME = 'vnsutra-cache-v1'; // Update cache name to reflect version change
+const CACHE_NAME = 'vnsutra-cache-v2'; // Update cache name to reflect version change
 const urlsToCache = [
     '/', 
     '/index.html', 
-    '/css/output.css'
+    '/css/output.css',
+    '/assets/music/bgm.mp3'
 ];
 
 // Install the service worker and cache initial assets

@@ -98,7 +98,7 @@ async function gameUI(config, fonts, navigate) {
             onclick: (element) => {
                 loadgame(config, load_win, "Save Game", fonts, remove_img, (details, image) => {
                     proceedBtn.onclick = () => {
-                        let url = game_layer.findOne("#game-box").toDataURL({ imageSmoothingEnabled: true });
+                        let url = konvaStage.toDataURL({ imageSmoothingEnabled: true });
 
                         dataStore.getItem("saved-games").then((games) => {
                             let index = games.findIndex(item => item.id === details.id);
@@ -421,6 +421,37 @@ async function gameUI(config, fonts, navigate) {
 
     game_container.add(game_rect, dialogContainer);
 
+    let endGroup = new Konva.Group({
+        id: "end-group",
+        width: width,
+        height: game_container.height(),
+        visible: false
+    });
+
+    let endRect = new Konva.Rect({
+        width: width,
+        height: endGroup.height(),
+        fill: config.colors.menu
+    });
+
+    let endText = new Konva.Text({
+        align: "center",
+        padding: 0,
+        verticalAlign: "middle",
+        width: width,
+        height: endGroup.height(),
+        text: "The End",
+        fontFamily: fonts['other'],
+        fontSize: isMobile ? 40 : (isAndroid ? 35 : 40),
+        fill: config.colors.text,
+        fillAfterStrokeEnabled: true,
+        wrap: "none"
+    });
+
+    endGroup.add(endRect, endText);
+
+    game_container.add(endGroup);
+
     game_layer.add(game_container, topbar_container, load_win.actionrect);
 
     if(isMobile) {
@@ -435,7 +466,8 @@ async function gameUI(config, fonts, navigate) {
         layer: game_layer,
         game: {
             container: game_layer.findOne("#game-container"),
-            bg: game_layer.findOne("#game-bg")
+            bg: game_layer.findOne("#game-bg"),
+            end: game_layer.findOne("#end-group")
         },
         dialog: {
             box: game_layer.findOne("#dialog-box"),

@@ -42,11 +42,11 @@ loadspin = loadwin.querySelector("#loadspin");
         window.onbeforeinstallprompt = (e) => {
             e.preventDefault();
             if(!installed) {
-                location.href = `${location.origin}/install/`;
+                // location.href = `${location.origin}/install/`;
             }
         }
 
-        document.getElementById("restartWindow").classList.replace("hidden", "flex");
+        // document.getElementById("restartWindow").classList.replace("hidden", "flex");
     }
 
     window.addEventListener("data-loaded", () => {
@@ -54,6 +54,9 @@ loadspin = loadwin.querySelector("#loadspin");
         loadspin.classList.add("hidden");
         document.onclick = () => {
             document.documentElement.requestFullscreen();
+            setTimeout(() => {
+                window.dispatchEvent(new CustomEvent("game-resize"));
+            }, 250);
             document.onclick = () => {};
         }
     });
@@ -114,30 +117,7 @@ loadspin = loadwin.querySelector("#loadspin");
 
     window.dispatchEvent(new CustomEvent("data-loaded"));
 
-    let pages = {
-        home: { ui: await home(CONFIG, fonts, navigate), func: (data) => {
-            music.pause();
-            document.getElementById("sfx").pause();
-            if(gameSettings['settings-music'] === true) {
-                music.src = CONFIG.bgm;
-                music.onloadedmetadata = () => {
-                    bgm();
-                }
-            }
-        } },
-        game: { ui: await gameUI(CONFIG, fonts, navigate), func: (data) => {
-            music.pause();
-            music.src = "";
-            if(data.scene) {
-                activeScene = data.scene;
-            } else {
-                activeScene = "start"; 
-            }
-            story[activeScene]();
-        } }
-    };
-
-    game = new Game(pages.game.ui);
+    let pages = {};
 
     window.addEventListener("orientationchange", (e) => {
         e.preventDefault();
@@ -155,49 +135,46 @@ loadspin = loadwin.querySelector("#loadspin");
         }
     });
 
-    window.addEventListener("resize", async (e) => {
-        if(!isTyping) {
-            let docRect = document.documentElement.getBoundingClientRect();
-            konvaStage.width(docRect.width);
-            konvaStage.height(docRect.height);
-    
-            isMobile = checkMobile();
-    
-            pages.home.ui.layer.destroy();
-            pages.game.ui.layer.destroy();
-    
-            pages = {
-                home: { ui: await home(CONFIG, fonts, navigate), func: (data) => {
-                    music.pause();
-                    document.getElementById("sfx").pause();
-                    if(gameSettings['settings-music'] === true) {
-                        music.src = CONFIG.bgm;
-                        music.onloadedmetadata = () => {
-                            bgm();
-                        }
+    window.addEventListener("game-resize", async (e) => {
+        let docRect = document.documentElement.getBoundingClientRect();
+        konvaStage.width(docRect.width);
+        konvaStage.height(docRect.height);
+
+        isMobile = checkMobile();
+
+        pages = {
+            home: { ui: await home(CONFIG, fonts, navigate), func: (data) => {
+                music.pause();
+                document.getElementById("sfx").pause();
+                if(gameSettings['settings-music'] === true) {
+                    music.src = CONFIG.bgm;
+                    music.onloadedmetadata = () => {
+                        bgm();
                     }
-                } },
-                game: { ui: await gameUI(CONFIG, fonts, navigate), func: (data) => {
-                    music.pause();
-                    music.src = "";
-                    if(data.scene) {
-                        activeScene = data.scene;
-                    } else {
-                        activeScene = "start"; 
-                    }
-                    story[activeScene]();
-                } }
-            };
-    
-            game.ui = pages.game.ui;
-    
-            setTimeout(() => {
-                navigate(activeLayer, { scene: activeScene ?? null });
-                if(!loadwin.classList.contains("hidden")) {
-                    loadwin.classList.add("hidden");
                 }
-            }, 100);
-        }
+            } },
+            game: { ui: await gameUI(CONFIG, fonts, navigate), func: (data) => {
+                music.pause();
+                music.src = "";
+                if(data.scene) {
+                    activeScene = data.scene;
+                } else {
+                    activeScene = "start"; 
+                }
+                story[activeScene]();
+            } }
+        };
+
+        game = new Game(pages.game.ui);
+
+        setTimeout(() => {
+            navigate(activeLayer, { scene: activeScene ?? null });
+            if(!loadwin.classList.contains("hidden")) {
+                loadwin.classList.add("hidden");
+            }
+        }, 100);
+
+        window.dispatchEvent(new CustomEvent("game-ui-ready"));
     });
 
     window.addEventListener("load-game", (e) => {
@@ -205,8 +182,6 @@ loadspin = loadwin.querySelector("#loadspin");
         activeScene = name;
         story[activeScene]();
     });
-
-    window.dispatchEvent(new CustomEvent("game-ui-ready"));
 
     function navigate(name, data) {
         if(pages[name]) {

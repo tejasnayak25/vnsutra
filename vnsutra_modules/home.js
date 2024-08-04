@@ -246,7 +246,6 @@ async function home(config, fonts, navigate) {
     let title = new Konva.Text({
         align: isMobile ? "center" : config.ui.title.align,
         width: title_group.width(),
-        padding: isMobile ? 60 : (isAndroid ? 30 : 60),
         text: config.title,
         fontFamily: fonts['title'],
         fontSize: isMobile ? 50 : (isAndroid ? 50 : 90),
@@ -257,23 +256,27 @@ async function home(config, fonts, navigate) {
         scale: {
             x: isMobile ? config.ui.mobile.title.scale : 1,
             y: isMobile ? config.ui.mobile.title.scale : 1
-        }
+        },
+        wrap: "word"
     });
 
     let subtitle = new Konva.Text({
         align: isMobile ? "center" : config.ui.title.align,
         width: title_group.width(),
         padding: isMobile ? 60 : (isAndroid ? 30 : 60),
-        y: isMobile ? ((title.fontSize() + title.padding()) * config.ui.mobile.title.scale) : (title.y() + title.height() + 20 - (isAndroid ? 60 : 120)),
+        y: isMobile ? (80 * title.scaleX() - 80) : (title.y() + title.height() + 20 - (isAndroid ? 60 : 120)),
         text: config.subtitle || "",
         fontFamily: fonts['other'],
         fontSize: isMobile ? 30 : (isAndroid ? 25 : 30),
         fill: config.ui.title.color,
-        fillAfterStrokeEnabled: true
+        fillAfterStrokeEnabled: true,
+        wrap: "word"
     });
 
     if(!isMobile) {
         title_group.y(height - (subtitle.y() + subtitle.height()));
+    } else {
+        title_group.y((height/2) - ((title.height()*title.scaleX()) + subtitle.height()))
     }
 
     title_group.add(title, subtitle);

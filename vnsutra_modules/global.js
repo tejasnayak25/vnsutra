@@ -6,7 +6,7 @@ gameSettings = {
 }, bgm = () => {
     document.getElementById("music").play();
 }, autoplay = false, is_app = false;
-let activeScene = undefined, activeLayer = 'home', configuration = null, isTyping = false;
+let activeScene = undefined, activeLayer = 'home', configuration = null;
 
 document.oncontextmenu = (e) => {
     e.preventDefault();
