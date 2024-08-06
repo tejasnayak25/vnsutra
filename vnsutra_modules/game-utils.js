@@ -84,6 +84,7 @@ function animateDialog(text) {
 }
 
 function next(scene) {
+    game.ui.game.end.visible(false);
     activeScene = scene.name;
     scene();
 }
@@ -199,4 +200,16 @@ function end() {
     game.ui.game.end.visible(true);
 }
 
-export { dialog, next, input, choice, storage, end };
+/**
+ * 
+ * @param {number} time 
+ */
+function wait(time) {
+    return new Promise((resolve, reject) => {
+        setTimeout(() => {
+            resolve();
+        }, time*1000);
+    });
+}
+
+export { dialog, next, input, choice, storage, end, wait };

@@ -157,6 +157,7 @@ loadspin = loadwin.querySelector("#loadspin");
             game: { ui: await gameUI(CONFIG, fonts, navigate), func: (data) => {
                 music.pause();
                 music.src = "";
+                game.ui.game.end.visible(false);
                 if(data.scene) {
                     activeScene = data.scene;
                 } else {
@@ -180,6 +181,7 @@ loadspin = loadwin.querySelector("#loadspin");
 
     window.addEventListener("load-game", (e) => {
         let name = e.detail.scene;
+        game.ui.game.end.visible(false);
         activeScene = name;
         story[activeScene]();
     });

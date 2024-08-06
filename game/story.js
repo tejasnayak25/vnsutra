@@ -1,5 +1,5 @@
 import { futon_room, apartment_ext, mary, music, obj } from "./assets.js";
-import { dialog, next, input, choice, storage, end } from "../vnsutra_modules/game-utils.js";
+import { dialog, next, input, choice, storage, end, wait } from "../vnsutra_modules/game-utils.js";
 
 export const story = {
     start: async function () {
