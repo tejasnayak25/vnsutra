@@ -1,6 +1,11 @@
-function dialog(speaker, text, wait = true) {
+function dialog(speaker, text = "", wait = true) {
+    let data = game.ui.dialog;
+    if(speaker === null) {
+        data.name.text("");
+        data.message.text("");
+        data.message.fire("update");
+    }
     return new Promise(async (resolve, reject) => {
-        let data = game.ui.dialog;
         data.name.text(speaker.data.name);
     
         if(gameSettings["text_animation"]) {
