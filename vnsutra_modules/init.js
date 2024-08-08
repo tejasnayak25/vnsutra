@@ -24,6 +24,14 @@ loadspin = loadwin.querySelector("#loadspin");
         document.addEventListener('visibilitychange', handleVisibilityChange);
         document.addEventListener('fullscreenchange', handleVisibilityChange);
     }
+
+    let devMode = false;
+
+    let params = new URLSearchParams(location.search);
+
+    if(params.has("dev")) {
+        devMode = true;
+    }
     
     let displayMode = 'browser tab';
     if (window.matchMedia('(display-mode: standalone)').matches) {
@@ -42,12 +50,12 @@ loadspin = loadwin.querySelector("#loadspin");
 
         window.onbeforeinstallprompt = (e) => {
             e.preventDefault();
-            if(!installed) {
+            if(!installed && !devMode) {
                 location.href = `${location.origin}/install/`;
             }
         }
 
-        document.getElementById("restartWindow").classList.replace("hidden", "flex");
+        if(!devMode) document.getElementById("restartWindow").classList.replace("hidden", "flex");
     }
 
     window.addEventListener("data-loaded", () => {
