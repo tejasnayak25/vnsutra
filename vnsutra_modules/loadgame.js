@@ -53,7 +53,7 @@ async function loadgame(config, actionbar, title, fonts, remove_img, click = (de
 
         if(isMobile) {
             let imgWidth = mainContainer.width();
-            imgHeight = (9 * imgWidth) / 16;
+            imgHeight = (konvaStage.height() * imgWidth) / konvaStage.width();
 
             for (let i = 0; i < data.length; i++) {
                 const element = data[i];

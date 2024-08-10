@@ -1,4 +1,4 @@
-let docRect = document.documentElement.getBoundingClientRect();
+let docRect = document.body.getBoundingClientRect();
 
 var konvaStage = new Konva.Stage({
     container: 'playground',   // id of container <div>

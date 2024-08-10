@@ -97,8 +97,8 @@ async function gameUI(config, fonts, navigate) {
             icon: config.gui['save-icon'],
             onclick: (element) => {
                 loadgame(config, load_win, "Save Game", fonts, remove_img, (details, image) => {
-                    proceedBtn.onclick = () => {
-                        let url = konvaStage.toDataURL({ imageSmoothingEnabled: true });
+                    proceedBtn.onclick = async () => {
+                        let url = game_layer.findOne("#game-box").toDataURL({ imageSmoothingEnabled: true, width: width, height: (height-topbarHeight) });
 
                         dataStore.getItem("saved-games").then((games) => {
                             let index = games.findIndex(item => item.id === details.id);
@@ -121,7 +121,7 @@ async function gameUI(config, fonts, navigate) {
                     alertWin.message = "Are you sure you want to overwrite this game?";
                     alertWin.show();
                 }, true, () => {
-                    let url = game_layer.findOne("#game-box").toDataURL({ imageSmoothingEnabled: true });
+                    let url = game_layer.findOne("#game-box").toDataURL({ imageSmoothingEnabled: true, width: width, height: (height-topbarHeight) });
 
                     dataStore.getItem("saved-games").then((games) => {
                         let id = Date.now();
@@ -388,7 +388,9 @@ async function gameUI(config, fonts, navigate) {
     let game_rect = new Konva.Group({
         width: width,
         height: gameHeight - dialogContainer.height(),
-        id: "game-container"
+        id: "game-container",
+        clipWidth: width,
+        clipHeight: gameHeight
     });
 
     let game_bg = new Konva.Image({

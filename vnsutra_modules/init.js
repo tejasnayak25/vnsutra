@@ -145,7 +145,7 @@ loadspin = loadwin.querySelector("#loadspin");
     });
 
     window.addEventListener("game-resize", async (e) => {
-        let docRect = document.documentElement.getBoundingClientRect();
+        let docRect = document.body.getBoundingClientRect();
         konvaStage.width(docRect.width);
         konvaStage.height(docRect.height);
 
