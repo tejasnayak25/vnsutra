@@ -69,6 +69,7 @@ async function loadgame(config, actionbar, title, fonts, remove_img, click = (de
                 });
 
                 image.on("click touchstart", () => {
+                    actionbar.close();
                     click(element, image);
                 });
 
@@ -158,6 +159,7 @@ async function loadgame(config, actionbar, title, fonts, remove_img, click = (de
                         });
 
                         image.on("click touchstart", () => {
+                            actionbar.close();
                             click(element, image);
                         });
 

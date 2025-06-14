@@ -1,4 +1,7 @@
 function dialog(speaker, text = "", wait = true) {
+    let id = ++instruction_count;
+    if ((state.instruction_count ?? 0) > id) return;
+
     let data = game.ui.dialog;
     if(speaker === null) {
         data.name.text("");
@@ -91,10 +94,16 @@ function animateDialog(text) {
 function next(scene) {
     game.ui.game.end.visible(false);
     activeScene = scene.name;
+    instruction_count = 0;
+    state.instruction_count = 0;
     scene();
 }
 
 function input(message, placeholder = undefined) {
+    let id = ++instruction_count;
+    if ((state.instruction_count ?? 0) > id) {
+        return state.history?.[`${activeScene}-${id}`] ?? "";
+    }
     return new Promise((resolve, reject) => {
         let proceedBtn = document.createElement("button");
         proceedBtn.innerText = "Continue";
@@ -133,6 +142,8 @@ function input(message, placeholder = undefined) {
                     } else {
                         alertwin.close();
                         alertwin.btns.classList.replace("justify-end", "justify-between");
+                        state.history = state.history || {};
+                        state.history[`${activeScene}-${id}`] = inp.value;
                         resolve(inp.value);
                     }
                 }
@@ -143,6 +154,8 @@ function input(message, placeholder = undefined) {
             if(inp.value !== "") {
                 alertwin.close();
                 alertwin.btns.classList.replace("justify-end", "justify-between");
+                state.history = state.history || {};
+                state.history[`${activeScene}-${id}`] = inp.value;
                 resolve(inp.value);
                 document.onclick = () => {};
             }
@@ -154,6 +167,10 @@ function input(message, placeholder = undefined) {
 }
 
 function choice(message, opts) {
+    let id = ++instruction_count;
+    if ((state.instruction_count ?? 0) > id) {
+        return state.history?.[`${activeScene}-${id}`] ?? "";
+    }
     return new Promise((resolve, reject) => {
         let proceedBtn = document.createElement("button");
         proceedBtn.innerText = "Continue";
@@ -178,6 +195,8 @@ function choice(message, opts) {
             let value = choicesElem.querySelector(`input[name="choices-radio"]:checked`).value;
             alertwin.close();
             alertwin.btns.classList.replace("justify-end", "justify-between");
+            state.history = state.history || {};
+            state.history[`${activeScene}-${id}`] = value;
             resolve(value);
         }
 
@@ -210,6 +229,10 @@ function end() {
  * @param {number} time 
  */
 function wait(time) {
+    let id = ++instruction_count;
+    if ((state.instruction_count ?? 0) > id) {
+        return;
+    }
     return new Promise((resolve, reject) => {
         setTimeout(() => {
             resolve();

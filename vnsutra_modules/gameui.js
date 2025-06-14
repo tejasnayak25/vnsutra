@@ -103,11 +103,13 @@ async function gameUI(config, fonts, navigate) {
                         dataStore.getItem("saved-games").then((games) => {
                             let index = games.findIndex(item => item.id === details.id);
                             let id = Date.now();
+                            state.instruction_count = instruction_count;
                             games[index] = {
                                 id: id,
                                 scene: activeScene,
                                 timestamp: id,
-                                src: url
+                                src: url,
+                                state: state
                             }
 
                             dataStore.setItem("saved-games", games).then(() => {
@@ -128,11 +130,14 @@ async function gameUI(config, fonts, navigate) {
                         if(games === null) {
                             games = [];
                         }
+
+                        state.instruction_count = instruction_count;
                         games.push({
                             id: id,
                             scene: activeScene,
                             timestamp: id,
-                            src: url
+                            src: url,
+                            state: state
                         });
 
                         dataStore.setItem("saved-games", games).then(() => {
@@ -152,7 +157,7 @@ async function gameUI(config, fonts, navigate) {
                     proceedBtn.onclick = () => {
                         alertWin.close();
                         closeBar(load_win.actionrect);
-                        window.dispatchEvent(new CustomEvent("load-game", {detail: { scene: details.scene }}));
+                        window.dispatchEvent(new CustomEvent("load-game", {detail: { ...details }}));
                     }
 
                     alertWin.message = "Are you sure you want to quit the active game?";

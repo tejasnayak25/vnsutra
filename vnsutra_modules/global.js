@@ -7,6 +7,8 @@ gameSettings = {
     document.getElementById("music").play();
 }, autoplay = false, is_app = false;
 let activeScene = undefined, activeLayer = 'home', configuration = null;
+let state = {};
+let instruction_count = 0;
 
 document.oncontextmenu = (e) => {
     e.preventDefault();

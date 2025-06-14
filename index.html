@@ -8,10 +8,21 @@
     <meta property="og:description" content="An introduction to VN-Sutra, visual novel SDK">
     <meta property="og:url" content="https://vnsutra.onrender.com/">
     <meta property="og:image" content="https://vnsutra.onrender.com/assets/screenshots/screenshot1.png">
-    
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="VN-Sutra">
+    <meta name="twitter:description" content="An introduction to VN-Sutra, visual novel SDK">
+    <meta name="twitter:url" content="https://vnsutra.onrender.com/" />
+    <meta name="twitter:image" content="https://vnsutra.onrender.com/assets/screenshots/screenshot1.png" />
+
+    <meta name="description" content="An introduction to VN-Sutra, visual novel SDK" />
+    <meta name="keywords" content="visual novel, SDK, game development, interactive fiction, VN-Sutra" />
+    <meta name="author" content="Tejas Nayak" />
+    <link rel="canonical" href="https://vnsutra.onrender.com/" />
+
     <title>VN-Sutra</title>
     <link rel="stylesheet" href="./css/output.css">
-    <link id="icon" rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+    <link id="icon" rel="shortcut icon" href="./assets/images/logo.png" type="image/png">
     <link rel="manifest" href="./game/manifest.json" crossorigin="use-credentials">
 </head>
 <body class="overflow-hidden">
@@ -20,7 +31,7 @@
     <audio id="music" src="" loop crossorigin="anonymous"></audio>
     <audio id="sfx" src="" crossorigin="anonymous"></audio>
 
-    <section id="alert-win" class=" absolute top-0 w-full h-full hidden justify-center items-center p-3 bg-slate-950 bg-opacity-70">
+    <section id="alert-win" class=" absolute top-0 w-full h-full hidden justify-center items-center p-3 bg-slate-950/70">
         <div id="alert-card" class=" lg:w-1/3 md:w-1/3 w-full border-t-2 p-5 rounded-md bg-slate-900 flex  flex-col justify-between min-h-40 gap-5" style="border-color: orange;">
             <p id="alert-message" class=" w-full">Lorem ipsum dolor sit amet consectetur adipisicing elit. Consequatur aperiam velit quae reprehenderit vero placeat eveniet molestias corporis modi iure tempora amet, explicabo eaque soluta maiores ducimus exercitationem optio id!</p>
             <div id="alert-opts" class=" hidden w-full"></div>
@@ -37,12 +48,16 @@
     <section id="loadwin" class="absolute top-0 w-full h-full overflow-hidden bg-slate-900">
         <img id="loadimg" src="" class=" w-full h-full object-cover absolute opacity-70" alt="Poster">
         <div class=" absolute top-0 left-0 w-full h-full flex justify-center items-center">
-            <p id="loadtitle" class=" lg:text-8xl md:text-8xl text-7xl text-center drop-shadow-lg"></p>
+            <p id="loadtitle" class=" lg:text-8xl md:text-8xl text-7xl text-center drop-shadow-lg">Hello</p>
         </div>
-        <div class=" flex items-center absolute bottom-0 left-0 w-full p-3">
-            <p id="loadstatus" class=" w-full text-center h-10 lg:text-xl md:text-xl text-lg animate-pulse">Loading...</p>
-            <div class=" w-10 aspect-square animate-spin absolute bottom-3 right-3">
-                <img id="loadspin" class=" w-full h-full" src="./assets/svgs/spinner.svg" alt="Loading">
+        <div class=" flex flex-col items-center justify-center absolute bottom-0 left-0 w-full pb-16">
+            <p id="loadstatus" class="hidden w-full text-center md:text-3xl text-xl text-slate-100 animate-pulse">Loading...</p>
+            <div id="loadspin" class=" w-10 aspect-square">
+                <!-- <img class=" w-full h-full animate-spin" src="./assets/svgs/spinner.svg" alt="Loading"> -->
+                <div class=" loading w-10 h-10"></div>
+                <!-- <div class=" loading-bars bg-white w-10 h-5 scale-150"></div> -->
+                <!-- <div class=" loading-dots bg-white w-10 h-5 scale-200"></div> -->
+                <!-- <div class=" loading-ring bg-white w-10 h-10"></div> -->
             </div>
         </div>
     </section>

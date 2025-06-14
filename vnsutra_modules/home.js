@@ -145,7 +145,7 @@ async function home(config, fonts, navigate) {
                     closeBar(siderect);
                 }
                 closeBar(actionbar.actionrect);
-                navigate("game", { scene: details.scene });
+                navigate("game", { ...details });
                 btnHolder.fire("mouseout");
             });
             openBar(actionbar.actionrect);
@@ -294,7 +294,7 @@ async function home(config, fonts, navigate) {
         } },
         { name: 'Load Game', onclick: () => {
             loadgame(config, actionbar, "Load Game", fonts, remove_img, (details) => {
-                navigate("game", { scene: details.scene });
+                navigate("game", { ...details});
                 closeBar(actionbar.actionrect);
             });
             openBar(actionbar.actionrect);

@@ -196,6 +196,10 @@ function actionBar(config, siderect, width, height, fonts, close_square_img, add
             actionbar_title.text("");
             actionContent.removeChildren();
             this.scrollbarHeight = 0;
+        },
+        close() {
+            animateBtn(closeActionMenuBtn);
+            closeBar(actionrect);
         }
     });
 }

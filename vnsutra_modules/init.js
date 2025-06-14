@@ -61,6 +61,7 @@ loadspin = loadwin.querySelector("#loadspin");
     window.addEventListener("data-loaded", () => {
         loadstatus.innerText = "Click To Start";
         loadspin.classList.add("hidden");
+        loadstatus.classList.remove("hidden");
         document.onclick = () => {
             document.documentElement.requestFullscreen();
             setTimeout(() => {
@@ -166,11 +167,15 @@ loadspin = loadwin.querySelector("#loadspin");
                 music.pause();
                 music.src = "";
                 game.ui.game.end.visible(false);
+                instruction_count = 0;
                 if(data.scene) {
                     activeScene = data.scene;
+                    state = data.state ?? {};
                 } else {
                     activeScene = "start"; 
+                    state = {};
                 }
+                console.log(state);
                 story[activeScene]();
             } }
         };
@@ -189,7 +194,9 @@ loadspin = loadwin.querySelector("#loadspin");
 
     window.addEventListener("load-game", (e) => {
         let name = e.detail.scene;
+        state = e.detail.state ?? {};
         game.ui.game.end.visible(false);
+        instruction_count = 0;
         activeScene = name;
         story[activeScene]();
     });
