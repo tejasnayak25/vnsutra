@@ -19,26 +19,18 @@ def zipFile(src, dest):
 
 PORT = 10000
 
-server = Flask(__name__, static_folder='', template_folder='')
+server = Flask(__name__, static_folder='../', template_folder='')
 
 @server.route("/")
 def home():
-    return send_from_directory(server.root_path, "index.html")
-
-@server.route("/install/")
-def install():
-    return send_from_directory(os.path.join(server.root_path, "install"), "index.html")
-
-@server.route("/service-worker.js")
-def service():
-    return send_from_directory(server.root_path, "service-worker.js")
+    return send_from_directory(server.root_path, "home.html")
 
 @server.route("/folder")
 def index():
     folder_path = request.args.get('path')
     fpath = folder_path
     if folder_path:
-        folder_path = os.path.join(server.root_path, "assets", "game-assets", unquote(folder_path))
+        folder_path = os.path.join(server.root_path, "..", "assets", "game-assets", unquote(folder_path))
         if os.path.exists(folder_path):
             if os.path.isdir(folder_path):
                 zipName = "_".join(fpath.split("/"))
@@ -64,8 +56,8 @@ def index():
 
 def main():
     global zipDir
-    print("serving at port", PORT)
-    zipDir = os.path.join(server.root_path, "zipfiles")
+    print("Running on PORT", PORT)
+    zipDir = os.path.join("tmp", "zipfiles")
     if not os.path.exists(zipDir):
         os.makedirs(zipDir)
     try:

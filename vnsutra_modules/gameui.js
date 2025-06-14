@@ -317,8 +317,10 @@ async function gameUI(config, fonts, navigate) {
     });
 
     menuBtn.on("click touchstart", () => {
-        animateBtn(menuBtn);
-        animateMenu(menuHolder);
+        if(isMobile) {
+            animateBtn(menuBtn);
+            animateMenu(menuHolder);
+        }
     });
 
     topbar_container.add(backBtn, menuHolder, menuBtn);

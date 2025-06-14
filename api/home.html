@@ -3,6 +3,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
 
     <meta property="og:title" content="VN-Sutra">
     <meta property="og:description" content="An introduction to VN-Sutra, visual novel SDK">
@@ -61,12 +62,8 @@
             </div>
         </div>
     </section>
-
-    <section id="restartWindow" class="absolute top-0 left-0 w-full h-full bg-slate-900 text-slate-100 hidden justify-center items-center">
-        <p class="text-xl">Please open app for best experience!</p>
-    </section>
     
-    <script type="module">
+    <!-- <script type="module">
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('/service-worker.js')
             .then(registration => {
@@ -89,7 +86,7 @@
                 console.log('Service Worker registration failed:', error);
             });
         }
-    </script>
+    </script> -->
     <script src="./vnsutra_modules/jszip.min.js"></script>
     <script src="./vnsutra_modules/konva.js"></script>
     <script src="./vnsutra_modules/mobile/ui.js"></script>

@@ -2,15 +2,16 @@
   "name": "vnsutra",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "api/index.js",
   "scripts": {
-    "start": "nodemon server.js",
+    "start": "nodemon api/index.js",
     "tailwindcss": "npx @tailwindcss/cli -i ./css/input.css -o ./css/output.css --watch",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Tejas Nayak",
   "license": "ISC",
   "dependencies": {
+    "@vercel/edge": "^1.2.2",
     "archiver": "^7.0.1",
     "daisyui": "^5.0.43",
     "express": "^4.19.2",

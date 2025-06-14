@@ -4,7 +4,7 @@ let express = require("express");
 let app = express();
 let archiver = require("archiver");
 
-let zipDir = path.join(__dirname, "zipfiles");
+let zipDir = path.join('tmp', "zipfiles");
 if(!fs.existsSync(zipDir)) {
     fs.mkdirSync(zipDir, { recursive: true });
 }
@@ -32,23 +32,19 @@ function zipFile(source_dir, dest) {
     });
 }
 
-app.use(express.static(__dirname))
+app.use(express.static(__dirname));
+app.use(express.static(path.join(__dirname, "..")));
 
 app.route("/")
 .get((req, res) => {
-    res.sendFile(path.join(__dirname, "index.html"));
-});
-
-app.route("/service-worker.js")
-.get((req, res) => {
-    res.sendFile(path.join(__dirname, "service-worker.js"));
+    res.sendFile(path.join(__dirname, "home.html"));
 });
 
 app.route(`/folder`)
 .get(async (req, res) => {
     if(req.headers['sec-fetch-site'] === "same-origin") {
         let fpath = decodeURIComponent(req.query.path);
-        let folder = path.join(__dirname, "assets", "game-assets", fpath);
+        let folder = path.join(__dirname, "..", "assets", "game-assets", fpath);
 
         if(fs.existsSync(folder)) {
             let data = fs.statSync(folder);
@@ -82,5 +78,5 @@ app.route(`/folder`)
 });
 
 app.listen(10000, () => {
-    console.log("started");
+    console.log("Running on PORT 10000");
 });

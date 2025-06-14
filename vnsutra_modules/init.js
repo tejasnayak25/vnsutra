@@ -25,16 +25,8 @@ loadspin = loadwin.querySelector("#loadspin");
         document.addEventListener('fullscreenchange', handleVisibilityChange);
     }
 
-    let devMode = false;
-
-    let params = new URLSearchParams(location.search);
-
-    if(params.has("dev")) {
-        devMode = true;
-    }
-    
     let displayMode = 'browser tab';
-    if (window.matchMedia('(display-mode: standalone)').matches) {
+    if (window.matchMedia('(display-mode: standalone)').matches || window.matchMedia('(display-mode: fullscreen)').matches) {
         displayMode = 'standalone';
     }
 
@@ -42,20 +34,23 @@ loadspin = loadwin.querySelector("#loadspin");
         exitApp = () => {
             window.close();
         }
-    } else {
-        let installed = false;
-        window.onappinstalled = () => {
-            installed = true;
-        }
+    }
 
-        window.onbeforeinstallprompt = (e) => {
-            e.preventDefault();
-            if(!installed && !devMode) {
-                location.href = `${location.origin}/install/`;
+    window.matchMedia('(display-mode: standalone)').onchange = () => {
+        let standalone = window.matchMedia('(display-mode: standalone)').matches;
+        let fullscreen = window.matchMedia('(display-mode: fullscreen)').matches;
+
+        displayMode = standalone || fullscreen ? "standalone" : "browser tab";
+
+        if(standalone) {
+            exitApp = () => {
+                window.close();
+            }
+        } else {
+            exitApp = () => {
+                history.back();
             }
         }
-
-        if(!devMode) document.getElementById("restartWindow").classList.replace("hidden", "flex");
     }
 
     window.addEventListener("data-loaded", () => {
