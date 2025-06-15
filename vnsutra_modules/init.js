@@ -43,6 +43,13 @@ loadspin = loadwin.querySelector("#loadspin");
     if(displayMode === "fullscreen") {
         exitApp = () => {
             document.exitFullscreen();
+            setTimeout(() => {
+                if (window.matchMedia('(display-mode: standalone)').matches) {
+                    window.close();
+                } else {
+                    history.back();
+                }
+            }, 0);
         }
     }
 
@@ -59,6 +66,13 @@ loadspin = loadwin.querySelector("#loadspin");
         } else if(fullscreen) {
             exitApp = () => {
                 document.exitFullscreen();
+                setTimeout(() => {
+                    if (window.matchMedia('(display-mode: standalone)').matches) {
+                        window.close();
+                    } else {
+                        history.back();
+                    }
+                }, 0);
             }
         } else {
             exitApp = () => {
