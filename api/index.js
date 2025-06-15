@@ -4,7 +4,7 @@ let express = require("express");
 let app = express();
 let archiver = require("archiver");
 
-let zipDir = path.join('tmp', "zipfiles");
+let zipDir = path.join("/tmp", "zipfiles");
 if(!fs.existsSync(zipDir)) {
     fs.mkdirSync(zipDir, { recursive: true });
 }

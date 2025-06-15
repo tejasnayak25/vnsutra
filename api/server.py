@@ -57,7 +57,7 @@ def index():
 def main():
     global zipDir
     print("Running on PORT", PORT)
-    zipDir = os.path.join("tmp", "zipfiles")
+    zipDir = os.path.join("/tmp", "zipfiles")
     if not os.path.exists(zipDir):
         os.makedirs(zipDir)
     try:
