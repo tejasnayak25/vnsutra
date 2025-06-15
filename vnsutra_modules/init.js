@@ -26,8 +26,12 @@ loadspin = loadwin.querySelector("#loadspin");
     }
 
     let displayMode = 'browser tab';
-    if (window.matchMedia('(display-mode: standalone)').matches || window.matchMedia('(display-mode: fullscreen)').matches) {
+    if (window.matchMedia('(display-mode: standalone)').matches) {
         displayMode = 'standalone';
+    }
+
+    if(window.matchMedia('(display-mode: fullscreen)').matches) {
+        displayMode = 'fullscreen';
     }
 
     if(displayMode === "standalone") {
@@ -36,15 +40,25 @@ loadspin = loadwin.querySelector("#loadspin");
         }
     }
 
+    if(displayMode === "fullscreen") {
+        exitApp = () => {
+            document.exitFullscreen();
+        }
+    }
+
     window.matchMedia('(display-mode: standalone)').onchange = () => {
         let standalone = window.matchMedia('(display-mode: standalone)').matches;
         let fullscreen = window.matchMedia('(display-mode: fullscreen)').matches;
 
-        displayMode = standalone || fullscreen ? "standalone" : "browser tab";
+        displayMode = standalone ? "standalone" : (fullscreen ? "fullscreen" : "browser tab");
 
-        if(standalone || fullscreen) {
+        if(standalone) {
             exitApp = () => {
                 window.close();
+            }
+        } else if(fullscreen) {
+            exitApp = () => {
+                document.exitFullscreen();
             }
         } else {
             exitApp = () => {
