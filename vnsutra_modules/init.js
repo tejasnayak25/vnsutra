@@ -49,7 +49,7 @@ loadspin = loadwin.querySelector("#loadspin");
                 } else {
                     history.back();
                 }
-            }, 0);
+            }, 100);
         }
     }
 
@@ -78,7 +78,7 @@ loadspin = loadwin.querySelector("#loadspin");
                     } else {
                         history.back();
                     }
-                }, 0);
+                }, 100);
             }
         } else {
             exitApp = () => {
