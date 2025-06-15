@@ -42,7 +42,7 @@ loadspin = loadwin.querySelector("#loadspin");
 
         displayMode = standalone || fullscreen ? "standalone" : "browser tab";
 
-        if(standalone) {
+        if(standalone || fullscreen) {
             exitApp = () => {
                 window.close();
             }
