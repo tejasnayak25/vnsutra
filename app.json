@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "vnsutra-app",
+    "name": "VN-Sutra",
     "slug": "vnsutra-app",
     "version": "1.0.0",
     "orientation": "landscape",
@@ -46,6 +46,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "05188855-8608-4ea5-b6cb-d69d3abb3af4"
+      }
     }
   }
 }
