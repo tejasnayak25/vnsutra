@@ -30,24 +30,28 @@ loadspin = loadwin.querySelector("#loadspin");
         displayMode = 'standalone';
     }
 
-    if(window.matchMedia('(display-mode: fullscreen)').matches) {
+    if (window.matchMedia('(display-mode: fullscreen)').matches) {
         displayMode = 'fullscreen';
     }
 
     if(displayMode === "standalone") {
         exitApp = () => {
-            window.close();
+            window.closeApp?.() || window.close();
         }
     }
 
     if(displayMode === "fullscreen") {
         exitApp = () => {
+            if (window.closeApp) {
+                window.closeApp();
+                return;
+            }
             document.exitFullscreen();
             setTimeout(() => {
                 if (window.matchMedia('(display-mode: standalone)').matches) {
-                    window.close();
+                    window.closeApp?.() || window.close();
                 } else {
-                    history.back();
+                    window.closeApp?.() || history.back();
                 }
             }, 100);
         }
@@ -67,22 +71,26 @@ loadspin = loadwin.querySelector("#loadspin");
     function onDisplayModeChange(mode) {
         if(mode === "standalone") {
             exitApp = () => {
-                window.close();
+                window.closeApp?.() || window.close();
             }
         } else if(mode === "fullscreen") {
             exitApp = () => {
+                if (window.closeApp) {
+                    window.closeApp();
+                    return;
+                }
                 document.exitFullscreen();
                 setTimeout(() => {
                     if (window.matchMedia('(display-mode: standalone)').matches) {
-                        window.close();
+                        window.closeApp?.() || window.close();
                     } else {
-                        history.back();
+                        window.closeApp?.() || history.back();
                     }
                 }, 100);
             }
         } else {
             exitApp = () => {
-                history.back();
+                window.closeApp?.() || history.back();
             }
         }
     }

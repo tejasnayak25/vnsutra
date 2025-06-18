@@ -2,7 +2,7 @@ let game,
 gameSettings = {
     text_animation: true
 }, exitApp = () => {
-    history.back();
+    window.closeApp?.() || history.back();
 }, bgm = () => {
     document.getElementById("music").play();
 }, autoplay = false, is_app = false;
