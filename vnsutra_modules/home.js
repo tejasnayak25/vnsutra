@@ -188,12 +188,13 @@ async function home(config, fonts, navigate) {
             fontFamily: fonts['other'],
             fontSize: isMobile ? 30 : (isAndroid ? 25 : 30),
             fill: config.colors.text,
-            fillAfterStrokeEnabled: true
+            fillAfterStrokeEnabled: true,
+            x: isMobile ? 0 : (isAndroid ? 30 : 0)
         });
 
         opt_group.on("mouseover", () => {
             opt_text.to({
-                x: isMobile ? 60 : 30,
+                x: isMobile ? 60 : (isAndroid ? 60 : 30),
                 duration: 0.1
             });
             document.body.style.cursor = "pointer";
