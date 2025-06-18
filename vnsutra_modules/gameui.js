@@ -77,6 +77,11 @@ async function gameUI(config, fonts, navigate) {
         alertWin.show();
     });
 
+    window.onbeforeunload = (e) => {
+        e.preventDefault();
+        e.returnValue = '';
+        return '';
+    }
 
     let close_square_img = new Image();
     close_square_img.src = config.gui['close-icon'];

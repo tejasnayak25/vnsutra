@@ -1,4 +1,6 @@
 async function home(config, fonts, navigate) {
+    window.onbeforeunload = () => {};
+
     let home_layer = new Konva.Layer();
 
     let width = konvaStage.width(),

@@ -204,7 +204,6 @@ loadspin = loadwin.querySelector("#loadspin");
                     activeScene = "start"; 
                     state = {};
                 }
-                console.log(state);
                 story[activeScene]();
             } }
         };
