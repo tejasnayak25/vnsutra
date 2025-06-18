@@ -1,7 +1,7 @@
 // webview.tsx
 import { useFocusEffect } from 'expo-router'; // Or from @react-navigation/native
 import React, { useCallback, useRef } from 'react';
-import { Alert, BackHandler, StyleSheet, View } from 'react-native';
+import { BackHandler, StyleSheet, View } from 'react-native';
 import type { WebViewNavigation } from 'react-native-webview'; // For typing navState
 import { WebView, WebViewMessageEvent } from 'react-native-webview';
 
@@ -33,10 +33,7 @@ export default function WebViewScreen() {
     const message = event.nativeEvent.data;
     if (message === 'close-app') {
       // Web page requested to close the app
-      Alert.alert("Exit App", "The game wants to close. Exit?", [
-        { text: "Cancel", onPress: () => null, style: "cancel" },
-        { text: "YES", onPress: () => BackHandler.exitApp() }
-      ]);
+      BackHandler.exitApp();
     }
   };
 
@@ -48,6 +45,7 @@ export default function WebViewScreen() {
         style={styles.webview}
         onNavigationStateChange={handleNavigationStateChange}
         onMessage={onMessageFromWebView}
+        injectedJavaScript={`window.closeApp = function() { window.ReactNativeWebView.postMessage('close-app'); };`}
       />
     </View>
   );
