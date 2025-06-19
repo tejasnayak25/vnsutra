@@ -10,9 +10,9 @@ loadspin = loadwin.querySelector("#loadspin");
         const requestWakeLock = async () => {
           wakeLock = await navigator.wakeLock.request('screen');
           wakeLock.addEventListener('release', () => {
-            console.log('Wake Lock was released');
+            // Wake Lock was released
           });
-          console.log('Wake Lock is active');
+          // Wake Lock is active
         };
         
         const handleVisibilityChange = () => {

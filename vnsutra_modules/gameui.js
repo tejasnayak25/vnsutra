@@ -174,7 +174,7 @@ async function gameUI(config, fonts, navigate) {
         {
             name: "Screenshot",
             icon: config.gui['screenshot-icon'],
-            onclick: () => {
+            onclick: (element) => {
                 menuBtn.fire("click");
                 setTimeout(() => {
                     game_layer.toBlob({ imageSmoothingEnabled: true }).then(blob => {
@@ -182,6 +182,10 @@ async function gameUI(config, fonts, navigate) {
                         a.href = URL.createObjectURL(blob);
                         a.download = `${config.title}_screenshot_${Date.now()}`;
                         a.click();
+                        element.img.src = config.gui['check-icon'];
+                        setTimeout(() => {
+                            element.img.src = config.gui['screenshot-icon'];
+                        }, 2000);
                     });
                 }, 500);
             }
@@ -209,10 +213,12 @@ async function gameUI(config, fonts, navigate) {
     let iconPadding = 10;
 
     for (let j = 0; j < menuItems.length; j++) {
-        const element = menuItems[j];
+        let element = menuItems[j];
 
         let img = new Image();
         img.src = element.icon;
+
+        element.img = img;
 
         let btn_img = new Konva.Image({
             width: topbarInnerHeight - 2*iconPadding,
@@ -234,7 +240,6 @@ async function gameUI(config, fonts, navigate) {
             fillAfterStrokeEnabled: true,
             wrap: "word"
         });
-
 
         let x = 0;
 
