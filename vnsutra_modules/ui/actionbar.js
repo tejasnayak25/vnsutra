@@ -146,12 +146,13 @@ function actionBar(config, siderect, width, height, fonts, close_square_img, add
     actionrect.add(actionbar, actionbar_border, actionbar_title, actionbar_title_border, addBtn, closeActionMenuBtn, actionContent, scrollContainer);
 
     window.scrollApp = (deltaY) => {
-        if(deltaY < 0) {
-            deltaY = 0;
-        } else if(deltaY > (scrollContainer.height() - scrollbar.height())) {
-            deltaY = (scrollContainer.height() - scrollbar.height());
+        let value = scrollbar.y() + deltaY;
+        if(value < 0) {
+            value = 0;
+        } else if(value > (scrollContainer.height() - scrollbar.height())) {
+            value = (scrollContainer.height() - scrollbar.height());
         }
-        scrollbar.y(deltaY);
+        scrollbar.y(value);
         scrollbar.fire("dragmove");
     }
 
