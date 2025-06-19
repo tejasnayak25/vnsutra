@@ -152,6 +152,7 @@ function actionBar(config, siderect, width, height, fonts, close_square_img, add
             deltaY = (scrollContainer.height() - scrollbar.height());
         }
         scrollbar.y(deltaY);
+        scrollbar.fire("dragmove");
     }
 
     return ({
