@@ -152,8 +152,8 @@ function actionBar(config, siderect, width, height, fonts, close_square_img, add
         } else if(value > (scrollContainer.height() - scrollbar.height())) {
             value = (scrollContainer.height() - scrollbar.height());
         }
-        scrollbar.y(value);
         console.log(deltaY, scrollbar.y());
+        scrollbar.y(value);
         scrollbar.fire("dragmove");
     }
 
