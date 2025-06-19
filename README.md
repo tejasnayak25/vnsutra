@@ -8,5 +8,5 @@ Change icon file in assets/icon/icon.png
 
 Run in terminal:
 ```shell
-dart run tools/prebuild_update.dart
+dart run tools/prebuild.dart
 ```
