@@ -145,19 +145,6 @@ function actionBar(config, siderect, width, height, fonts, close_square_img, add
 
     actionrect.add(actionbar, actionbar_border, actionbar_title, actionbar_title_border, addBtn, closeActionMenuBtn, actionContent, scrollContainer);
 
-    window.scrollApp = (deltaY) => {
-        let value = scrollbar.y() + deltaY;
-        console.log(value, (scrollContainer.height() - scrollbar.height()))
-        if(value < 0) {
-            value = 0;
-        } else if(value > (scrollContainer.height() - scrollbar.height())) {
-            value = (scrollContainer.height() - scrollbar.height());
-        }
-        console.log(deltaY, scrollbar.y());
-        scrollbar.y(value);
-        scrollbar.fire("dragmove");
-    }
-
     return ({
         addBtn,
         actionrect,

@@ -266,6 +266,11 @@ async function loadgame(config, actionbar, title, fonts, remove_img, click = (de
         scrollbar.on("dragmove", () => {
             mainContainer.y(-(actionbar.scrollHeight / actionbar.scrollScale));
         });
+
+        window.scrollApp = (deltaY) => {
+            actionbar.scrollHeight += deltaY;
+            scrollbar.fire("dragmove");
+        }
     
         actionContent.off("mousedown touchstart");
     

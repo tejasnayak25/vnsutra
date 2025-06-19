@@ -232,6 +232,11 @@ function settings(config, actionbar, fonts, credit_details) {
             scrollbar.on("dragmove", () => {
                 mainContainer.y(-(actionbar.scrollHeight / actionbar.scrollScale));
             });
+
+            window.scrollApp = (deltaY) => {
+                actionbar.scrollHeight += deltaY;
+                scrollbar.fire("dragmove");
+            }
         
             actionContent.off("mousedown touchstart");
     
