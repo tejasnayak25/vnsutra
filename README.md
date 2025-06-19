@@ -7,6 +7,6 @@ An introduction to VN-Sutra, visual novel SDK
 Change icon file in assets/icon/icon.png
 
 Run in terminal:
-```shell
+```bash
 dart run tools/prebuild.dart
 ```
