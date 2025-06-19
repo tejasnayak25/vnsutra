@@ -1114,6 +1114,9 @@ class Music {
     }
 
     play() {
+        let id = ++instruction_count;
+        if ((state.instruction_count ?? 0) > id) return;
+
         if(gameSettings['settings-music'] === true) {
             this.elem.src = this.src;
             this.elem.play();
@@ -1135,6 +1138,9 @@ class Sfx {
     }
 
     play() {
+        let id = ++instruction_count;
+        if ((state.instruction_count ?? 0) > id) return;
+        
         if(gameSettings['settings-sfx'] === true) {
             this.elem.src = this.src;
             this.elem.play();
