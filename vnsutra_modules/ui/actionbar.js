@@ -146,6 +146,7 @@ function actionBar(config, siderect, width, height, fonts, close_square_img, add
     actionrect.add(actionbar, actionbar_border, actionbar_title, actionbar_title_border, addBtn, closeActionMenuBtn, actionContent, scrollContainer);
 
     window.scrollApp = (deltaY) => {
+        console.log(deltaY);
         let value = scrollbar.y() + deltaY;
         if(value < 0) {
             value = 0;
