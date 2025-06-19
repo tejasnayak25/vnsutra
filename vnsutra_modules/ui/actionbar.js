@@ -145,6 +145,15 @@ function actionBar(config, siderect, width, height, fonts, close_square_img, add
 
     actionrect.add(actionbar, actionbar_border, actionbar_title, actionbar_title_border, addBtn, closeActionMenuBtn, actionContent, scrollContainer);
 
+    window.scrollApp = (deltaY) => {
+        if(deltaY < 0) {
+            deltaY = 0;
+        } else if(deltaY > (scrollContainer.height() - scrollbar.height())) {
+            deltaY = (scrollContainer.height() - scrollbar.height());
+        }
+        scrollbar.y(deltaY);
+    }
+
     return ({
         addBtn,
         actionrect,
