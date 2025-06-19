@@ -153,7 +153,7 @@ function actionBar(config, siderect, width, height, fonts, close_square_img, add
             value = (scrollContainer.height() - scrollbar.height());
         }
         scrollbar.y(value);
-        console.log(value);
+        console.log(deltaY, scrollbar.y());
         scrollbar.fire("dragmove");
     }
 
