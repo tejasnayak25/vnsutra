@@ -45,5 +45,5 @@ Refer to [package.json](package.json) for all available scripts.
 
 ---
 
-- Edit your app in the `app/` directory.
-- Native metadata (name, version, orientation, etc.) is managed in `app.json` and synced to Android native files by the prebuild script.
+- Edit your app in the [app/](app/) directory.
+- Native metadata (name, version, orientation, etc.) is managed in [app.json](app.json) and synced to Android native files by the prebuild script.
