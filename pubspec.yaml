@@ -1,0 +1,29 @@
+name: vnsutra
+description: "An introduction to VN-Sutra, visual novel SDK"
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: ^3.5.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+  webview_flutter: ^4.7.0 # Use the latest version
+  webview_windows: ^0.2.0 # Or the latest version
+  window_manager: ^0.3.7
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/icon.png"
+
+
+flutter:
+  uses-material-design: true
