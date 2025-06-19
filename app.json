@@ -1,11 +1,11 @@
 {
   "expo": {
     "name": "VN-Sutra",
-    "slug": "vnsutra-app",
+    "slug": "vnsutra",
     "version": "1.0.0",
     "orientation": "landscape",
     "icon": "./assets/images/icon.png",
-    "scheme": "vnsutraapp",
+    "scheme": "vnsutra",
     "userInterfaceStyle": "automatic",
     "androidStatusBar": {
       "hidden": true,
@@ -25,7 +25,7 @@
         "backgroundColor": "#020617"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.tejasnayak25.vnsutraapp"
+      "package": "com.game.vnsutra"
     },
     "web": {
       "bundler": "metro",
@@ -49,9 +49,7 @@
     },
     "extra": {
       "router": {},
-      "eas": {
-        "projectId": "05188855-8608-4ea5-b6cb-d69d3abb3af4"
-      }
+      "eas": {}
     }
   }
 }

@@ -1,4 +1,4 @@
-package com.tejasnayak25.vnsutraapp
+package com.game.vnsutra
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build

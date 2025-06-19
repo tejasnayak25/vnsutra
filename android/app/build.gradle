@@ -87,9 +87,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.tejasnayak25.vnsutraapp'
+    namespace 'com.game.vnsutra'
     defaultConfig {
-        applicationId 'com.tejasnayak25.vnsutraapp'
+        applicationId 'com.game.vnsutra'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

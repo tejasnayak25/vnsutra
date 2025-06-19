@@ -1,4 +1,4 @@
-package com.tejasnayak25.vnsutraapp
+package com.game.vnsutra
 
 import android.app.Application
 import android.content.res.Configuration
