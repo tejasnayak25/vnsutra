@@ -32,10 +32,16 @@ This project uses [Expo](https://expo.dev) and [expo-router](https://expo.github
    ```
 
 4. **Build the app**
-   - Android: `npm run build-android`
-   - iOS: `npm run build-ios`
+   - Android: 
+   ```bash
+   npm run build-android
+   ```
+   - iOS: 
+   ```bash
+   npm run build-ios
+   ```
 
-Refer to `package.json` for all available scripts.
+Refer to [package.json](package.json) for all available scripts.
 
 ---
 
