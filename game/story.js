@@ -12,7 +12,7 @@ export const story = {
         mary.outfit = mary.outfits['Casual'];
         mary.mood = "Rin_Casual_Smile";
         mary.x = -0.25;
-        mary.y = 0.1;
+        mary.y = isMobile ? 0.1 : (isAndroid ? 0.2 : 0.1);
         await mary.slideIn(0.5, 1);
         await dialog(mary, "Hello, developer!");
         await dialog(mary, "I have been tasked with introducing VN-Sutra to you");

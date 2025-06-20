@@ -189,7 +189,6 @@ async function home(config, fonts, navigate) {
             fontSize: isMobile ? 30 : (isAndroid ? 25 : 30),
             fill: config.colors.text,
             fillAfterStrokeEnabled: true,
-            x: isMobile ? 0 : (isAndroid ? 30 : 0)
         });
 
         opt_group.on("mouseover", () => {
