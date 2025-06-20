@@ -18,6 +18,7 @@ export const story = {
         await dialog(mary, "I have been tasked with introducing VN-Sutra to you");
         await dialog(mary, "Before we get started, how about we introduce ourselves?");
         let name = await input("What's your name?", "Peanut");
+        name = name.trim();
         storage.setItem("name", name);
         if(name === "Peanut") {
             await mary.to({mood: "Rin_Casual_OpenSmile_EyesClosed"});
