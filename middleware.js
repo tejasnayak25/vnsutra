@@ -22,6 +22,6 @@ export default async function middleware(request) {
   if (pathname.startsWith('/api')) {
     return new Response("Not Found", { status: 404 });
   }
-
+  
   return rewrite(request.url);
 }
