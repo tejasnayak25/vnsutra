@@ -17,7 +17,6 @@ export const story = {
         await dialog(mary, "Hello, developer!");
         await dialog(mary, "I have been tasked with introducing VN-Sutra to you");
         await dialog(mary, "Before we get started, how about we introduce ourselves?");
-        await dialog(mary, "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Totam minima quaerat enim atque temporibus, et consectetur asperiores dolores tenetur nulla, porro quod reiciendis? Quis impedit earum accusamus? Nisi, earum delectus!")
         let name = await input("What's your name?", "Peanut");
         storage.setItem("name", name);
         if(name === "Peanut") {
