@@ -380,7 +380,7 @@ async function gameUI(config, fonts, navigate) {
 
     let nameBorderB = new Konva.Rect({
         width: width,
-        height: 4,
+        height: isMobile ? 5 : 4,
         x: nameContainerBG.x(),
         y: nameContainerBG.height(),
         fill: config.colors.menu,
@@ -388,7 +388,8 @@ async function gameUI(config, fonts, navigate) {
     });
 
     let name_text = new Konva.Text({
-        padding: isMobile ? 20 : (isAndroid ? 10 : 15),
+        align: "center",
+        padding: isMobile ? 15 : (isAndroid ? 10 : 15),
         verticalAlign: "middle",
         // width: dialogContainer.width(),
         x: isMobile ? 0 : 200,
@@ -416,7 +417,7 @@ async function gameUI(config, fonts, navigate) {
         y: name_text.height() + dialogPadding,
         text: "",
         fontFamily: fonts['other'],
-        fontSize: isMobile ? 20 : (isAndroid ? 18 : 25),
+        fontSize: isMobile ? 23 : (isAndroid ? 18 : 25),
         lineHeight: 1.5,
         fill: config.colors.text,
         fillAfterStrokeEnabled: true,
