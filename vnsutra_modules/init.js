@@ -204,6 +204,7 @@ loadspin = loadwin.querySelector("#loadspin");
                 music.pause();
                 music.src = "";
                 game.ui.game.end.visible(false);
+                game.ui.game.loading.visible(false);
                 instruction_count = 0;
                 if(data.scene) {
                     activeScene = data.scene;
@@ -232,6 +233,7 @@ loadspin = loadwin.querySelector("#loadspin");
         let name = e.detail.scene;
         state = e.detail.state ?? {};
         game.ui.game.end.visible(false);
+        game.ui.game.loading.visible(false);
         instruction_count = 0;
         activeScene = name;
         story[activeScene]();

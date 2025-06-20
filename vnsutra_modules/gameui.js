@@ -344,7 +344,7 @@ async function gameUI(config, fonts, navigate) {
 
     let gameHeight = game_container.height();
 
-    let dialogPadding = 20;
+    let dialogPadding = isMobile ? 20 : 30;
 
     let dialogContainer = new Konva.Group({
         width: width,
@@ -357,25 +357,51 @@ async function gameUI(config, fonts, navigate) {
         width: width,
         height: dialogContainer.height(),
         fill: config.colors.menu,
-        id: "dialog-bg"
+        id: "dialog-bg",
+        stroke: config.colors.primary,
+        strokeWidth: 4,
+        fillAfterStrokeEnabled: true,
     });
 
-    dialogContainer.add(dialogContainerBG);
+    let nameGroup = new Konva.Group({
+        skewX: config["game-ui"].dialog.title.skew,
+    });
+
+    let nameContainerBG = new Konva.Rect({
+        width: width,
+        height: dialogContainer.height(),
+        fill: config.colors.menu,
+        id: "name-bg",
+        stroke: config.colors.primary,
+        strokeWidth: 4,
+        fillAfterStrokeEnabled: true,
+    });
+
+    let nameBorderB = new Konva.Rect({
+        width: width,
+        height: 4,
+        x: nameContainerBG.x(),
+        y: nameContainerBG.height(),
+        fill: config.colors.menu
+    });
 
     let name_text = new Konva.Text({
-        align: config["game-ui"].dialog.title.align,
-        padding: isMobile ? 20 : (isAndroid ? 10 : 20),
+        padding: isMobile ? 20 : (isAndroid ? 10 : 15),
         verticalAlign: "middle",
-        width: dialogContainer.width(),
+        // width: dialogContainer.width(),
+        x: isMobile ? 0 : 200,
         text: "Alex",
         fontFamily: fonts['other'],
-        fontSize: isMobile ? 23 : (isAndroid ? 20 : 23),
+        fontSize: isMobile ? 23 : (isAndroid ? 20 : 25),
         fill: config.colors.text,
         fillAfterStrokeEnabled: true,
         wrap: "none",
-        textDecoration: "underline",
+        // textDecoration: "underline",
         id: "dialog-name"
     });
+
+    nameGroup.add(nameContainerBG, nameBorderB, name_text);
+    dialogContainer.add(dialogContainerBG, nameGroup);
 
     let dialogContainerWidth = dialogContainer.width();
 
@@ -383,12 +409,12 @@ async function gameUI(config, fonts, navigate) {
         align: config["game-ui"].dialog.speech.align,
         verticalAlign: "middle",
         padding: isMobile ? 10 : (isAndroid ? 5 : 10),
-        width: isMobile ? (dialogContainerWidth - 30) : (dialogContainerWidth - 100),
-        x: isMobile ? 15 : 50,
-        y: name_text.height(),
+        width: isMobile ? (dialogContainerWidth - 30) : (dialogContainerWidth - 200),
+        x: isMobile ? 15 : 100,
+        y: name_text.height() + dialogPadding,
         text: "",
         fontFamily: fonts['other'],
-        fontSize: isMobile ? 20 : (isAndroid ? 18 : 20),
+        fontSize: isMobile ? 20 : (isAndroid ? 18 : 25),
         lineHeight: 1.5,
         fill: config.colors.text,
         fillAfterStrokeEnabled: true,
@@ -398,9 +424,11 @@ async function gameUI(config, fonts, navigate) {
     
     dialogContainer.height(name_text.height() + dialog_text.height() + 2*dialogPadding);
     dialogContainer.y(gameHeight);
-    dialogContainerBG.height(dialogContainer.height());
+    nameContainerBG.height(name_text.height());
+    nameContainerBG.width(name_text.width());
+    dialogContainerBG.height(dialog_text.height() + 2*dialogPadding);
 
-    dialogContainer.add(name_text, dialog_text);
+    dialogContainer.add(dialog_text);
 
     let game_rect = new Konva.Group({
         width: width,
@@ -419,9 +447,21 @@ async function gameUI(config, fonts, navigate) {
     });
 
     dialog_text.on('update', () => {
-        let height = name_text.height() + dialog_text.height() + 2*dialogPadding;
+        let height = Math.max(name_text.height() + dialog_text.height() + 2*dialogPadding, 230);
         dialogContainerBG.to({
-            height: height,
+            height: height - name_text.height(),
+            y: name_text.height() + 3,
+            duration: 0.2
+        });
+        let name_width = Math.max(name_text.width(), 200);
+        let name_x = name_text.x() - (name_width - name_text.width())/2;
+        nameBorderB.y(name_text.height() - 1);
+        nameBorderB.x(name_x);
+        nameBorderB.width(name_width);
+        nameContainerBG.to({
+            width: name_width,
+            x: name_x,
+            height: name_text.height(),
             duration: 0.2
         });
         dialogContainer.to({
@@ -439,6 +479,8 @@ async function gameUI(config, fonts, navigate) {
     game_rect.add(game_bg);
 
     game_container.add(game_rect, dialogContainer);
+
+    // The End
 
     let endGroup = new Konva.Group({
         id: "end-group",
@@ -471,6 +513,40 @@ async function gameUI(config, fonts, navigate) {
 
     game_container.add(endGroup);
 
+    // Loading
+
+    let loadingGroup = new Konva.Group({
+        id: "loading-group",
+        width: width,
+        height: game_container.height(),
+        visible: false
+    });
+
+    let loadingRect = new Konva.Rect({
+        width: width,
+        height: loadingGroup.height(),
+        fill: config.colors.menu
+    });
+
+    let loadingImg = new Konva.Image({
+        width: 50,
+        height: 50,
+        x: (loadingRect.width()/2) - 25,
+        y: (loadingRect.height()/2) - 25,
+        offsetX: 25, // center rotation
+        offsetY: 25,
+        image: loadImg(config.gui['loading-spinner-icon'])
+    });
+
+    let loadingAnimation = new Konva.Animation((frame) => {
+        const angleDiff = (frame.timeDiff * 180) / 500; // 90 degrees per second
+        loadingImg.rotate(angleDiff);
+    }, game_layer);
+
+    loadingGroup.add(loadingRect, loadingImg);
+
+    game_container.add(loadingGroup);
+
     game_layer.add(game_container, topbar_container, load_win.actionrect);
 
     if(isMobile) {
@@ -486,13 +562,17 @@ async function gameUI(config, fonts, navigate) {
         game: {
             container: game_layer.findOne("#game-container"),
             bg: game_layer.findOne("#game-bg"),
-            end: game_layer.findOne("#end-group")
+            end: game_layer.findOne("#end-group"),
+            loading: game_layer.findOne("#loading-group")
         },
         dialog: {
             box: game_layer.findOne("#dialog-box"),
             bg: game_layer.findOne("#dialog-bg"),
             name: game_layer.findOne("#dialog-name"),
             message: game_layer.findOne("#dialog-message")
+        },
+        animations: {
+            loading: loadingAnimation
         }
     });
 }

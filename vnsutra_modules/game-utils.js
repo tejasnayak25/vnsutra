@@ -93,6 +93,7 @@ function animateDialog(text) {
 
 function next(scene) {
     game.ui.game.end.visible(false);
+    game.ui.game.loading.visible(false);
     activeScene = scene.name;
     instruction_count = 0;
     state.instruction_count = 0;
@@ -224,9 +225,20 @@ function end() {
     game.ui.game.end.visible(true);
 }
 
+const loading = {
+    start() {
+        game.ui.animations.loading.start();
+        game.ui.game.loading.visible(true);
+    },
+    stop() {
+        game.ui.game.loading.visible(false);
+        game.ui.animations.loading.stop();
+    }
+};
+
 /**
  * 
- * @param {number} time 
+ * @param {number} time - seconds
  */
 function wait(time) {
     let id = ++instruction_count;
@@ -240,4 +252,4 @@ function wait(time) {
     });
 }
 
-export { dialog, next, input, choice, storage, end, wait };
+export { dialog, next, loading, input, choice, storage, end, wait };
