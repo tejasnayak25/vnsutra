@@ -464,6 +464,7 @@ async function gameUI(config, fonts, navigate) {
             opacity: 0.9
         });
         let name_width = Math.max(name_text.width(), 200);
+        if(name_text.width() !== name_width) name_text.width(name_width);
         let name_x = name_text.x() - (name_width - name_text.width())/2;
         nameBorderB.y(name_text.height() - 1);
         nameBorderB.x(name_x);
