@@ -14,11 +14,19 @@ document.oncontextmenu = (e) => {
     e.preventDefault();
 }
 
-document.onkeydown = (e) => {
+document.addEventListener("keydown", (e) => {
     if(e.ctrlKey && e.shiftKey) {
         switch(e.key) {
             case "I": e.preventDefault();break;
+            case "J": e.preventDefault();break;
+            case "C": e.preventDefault();break;
             default: break;
         }
     }
-}
+    if(e.ctrlKey && (["n", "o", "s", "r", "u"].find(item => item === e.key.toLowerCase()))) {
+        e.preventDefault();
+    }
+    if(e.key === "F12") {
+        e.preventDefault();
+    }
+});

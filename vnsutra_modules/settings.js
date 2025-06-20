@@ -233,6 +233,9 @@ function settings(config, actionbar, fonts, credit_details) {
                 mainContainer.y(-(actionbar.scrollHeight / actionbar.scrollScale));
             });
 
+            actionbar.scrollHeight = 0;
+            scrollbar.fire("dragmove");
+
             window.scrollApp = (deltaY) => {
                 actionbar.scrollHeight += deltaY;
                 scrollbar.fire("dragmove");
