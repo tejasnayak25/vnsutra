@@ -392,10 +392,10 @@ async function gameUI(config, fonts, navigate) {
         padding: isMobile ? 15 : (isAndroid ? 10 : 15),
         verticalAlign: "middle",
         // width: dialogContainer.width(),
-        x: isMobile ? 0 : 200,
+        x: isMobile ? 0 : (isAndroid ? 100 : 200),
         text: "Alex",
         fontFamily: fonts['other'],
-        fontSize: isMobile ? 23 : (isAndroid ? 20 : 25),
+        fontSize: isMobile ? 23 : (isAndroid ? 22 : 25),
         fill: config.colors.text,
         fillAfterStrokeEnabled: true,
         wrap: "none",
@@ -417,7 +417,7 @@ async function gameUI(config, fonts, navigate) {
         y: name_text.height() + dialogPadding,
         text: "",
         fontFamily: fonts['other'],
-        fontSize: isMobile ? 23 : (isAndroid ? 18 : 25),
+        fontSize: isMobile ? 23 : (isAndroid ? 22 : 25),
         lineHeight: 1.5,
         fill: config.colors.text,
         fillAfterStrokeEnabled: true,
@@ -456,7 +456,7 @@ async function gameUI(config, fonts, navigate) {
         } else {
             dialogContainer.visible(true);
         }
-        let height = Math.max(name_text.height() + dialog_text.height() + 2*dialogPadding, 230);
+        let height = Math.max(name_text.height() + dialog_text.height() + 2*dialogPadding, (isMobile ? 230 : (isAndroid ? 150 : 230)));
         dialogContainerBG.to({
             height: height - name_text.height(),
             y: name_text.height() + 3,
