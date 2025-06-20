@@ -8,7 +8,7 @@ class AlertWindow {
         this.btns = this.win.querySelector("#alert-btns");
         
         this.color = config.colors.primary;
-        this.cardColor = config.colors.menu;
+        this.cardColor = `${config.colors.menu}cc`;
         this.textColor = config.colors.text;
 
         this.data = {

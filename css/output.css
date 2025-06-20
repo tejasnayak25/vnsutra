@@ -4009,6 +4009,9 @@
   .bg-slate-900 {
     background-color: var(--color-slate-900);
   }
+  .bg-slate-900\/70 {
+    background-color: color-mix(in oklab, var(--color-slate-900) 70%, transparent);
+  }
   .bg-slate-950 {
     background-color: var(--color-slate-950);
   }

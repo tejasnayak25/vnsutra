@@ -12,7 +12,9 @@ export const story = {
         mary.outfit = mary.outfits['Casual'];
         mary.mood = "Rin_Casual_Smile";
         mary.x = -0.25;
+        mary.y = 0.1;
         await mary.slideIn(0.5, 1);
+        await wait(2);
         await dialog(mary, "Hello, developer!");
         await dialog(mary, "I have been tasked with introducing VN-Sutra to you");
         await dialog(mary, "Before we get started, how about we introduce ourselves?");
@@ -39,7 +41,7 @@ export const story = {
     },
     scene2: async function () {
         game.background.reset();
-        mary.reset(["scale"]);
+        mary.reset(["scale", "y"]);
         game.background = apartment_ext;
     
         mary.outfit = mary.outfits['Casual'];

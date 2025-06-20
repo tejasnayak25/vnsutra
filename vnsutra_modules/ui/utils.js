@@ -292,7 +292,7 @@ function getRadioOptions(options, name) {
     return text;
 }
 
-class LongTextRadio {
+class ChoiceMenu {
     constructor({ label, id, placeholder = "", options = [], onchange = (e, input) => {}, disabled = false }) {
         let div = new HTMLNode({
             tagName: "div",
@@ -317,10 +317,12 @@ class LongTextRadio {
                     if(document.getElementById(id).querySelector(".active-choice")) {
                         let activeChoice = document.getElementById(id).querySelector(".active-choice");
                         activeChoice.style.borderColor = configuration.colors.text;
+                        activeChoice.style.color = configuration.colors.text;
                         activeChoice.classList.remove("active-choice");
                     }
 
                     elem.style.borderColor = configuration.colors.primary;
+                    elem.style.color = configuration.colors.primary;
                     elem.classList.add("active-choice");
                 }
             });

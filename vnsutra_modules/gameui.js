@@ -350,7 +350,8 @@ async function gameUI(config, fonts, navigate) {
         width: width,
         height: 180,
         y: gameHeight - 180,
-        id: "dialog-box"
+        id: "dialog-box",
+        visible: false
     });
 
     let dialogContainerBG = new Konva.Rect({
@@ -382,7 +383,8 @@ async function gameUI(config, fonts, navigate) {
         height: 4,
         x: nameContainerBG.x(),
         y: nameContainerBG.height(),
-        fill: config.colors.menu
+        fill: config.colors.menu,
+        opacity: 0.9
     });
 
     let name_text = new Konva.Text({
@@ -447,11 +449,18 @@ async function gameUI(config, fonts, navigate) {
     });
 
     dialog_text.on('update', () => {
+        if(name_text.text() === "" && dialog_text.text() === "") {
+            dialogContainer.visible(false);
+            return;
+        } else {
+            dialogContainer.visible(true);
+        }
         let height = Math.max(name_text.height() + dialog_text.height() + 2*dialogPadding, 230);
         dialogContainerBG.to({
             height: height - name_text.height(),
             y: name_text.height() + 3,
-            duration: 0.2
+            duration: 0.2,
+            opacity: 0.9
         });
         let name_width = Math.max(name_text.width(), 200);
         let name_x = name_text.x() - (name_width - name_text.width())/2;
@@ -462,7 +471,8 @@ async function gameUI(config, fonts, navigate) {
             width: name_width,
             x: name_x,
             height: name_text.height(),
-            duration: 0.2
+            duration: 0.2,
+            opacity: 0.9
         });
         dialogContainer.to({
             height: height,

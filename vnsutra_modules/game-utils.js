@@ -179,7 +179,7 @@ function choice(message, opts) {
         proceedBtn.style.backgroundColor = configuration.colors.primary;
         proceedBtn.style.color = configuration.colors['primary-text'];
     
-        let choices = new LongTextRadio({
+        let choices = new ChoiceMenu({
             label: "Choices",
             id: "choices",
             options: opts,
