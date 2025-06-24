@@ -1,5 +1,4 @@
 <p align="center">
-  <big>VN-Sutra</big>
   <b>Modular Visual Novel SDK for the Web</b><br>
   <i>Build beautiful, interactive visual novels with JavaScript and Node.js</i>
 </p>
@@ -154,5 +153,4 @@ export const story = {
 
 ## 📄 License
 
-ISC
-
+MIT

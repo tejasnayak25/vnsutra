@@ -9,7 +9,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Tejas Nayak",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "@vercel/edge": "^1.2.2",
     "archiver": "^7.0.1",
