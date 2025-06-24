@@ -160,6 +160,13 @@ async function home(config, fonts, navigate) {
             credit_details.render();
             openBar(actionbar.actionrect);
         } },
+        { name: "Fullscreen", onclick: () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        } },
         { name: 'Exit', onclick: () => {
             proceedBtn.onclick = () => {
                 alertWin.close();
