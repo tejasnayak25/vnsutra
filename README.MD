@@ -1,6 +1,5 @@
-# VN-Sutra
-
 <p align="center">
+  <h2>VN-Sutra</h2>
   <b>Modular Visual Novel SDK for the Web</b><br>
   <i>Build beautiful, interactive visual novels with JavaScript and Node.js</i>
 </p>
@@ -141,8 +140,6 @@ export const story = {
 | `manifest.json`| Web app manifest for PWA support and installability                     |
 
 ---
-
-## 📸 Screenshots
 
 ## 📸 Screenshots
 
