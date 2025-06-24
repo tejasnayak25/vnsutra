@@ -1,5 +1,5 @@
 <p align="center">
-  <h2>VN-Sutra</h2>
+  <big>VN-Sutra</big>
   <b>Modular Visual Novel SDK for the Web</b><br>
   <i>Build beautiful, interactive visual novels with JavaScript and Node.js</i>
 </p>
