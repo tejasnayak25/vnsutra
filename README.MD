@@ -103,7 +103,7 @@ export const story = {
 - `choice(question, options)` — Present choices to the player
 - `next(sceneFunction)` — Move to the next scene
 - `wait(seconds)` — Wait before continuing
-- `end()` — End the story or scene
+- `end()` — End the story
 - `loading.start()` / `loading.stop()` — Show/hide loading animation
 - `storage.setItem(key, value)`, `storage.getItem(key)` — Save/load data
 </details>
