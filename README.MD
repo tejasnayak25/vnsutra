@@ -1,21 +1,32 @@
-## VN-Sutra
+# VN-Sutra
 
-VN-Sutra is a modular Visual Novel Game SDK for building browser-based visual novels using JavaScript and Node.js. It provides a flexible architecture, asset management, and a customizable UI for rapid game development.
+<p align="center">
+  <img src="./assets/images/logo.png" alt="VN-Sutra Logo" width="120"/>
+</p>
 
-### Features
+<p align="center">
+  <b>Modular Visual Novel SDK for the Web</b><br>
+  <i>Build beautiful, interactive visual novels with JavaScript and Node.js</i>
+</p>
 
-- Modular JavaScript SDK for game logic, UI, storage, and asset management (`vnsutra_modules/`)
-- Customizable UI with [Konva.js](https://konvajs.org/)
-- Asset management for images, music, fonts, and game assets
-- Save/load system for game state
-- Cross-platform: works in modern browsers, supports mobile and desktop
-- Node.js (Express) server for asset delivery and packaging
-- Tailwind CSS for rapid UI styling
-- Vercel-ready with middleware and deployment config
+---
 
-### Project Structure
+## ✨ Features
 
-```
+- **Modular JavaScript SDK** for game logic, UI, storage, and asset management ([`vnsutra_modules/`](./vnsutra_modules))
+- **Customizable UI** with [Konva.js](https://konvajs.org/)
+- **Asset management** for images, music, fonts, and game assets
+- **Save/load system** for game state
+- **Cross-platform**: works in modern browsers, supports mobile and desktop
+- **Node.js (Express) server** for asset delivery and packaging
+- **Tailwind CSS** for rapid UI styling
+- **Vercel-ready** with middleware and deployment config
+
+---
+
+## 📁 Project Structure
+
+```text
 api/                # Node.js (Express) server
 assets/             # Game assets: images, music, fonts, backgrounds, characters
 css/                # Tailwind CSS input and output
@@ -26,28 +37,21 @@ package.json        # Node.js dependencies and scripts
 vercel.json         # Vercel deployment config
 ```
 
-### Getting Started
+---
 
-#### Install Dependencies
+## 🚀 Quick Start
 
 ```sh
 npm install
+npm start
+npm run tailwindcss
 ```
 
-#### Development
+---
 
-- Start the Node.js server:
-  ```sh
-  npm start
-  ```
-- Build Tailwind CSS:
-  ```sh
-  npm run tailwindcss
-  ```
+## 🛠️ Implementation Overview
 
-### Implementation Overview
-
-#### Defining Assets (`game/assets.js`)
+### Defining Assets ([`game/assets.js`](./game/assets.js))
 
 ```js
 import { Background, Character, Music, IMG, Sfx } from "../vnsutra_modules/asset-utils.js";
@@ -59,13 +63,7 @@ let clickSound = new Sfx("../assets/sfx/click.mp3");
 export { futon_room, mary, music, logo, clickSound };
 ```
 
-- `Background(path)`: Add a background image
-- `Character({ name, folder, scale })`: Add a character and their folder of images
-- `Music(path)`: Add background music
-- `IMG({ src, scale })`: Add a generic image
-- `Sfx(path)`: Add a sound effect
-
-#### Writing the Story (`game/story.js`)
+### Writing the Story ([`game/story.js`](./game/story.js))
 
 ```js
 import { futon_room, mary, music } from "./assets.js";
@@ -89,42 +87,77 @@ export const story = {
 };
 ```
 
-- `dialog(character, text)`: Show dialog from a character
-- `input(question, default)`: Ask the player for input
-- `choice(question, options)`: Present choices to the player
-- `next(sceneFunction)`: Move to the next scene
-- `wait(seconds)`: Wait before continuing
-- `end()`: End the story or scene
-- `loading.start()` / `loading.stop()`: Show/hide loading animation
-- `storage.setItem(key, value)`, `storage.getItem(key)`: Save/load data
+---
 
-#### More Character & Game APIs
+## 🧩 Core APIs
 
-- `character.fadeIn(duration)`, `character.fadeOut(duration)`: Fade character in/out with animation.
-- `character.slideIn(x, duration)`, `character.slideOut(x, duration)`: Slide character in/out to a position.
-- `character.to({ x, y, scale, opacity, blurRadius, noise, pixelSize, brightness, contrast, hue, saturation, luminance, mood, duration })`: Animate multiple properties at once.
-- `character.reset([except])`: Reset character properties to default, except those listed.
-- `game.background = bgObj`: Set the background image.
-- `game.background.grayscale = true/false`: Toggle grayscale effect on background.
+<details>
+<summary><b>Assets</b></summary>
 
-#### Utility Functions
+- `Background(path)` — Add a background image
+- `Character({ name, folder, scale })` — Add a character and their folder of images
+- `Music(path)` — Add background music
+- `IMG({ src, scale })` — Add a generic image
+- `Sfx(path)` — Add a sound effect
+</details>
 
-- `load(path)`: Fetch a file (returns a Promise).
-- `loadJSON(path)`: Fetch and parse a JSON file.
-- `loadFonts(fonts, root)`: Load custom fonts from a config object.
+<details>
+<summary><b>Story</b></summary>
 
-### Game Folder Files
+- `dialog(character, text)` — Show dialog from a character
+- `input(question, default)` — Ask the player for input
+- `choice(question, options)` — Present choices to the player
+- `next(sceneFunction)` — Move to the next scene
+- `wait(seconds)` — Wait before continuing
+- `end()` — End the story or scene
+- `loading.start()` / `loading.stop()` — Show/hide loading animation
+- `storage.setItem(key, value)`, `storage.getItem(key)` — Save/load data
+</details>
 
-- `assets.js`: Define and export your backgrounds, characters, music, images, and sound effects for use in your story.
-- `story.js`: Write your story logic, scenes, and dialog using the SDK APIs.
-- `config.json`: Main configuration for your game. Set project name, title, subtitle, icons, background music, author info, fonts, GUI icons, and UI options. This file controls the look and metadata of your VN.
-- `manifest.json`: Web app manifest for PWA support. Defines app name, icons, start URL, display mode, and protocol handlers for installability and integration.
+<details>
+<summary><b>Character & Game</b></summary>
+
+- `character.fadeIn(duration)`, `character.fadeOut(duration)` — Fade character in/out
+- `character.slideIn(x, duration)`, `character.slideOut(x, duration)` — Slide character in/out
+- `character.to({...})` — Animate multiple properties at once
+- `character.reset([except])` — Reset character properties
+- `game.background = bgObj` — Set the background image
+- `game.background.grayscale = true/false` — Grayscale background
+</details>
+
+<details>
+<summary><b>Utilities</b></summary>
+
+- `load(path)` — Fetch a file (Promise)
+- `loadJSON(path)` — Fetch and parse a JSON file
+- `loadFonts(fonts, root)` — Load custom fonts
+</details>
 
 ---
 
-Add your backgrounds, characters, and music in `assets.js`. Write your story and dialog in `story.js` using the APIs above. Place your images, music, and fonts in the `assets/` folder.
+## 🗂️ Game Folder Files
 
-### License
+| File           | Purpose                                                                 |
+|----------------|-------------------------------------------------------------------------|
+| `assets.js`    | Define and export backgrounds, characters, music, images, sound effects |
+| `story.js`     | Write your story logic, scenes, and dialog using the SDK APIs           |
+| `config.json`  | Main configuration: title, icons, music, fonts, UI, author, etc.        |
+| `manifest.json`| Web app manifest for PWA support and installability                     |
+
+---
+
+## 📸 Screenshots
+
+<p align="center">
+  <img src="./assets/screenshots/screenshot1.png" width="200"/>
+  <img src="./assets/screenshots/screenshot2.png" width="200"/>
+  <img src="./assets/screenshots/screenshot3.png" width="200"/>
+  <img src="./assets/screenshots/screenshot4.png" width="200"/>
+</p>
+
+---
+
+## 📄 License
 
 ISC
 
