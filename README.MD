@@ -1,10 +1,6 @@
 # VN-Sutra
 
 <p align="center">
-  <img src="./assets/images/logo.png" alt="VN-Sutra Logo" width="120"/>
-</p>
-
-<p align="center">
   <b>Modular Visual Novel SDK for the Web</b><br>
   <i>Build beautiful, interactive visual novels with JavaScript and Node.js</i>
 </p>
@@ -148,12 +144,14 @@ export const story = {
 
 ## 📸 Screenshots
 
-<p align="center">
-  <img src="./assets/screenshots/screenshot1.png" width="200"/>
-  <img src="./assets/screenshots/screenshot2.png" width="200"/>
-  <img src="./assets/screenshots/screenshot3.png" width="200"/>
-  <img src="./assets/screenshots/screenshot4.png" width="200"/>
-</p>
+## 📸 Screenshots
+
+<div align="center" style="overflow-x:auto; white-space:nowrap;">
+  <img src="./assets/screenshots/screenshot1.png" width="200" style="display:inline-block; margin-right:8px;"/>
+  <img src="./assets/screenshots/screenshot2.png" width="200" style="display:inline-block; margin-right:8px;"/>
+  <img src="./assets/screenshots/screenshot3.png" width="200" style="display:inline-block; margin-right:8px;"/>
+  <img src="./assets/screenshots/screenshot4.png" width="200" style="display:inline-block;"/>
+</div>
 
 ---
 
