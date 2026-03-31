@@ -1,0 +1,73 @@
+.action-root {
+    left: 0px;
+    top: 0px;
+    width: 100%;
+    height: 100%;
+    visible: false;
+}
+
+#action-bg {
+    left: 0px;
+    top: 0px;
+    width: 100%;
+    height: 100%;
+    opacity: 0.8;
+}
+
+#action-top-border {
+    left: 0px;
+    top: 0px;
+    width: 100%;
+    height: 6px;
+}
+
+#action-title {
+    left: 0px;
+    top: 0px;
+    width: 100%;
+    height: 95px;
+    text-align: left;
+    vertical-align: middle;
+    padding: 60px;
+    font-size: 30px;
+    font-family: "YanoneKaffeesatz";
+}
+
+#action-title-border {
+    left: 30px;
+    top: 85px;
+    width: calc(100% - 60px);
+    height: 2px;
+}
+
+@portrait {
+    #action-bg {
+        opacity: 0.9;
+    }
+
+    #action-title {
+        height: 90px;
+        padding: 30px;
+        font-size: 30px;
+    }
+
+    #action-title-border {
+        left: 30px;
+        top: 80px;
+        width: calc(100% - 60px);
+    }
+}
+
+@android-landscape {
+    #action-title {
+        height: 60px;
+        padding: 40px;
+        font-size: 25px;
+    }
+
+    #action-title-border {
+        left: 20px;
+        top: 50px;
+        width: calc(100% - 40px);
+    }
+}

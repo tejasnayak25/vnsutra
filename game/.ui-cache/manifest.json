@@ -1,0 +1,30 @@
+{
+    "engineVersion": "0.1.0",
+    "generatedAt": "2026-03-29T14:05:51.068Z",
+    "artifacts": [
+        {
+            "screen": "actionbar",
+            "file": "actionbar.ui.json",
+            "hash": "sha256:a67b8f358b94b39fe8f434628d90db47e0b7da20f0cbfe12be916dc3ecf8cda8",
+            "xmlHash": "sha256:4907292631a6682093d6d3b5ca6a486656f8beeccee852ff26267abb418b897d",
+            "cssHash": "sha256:f1d591d60e5e0cf55545d823b4cf421ecb5cc26186a44dac472746b2cfe53d66",
+            "nodeCount": 5
+        },
+        {
+            "screen": "gameui",
+            "file": "gameui.ui.json",
+            "hash": "sha256:ad3ee9c05081b16f5f40121dcdeefb401ffe597239bfde7834d2d366305cbc16",
+            "xmlHash": "sha256:95a5c1f2adfa24d7f704223f7013b9a532eb971d99006b5778fb5980ee4e9ecc",
+            "cssHash": "sha256:1bfc63366260b362d3aaa0d1d7b20d88242d403fe1db9e39b3290bbb98900d0f",
+            "nodeCount": 11
+        },
+        {
+            "screen": "home",
+            "file": "home.ui.json",
+            "hash": "sha256:f73532350138e240fdd9dbd659658dd20f70e1512166eb3a4dab807090552937",
+            "xmlHash": "sha256:6f7a65c6c8f36f6501b3e15982badbdeea5e3a18b8e5ea9fb9ac15cf8968c8a5",
+            "cssHash": "sha256:24e67e7a29ce95f203a503152dc12f05085e4163265e952bb237969af06ab439",
+            "nodeCount": 15
+        }
+    ]
+}

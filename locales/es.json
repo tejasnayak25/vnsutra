@@ -1,0 +1,52 @@
+{
+  "scene1": {
+    "hello": "¡Hola, desarrollador!",
+    "intro": "Me han encargado que te presente VN-Sutra.",
+    "introduction": "Antes de comenzar, ¿por qué no nos presentamos?",
+    "namePrompt": "¿Cuál es tu nombre?",
+    "defaultName": "Cacahuete",
+    "correctGuess": "¡En serio elegiste mi sugerencia!",
+    "wrongGuess": "Hola, {{name}}. ¡Mucho gusto!",
+    "maryIntro": "De todas formas, mi nombre es María.",
+    "question": "¿Sabes qué es VN-Sutra?",
+    "answerOptions": ["Galleta", "SDK para Novelas Visuales"],
+    "wrongAnswer": "Por supuesto que no. Es un SDK para novelas visuales.",
+    "rightAnswer": "Sí, tienes razón.",
+    "question2": "¿Qué más puedes hacer con VN-Sutra?"
+  },
+  "scene2": {
+    "makeScenes": "El mismo personaje, un fondo distinto y un ánimo diferente.",
+    "addAssets": "Una escena sigue siendo una lista de acciones, pero el resultado puede sentirse vivo.",
+    "movement": "Un poco de movimiento hace mucho en una escena tan pequeña.",
+    "question": "¿Qué quieres que te muestre ahora?",
+    "tourOptions": ["Personajes", "Efectos visuales", "Flujo de la historia"],
+    "characters": "Elegiste personajes. La expresión y la pose cambian el ritmo al instante.",
+    "charactersFollowup": "Las sprites y los atuendos se leen mejor cuando forman parte del guion.",
+    "grayscale": "Elegiste efectos visuales. Un filtro puede cambiar el tono de toda la escena.",
+    "grayscaleReset": "Incluso los efectos fuertes siguen siendo fáciles de seguir cuando son declarativos.",
+    "bgGrayscale": "El fondo también puede cambiar, no solo el personaje.",
+    "bgGrayscaleReset": "Y cuando el efecto termina, la historia sigue avanzando.",
+    "explanation": "Elegiste el flujo de la historia. Las elecciones, el almacenamiento y los saltos hacen que la demo se recuerde a sí misma.",
+    "docs": "Aquí no hace falta código especial, solo una lista limpia de acciones.",
+    "goodbye": "Ahora cerraré el recorrido y volveremos a la habitación.",
+    "maryGoodbye": "¡Adiós, {{name}}!"
+  },
+  "scene3": {
+    "return": "Hemos vuelto al inicio, pero ahora la escena tiene más contexto.",
+    "named": "Gracias por quedarte conmigo, {{name}}.",
+    "characters": "Elegiste personajes. El ánimo y el movimiento siguen siendo flexibles cuando viven en el guion.",
+    "effects": "Elegiste efectos. Un destello corto puede aportar mucha energía.",
+    "flow": "Elegiste flujo. Esa es la base de una demo jugable.",
+    "recap": "Ese es el punto de VN-Sutra: que la historia se lea y que el motor desaparezca.",
+    "nextStepPrompt": "¿Qué quieres hacer ahora?",
+    "nextStepOptions": ["Abrir la documentación", "Explorar capítulos", "Repetir la demo"],
+    "nextDocs": "Buena elección. La documentación es la forma más rápida de profundizar.",
+    "nextChapters": "Explora los capítulos si quieres moverte por la estructura.",
+    "nextReplay": "Repetir la demo también ayuda. Hace que el flujo se vea mejor.",
+    "final": "Eso basta para una demo inicial. El resto es tuyo."
+  },
+  "ui": {
+    "languageLabel": "Idioma",
+    "languageName": "Español"
+  }
+}

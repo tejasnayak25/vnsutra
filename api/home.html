@@ -27,12 +27,20 @@
     <link rel="manifest" href="./game/manifest.json" crossorigin="use-credentials">
 </head>
 <body class="overflow-hidden">
-    <div id="playground" class=" w-full h-full"></div>
+    <div id="playground" class=" w-full h-full" role="application" aria-label="VN-Sutra game area"></div>
 
-    <audio id="music" src="" loop crossorigin="anonymous"></audio>
-    <audio id="sfx" src="" crossorigin="anonymous"></audio>
+    <!-- Install App Prompt (hidden by default, shown by JS) -->
+    <div id="install-app-utility" class="hidden fixed bottom-6 right-6 z-[9999] bg-slate-800 text-white rounded-xl shadow-lg px-6 py-4 text-base flex items-center gap-4">
+        <img src="./assets/images/logo.png" alt="App Logo" class="w-10 h-10 rounded-lg shadow-md mr-2" />
+        <span>Install this app for a better experience!</span>
+        <button id="install-app-btn" class="bg-indigo-600 text-white rounded-md px-4 py-2 text-base font-medium hover:bg-indigo-700 focus:outline-none">Install</button>
+        <button id="install-app-close" class="bg-transparent text-white border-none text-xl cursor-pointer">&#10005;</button>
+    </div>
 
-    <section id="alert-win" class=" absolute top-0 w-full h-full hidden justify-center items-center p-3 bg-slate-950/70">
+    <audio id="music" src="" loop crossorigin="anonymous" aria-label="Background music"></audio>
+    <audio id="sfx" src="" crossorigin="anonymous" aria-label="Sound effects"></audio>
+
+    <section id="alert-win" class=" absolute top-0 w-full h-full hidden justify-center items-center p-3 bg-slate-950/70" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Game dialog">
         <div id="alert-card" class=" max-w-xs w-full border-t-2 p-5 rounded-md bg-slate-900/70 flex  flex-col justify-between min-h-40 gap-5" style="border-color: orange;">
             <p id="alert-message" class=" w-full">Lorem ipsum dolor sit amet consectetur adipisicing elit. Consequatur aperiam velit quae reprehenderit vero placeat eveniet molestias corporis modi iure tempora amet, explicabo eaque soluta maiores ducimus exercitationem optio id!</p>
             <div id="alert-opts" class=" hidden w-full"></div>
@@ -46,13 +54,29 @@
         </div>
     </section>
 
-    <section id="loadwin" class="absolute top-0 w-full h-full overflow-hidden bg-slate-900">
+    <div id="disclaimer-modal" class="absolute top-0 w-full h-full hidden justify-center items-center p-3" role="presentation">
+        <div id="disclaimer-card" class="w-full border-t-2 p-5 rounded-md flex flex-col justify-between gap-5" role="dialog" aria-modal="true" aria-label="Disclaimer">
+            <div>
+                <h2 id="disclaimer-title" class="text-xl font-bold m-0 mb-4">Disclaimer</h2>
+                <div id="disclaimer-body" class="max-h-64 overflow-y-auto text-sm leading-relaxed"></div>
+            </div>
+            <div class="flex justify-end">
+                <button id="disclaimer-btn" class="btn btn-primary">I Understand</button>
+            </div>
+        </div>
+    </div>
+
+    <section id="loadwin" class="absolute top-0 w-full h-full overflow-hidden bg-slate-900" role="status" aria-live="polite" aria-label="Loading screen">
         <img id="loadimg" src="" class=" w-full h-full object-cover absolute opacity-70" alt="Poster">
+        <div id="splash-layer" class="absolute top-0 left-0 w-full h-full flex flex-col justify-center items-center bg-slate-950/95 z-50 pointer-events-none">
+            <img id="splash-logo" src="./assets/images/logo.png" class="max-w-[50vw] max-h-[36vh] object-contain opacity-0" alt="Splash logo">
+            <p id="splash-label" class="mt-6 text-slate-100 text-xl md:text-2xl text-center px-6 opacity-0">VN-Sutra</p>
+        </div>
         <div class=" absolute top-0 left-0 w-full h-full flex justify-center items-center">
-            <p id="loadtitle" class=" lg:text-8xl md:text-8xl text-7xl text-center drop-shadow-lg">Hello</p>
+            <p id="loadtitle" class=" lg:text-8xl md:text-8xl text-7xl text-center drop-shadow-lg">VN-Sutra</p>
         </div>
         <div class=" flex flex-col items-center justify-center absolute bottom-0 left-0 w-full pb-16">
-            <p id="loadstatus" class="hidden w-full text-center md:text-3xl text-xl text-slate-100 animate-pulse">Loading...</p>
+            <p id="loadstatus" class="hidden w-full text-center md:text-3xl text-xl text-slate-100 animate-pulse px-10">Loading...</p>
             <div id="loadspin" class=" w-10 aspect-square">
                 <!-- <img class=" w-full h-full animate-spin" src="./assets/svgs/spinner.svg" alt="Loading"> -->
                 <div class=" loading w-10 h-10 bg-slate-100"></div>
@@ -63,7 +87,9 @@
         </div>
     </section>
     
-    <!-- <script type="module">
+    <script type="module">
+        import { EVENTS } from "./vnsutra_modules/constants.js";
+
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('/service-worker.js')
             .then(registration => {
@@ -74,7 +100,7 @@
                     installingWorker.onstatechange = () => {
                         if (installingWorker.state === 'installed') {
                             if (navigator.serviceWorker.controller) {
-                                window.dispatchEvent(new CustomEvent("vnsutra-update"));
+                                window.dispatchEvent(new CustomEvent(EVENTS.UPDATE_AVAILABLE));
                             } else {
                                 console.log('Content is cached for offline use.');
                             }
@@ -86,24 +112,7 @@
                 console.log('Service Worker registration failed:', error);
             });
         }
-    </script> -->
-    <script src="./vnsutra_modules/jszip.min.js"></script>
-    <script src="./vnsutra_modules/konva.js"></script>
-    <script src="./vnsutra_modules/mobile/ui.js"></script>
-    <script src="./vnsutra_modules/utils.js"></script>
-    <script src="./vnsutra_modules/storage-utils.js"></script>
-    <script src="./vnsutra_modules/storage.js"></script>
-    <script src="./vnsutra_modules/global.js"></script>
-    <script src="./vnsutra_modules/stage.js"></script>
-    <script src="./vnsutra_modules/ui/utils.js"></script>
-    <script src="./vnsutra_modules/ui/actionbar.js"></script>
-    <script src="./vnsutra_modules/settings.js"></script>
-    <script src="./vnsutra_modules/credits.js"></script>
-    <script src="./vnsutra_modules/alert-window.js"></script>
-    <script src="./vnsutra_modules/home.js"></script>
-    <script src="./vnsutra_modules/game.js"></script>
-    <script src="./vnsutra_modules/gameui.js"></script>
+    </script>
     <script type="module" src="./vnsutra_modules/init.js"></script>
-    <script src="./vnsutra_modules/loadgame.js"></script>
 </body>
 </html>

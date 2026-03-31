@@ -1,0 +1,589 @@
+{
+    "engineVersion": "0.1.0",
+    "screen": "home",
+    "hash": "sha256:f73532350138e240fdd9dbd659658dd20f70e1512166eb3a4dab807090552937",
+    "nodeCount": 15,
+    "nodes": [
+        {
+            "id": "home-root",
+            "type": "view",
+            "parentId": null,
+            "classes": [
+                "home-root"
+            ],
+            "attrs": {},
+            "dynamic": {
+                "width": {
+                    "kind": "percent",
+                    "value": 100,
+                    "base": "parentWidth"
+                },
+                "height": {
+                    "kind": "percent",
+                    "value": 100,
+                    "base": "parentHeight"
+                }
+            },
+            "events": {}
+        },
+        {
+            "id": "home-sidebar-root",
+            "type": "view",
+            "parentId": "home-root",
+            "classes": [
+                "sidebar-root"
+            ],
+            "attrs": {
+                "x": 0,
+                "y": 0,
+                "width": 250
+            },
+            "dynamic": {
+                "height": {
+                    "kind": "percent",
+                    "value": 100,
+                    "base": "parentHeight"
+                }
+            },
+            "portraitDynamic": {
+                "width": {
+                    "kind": "percent",
+                    "value": 100,
+                    "base": "parentWidth"
+                }
+            },
+            "androidLandscapeAttrs": {
+                "width": 180
+            },
+            "events": {}
+        },
+        {
+            "id": "home-sidebar",
+            "type": "rect",
+            "parentId": "home-sidebar-root",
+            "classes": [
+                "sidebar"
+            ],
+            "attrs": {
+                "x": 0,
+                "y": 0,
+                "opacity": 0.8,
+                "fill": "#020617"
+            },
+            "dynamic": {
+                "width": {
+                    "kind": "percent",
+                    "value": 100,
+                    "base": "parentWidth"
+                },
+                "height": {
+                    "kind": "percent",
+                    "value": 100,
+                    "base": "parentHeight"
+                }
+            },
+            "portraitAttrs": {
+                "opacity": 0.9
+            },
+            "events": {}
+        },
+        {
+            "id": "home-sidebar-top-border",
+            "type": "rect",
+            "parentId": "home-sidebar-root",
+            "classes": [
+                "sidebar-top-border"
+            ],
+            "attrs": {
+                "x": 0,
+                "y": 0,
+                "height": 6,
+                "fill": "cornflowerblue"
+            },
+            "dynamic": {
+                "width": {
+                    "kind": "percent",
+                    "value": 100,
+                    "base": "parentWidth"
+                }
+            },
+            "events": {}
+        },
+        {
+            "id": "home-sidebar-title",
+            "type": "text",
+            "parentId": "home-sidebar-root",
+            "classes": [
+                "sidebar-title"
+            ],
+            "attrs": {
+                "text": "Menu",
+                "x": 0,
+                "y": 0,
+                "height": 95,
+                "fontSize": 30,
+                "fontFamily": "YanoneKaffeesatz",
+                "align": "center",
+                "verticalAlign": "middle",
+                "fill": "white"
+            },
+            "dynamic": {
+                "width": {
+                    "kind": "percent",
+                    "value": 100,
+                    "base": "parentWidth"
+                }
+            },
+            "portraitAttrs": {
+                "height": 90
+            },
+            "androidLandscapeAttrs": {
+                "height": 60,
+                "fontSize": 25
+            },
+            "events": {}
+        },
+        {
+            "id": "home-sidebar-title-border",
+            "type": "rect",
+            "parentId": "home-sidebar-root",
+            "classes": [
+                "sidebar-title-border"
+            ],
+            "attrs": {
+                "x": 30,
+                "y": 85,
+                "height": 2,
+                "fill": "grey"
+            },
+            "dynamic": {
+                "width": {
+                    "kind": "calc",
+                    "op": "-",
+                    "left": {
+                        "kind": "percent",
+                        "value": 100,
+                        "base": "parentWidth"
+                    },
+                    "right": {
+                        "kind": "static",
+                        "value": 60
+                    }
+                }
+            },
+            "portraitAttrs": {
+                "x": 30,
+                "y": 80
+            },
+            "portraitDynamic": {
+                "width": {
+                    "kind": "calc",
+                    "op": "-",
+                    "left": {
+                        "kind": "percent",
+                        "value": 100,
+                        "base": "parentWidth"
+                    },
+                    "right": {
+                        "kind": "static",
+                        "value": 60
+                    }
+                }
+            },
+            "androidLandscapeAttrs": {
+                "x": 20,
+                "y": 50
+            },
+            "androidLandscapeDynamic": {
+                "width": {
+                    "kind": "calc",
+                    "op": "-",
+                    "left": {
+                        "kind": "percent",
+                        "value": 100,
+                        "base": "parentWidth"
+                    },
+                    "right": {
+                        "kind": "static",
+                        "value": 40
+                    }
+                }
+            },
+            "events": {}
+        },
+        {
+            "id": "home-sidebar-divider",
+            "type": "rect",
+            "parentId": "home-sidebar-root",
+            "classes": [
+                "sidebar-divider"
+            ],
+            "attrs": {
+                "y": 0,
+                "width": 1,
+                "fill": "cornflowerblue"
+            },
+            "dynamic": {
+                "x": {
+                    "kind": "calc",
+                    "op": "-",
+                    "left": {
+                        "kind": "percent",
+                        "value": 100,
+                        "base": "parentWidth"
+                    },
+                    "right": {
+                        "kind": "static",
+                        "value": 1
+                    }
+                },
+                "height": {
+                    "kind": "percent",
+                    "value": 100,
+                    "base": "parentHeight"
+                }
+            },
+            "portraitAttrs": {
+                "width": 0
+            },
+            "events": {}
+        },
+        {
+            "id": "home-close-menu-btn",
+            "type": "image",
+            "parentId": "home-sidebar-root",
+            "classes": [
+                "close-menu-btn"
+            ],
+            "attrs": {
+                "src": "./assets/svgs/close-square.svg",
+                "y": 15,
+                "width": 40,
+                "height": 40,
+                "visible": false
+            },
+            "dynamic": {
+                "x": {
+                    "kind": "calc",
+                    "op": "-",
+                    "left": {
+                        "kind": "percent",
+                        "value": 100,
+                        "base": "parentWidth"
+                    },
+                    "right": {
+                        "kind": "static",
+                        "value": 55
+                    }
+                }
+            },
+            "portraitAttrs": {
+                "width": 50,
+                "height": 50,
+                "visible": true
+            },
+            "portraitDynamic": {
+                "x": {
+                    "kind": "calc",
+                    "op": "-",
+                    "left": {
+                        "kind": "percent",
+                        "value": 100,
+                        "base": "parentWidth"
+                    },
+                    "right": {
+                        "kind": "static",
+                        "value": 70
+                    }
+                }
+            },
+            "events": {}
+        },
+        {
+            "id": "home-opts-viewport",
+            "type": "view",
+            "parentId": "home-sidebar-root",
+            "classes": [
+                "opts-viewport"
+            ],
+            "attrs": {
+                "x": 0,
+                "y": 97
+            },
+            "dynamic": {
+                "width": {
+                    "kind": "percent",
+                    "value": 100,
+                    "base": "parentWidth"
+                }
+            },
+            "androidLandscapeAttrs": {
+                "y": 62
+            },
+            "events": {}
+        },
+        {
+            "id": "home-opts-group",
+            "type": "view",
+            "parentId": "home-opts-viewport",
+            "classes": [
+                "opts-group"
+            ],
+            "attrs": {
+                "x": 0,
+                "y": 0
+            },
+            "dynamic": {
+                "width": {
+                    "kind": "percent",
+                    "value": 100,
+                    "base": "parentWidth"
+                },
+                "height": {
+                    "kind": "percent",
+                    "value": 100,
+                    "base": "parentHeight"
+                }
+            },
+            "events": {}
+        },
+        {
+            "id": "home-main-root",
+            "type": "view",
+            "parentId": "home-root",
+            "classes": [
+                "main-root"
+            ],
+            "attrs": {
+                "x": 250,
+                "y": 0
+            },
+            "dynamic": {
+                "width": {
+                    "kind": "calc",
+                    "op": "-",
+                    "left": {
+                        "kind": "percent",
+                        "value": 100,
+                        "base": "parentWidth"
+                    },
+                    "right": {
+                        "kind": "static",
+                        "value": 250
+                    }
+                },
+                "height": {
+                    "kind": "percent",
+                    "value": 100,
+                    "base": "parentHeight"
+                }
+            },
+            "portraitAttrs": {
+                "x": 0
+            },
+            "portraitDynamic": {
+                "width": {
+                    "kind": "percent",
+                    "value": 100,
+                    "base": "parentWidth"
+                }
+            },
+            "androidLandscapeAttrs": {
+                "x": 180
+            },
+            "androidLandscapeDynamic": {
+                "width": {
+                    "kind": "calc",
+                    "op": "-",
+                    "left": {
+                        "kind": "percent",
+                        "value": 100,
+                        "base": "parentWidth"
+                    },
+                    "right": {
+                        "kind": "static",
+                        "value": 180
+                    }
+                }
+            },
+            "events": {}
+        },
+        {
+            "id": "home-title-group",
+            "type": "view",
+            "parentId": "home-main-root",
+            "classes": [
+                "title-group"
+            ],
+            "attrs": {
+                "x": 0,
+                "height": 260
+            },
+            "dynamic": {
+                "y": {
+                    "kind": "calc",
+                    "op": "-",
+                    "left": {
+                        "kind": "percent",
+                        "value": 100,
+                        "base": "parentHeight"
+                    },
+                    "right": {
+                        "kind": "static",
+                        "value": 260
+                    }
+                },
+                "width": {
+                    "kind": "percent",
+                    "value": 100,
+                    "base": "parentWidth"
+                }
+            },
+            "portraitDynamic": {
+                "y": {
+                    "kind": "percent",
+                    "value": 20,
+                    "base": "parentHeight"
+                },
+                "width": {
+                    "kind": "percent",
+                    "value": 100,
+                    "base": "parentWidth"
+                },
+                "height": {
+                    "kind": "percent",
+                    "value": 60,
+                    "base": "parentHeight"
+                }
+            },
+            "events": {}
+        },
+        {
+            "id": "home-title",
+            "type": "text",
+            "parentId": "home-title-group",
+            "classes": [
+                "home-title"
+            ],
+            "attrs": {
+                "text": "VN-Sutra",
+                "x": 0,
+                "y": 0,
+                "fontSize": 90,
+                "fontFamily": "LavishlyYours",
+                "align": "right",
+                "padding": 60,
+                "wrap": "word",
+                "fill": "white"
+            },
+            "dynamic": {
+                "width": {
+                    "kind": "percent",
+                    "value": 100,
+                    "base": "parentWidth"
+                }
+            },
+            "portraitAttrs": {
+                "y": 0,
+                "scaleX": 1.5,
+                "scaleY": 1.5,
+                "padding": 0,
+                "fontSize": 50,
+                "align": "center"
+            },
+            "portraitDynamic": {
+                "x": {
+                    "kind": "percent",
+                    "value": -25,
+                    "base": "parentWidth"
+                }
+            },
+            "androidLandscapeAttrs": {
+                "fontSize": 50,
+                "padding": 30
+            },
+            "events": {}
+        },
+        {
+            "id": "home-subtitle",
+            "type": "text",
+            "parentId": "home-title-group",
+            "classes": [
+                "home-subtitle"
+            ],
+            "attrs": {
+                "text": "",
+                "x": 0,
+                "fontSize": 30,
+                "fontFamily": "YanoneKaffeesatz",
+                "align": "right",
+                "padding": 60,
+                "wrap": "word",
+                "fill": "white"
+            },
+            "dynamic": {
+                "y": {
+                    "kind": "calc",
+                    "op": "+",
+                    "left": {
+                        "kind": "static",
+                        "value": 74
+                    },
+                    "right": {
+                        "kind": "viewport",
+                        "axis": "height",
+                        "value": 0.6
+                    }
+                },
+                "width": {
+                    "kind": "percent",
+                    "value": 100,
+                    "base": "parentWidth"
+                }
+            },
+            "portraitAttrs": {
+                "y": 40,
+                "padding": 60,
+                "fontSize": 30,
+                "align": "center"
+            },
+            "androidLandscapeAttrs": {
+                "fontSize": 25,
+                "padding": 30
+            },
+            "events": {}
+        },
+        {
+            "id": "home-mobile-buttons",
+            "type": "view",
+            "parentId": "home-main-root",
+            "classes": [
+                "mobile-buttons"
+            ],
+            "attrs": {
+                "x": 0,
+                "height": 240
+            },
+            "dynamic": {
+                "y": {
+                    "kind": "percent",
+                    "value": 72,
+                    "base": "parentHeight"
+                },
+                "width": {
+                    "kind": "percent",
+                    "value": 100,
+                    "base": "parentWidth"
+                }
+            },
+            "portraitDynamic": {
+                "y": {
+                    "kind": "percent",
+                    "value": 0,
+                    "base": "parentHeight"
+                }
+            },
+            "events": {}
+        }
+    ]
+}

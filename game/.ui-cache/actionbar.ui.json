@@ -1,0 +1,188 @@
+{
+    "engineVersion": "0.1.0",
+    "screen": "actionbar",
+    "hash": "sha256:a67b8f358b94b39fe8f434628d90db47e0b7da20f0cbfe12be916dc3ecf8cda8",
+    "nodeCount": 5,
+    "nodes": [
+        {
+            "id": "action-root",
+            "type": "view",
+            "parentId": null,
+            "classes": [
+                "action-root"
+            ],
+            "attrs": {
+                "x": 0,
+                "y": 0,
+                "visible": false
+            },
+            "dynamic": {
+                "width": {
+                    "kind": "percent",
+                    "value": 100,
+                    "base": "parentWidth"
+                },
+                "height": {
+                    "kind": "percent",
+                    "value": 100,
+                    "base": "parentHeight"
+                }
+            },
+            "events": {}
+        },
+        {
+            "id": "action-bg",
+            "type": "rect",
+            "parentId": "action-root",
+            "classes": [
+                "action-bg"
+            ],
+            "attrs": {
+                "x": 0,
+                "y": 0,
+                "opacity": 0.8
+            },
+            "dynamic": {
+                "width": {
+                    "kind": "percent",
+                    "value": 100,
+                    "base": "parentWidth"
+                },
+                "height": {
+                    "kind": "percent",
+                    "value": 100,
+                    "base": "parentHeight"
+                }
+            },
+            "portraitAttrs": {
+                "opacity": 0.9
+            },
+            "events": {}
+        },
+        {
+            "id": "action-top-border",
+            "type": "rect",
+            "parentId": "action-root",
+            "classes": [
+                "action-top-border"
+            ],
+            "attrs": {
+                "x": 0,
+                "y": 0,
+                "height": 6
+            },
+            "dynamic": {
+                "width": {
+                    "kind": "percent",
+                    "value": 100,
+                    "base": "parentWidth"
+                }
+            },
+            "events": {}
+        },
+        {
+            "id": "action-title",
+            "type": "text",
+            "parentId": "action-root",
+            "classes": [
+                "action-title"
+            ],
+            "attrs": {
+                "text": "Action Menu",
+                "x": 0,
+                "y": 0,
+                "height": 95,
+                "align": "left",
+                "verticalAlign": "middle",
+                "padding": 60,
+                "fontSize": 30,
+                "fontFamily": "YanoneKaffeesatz"
+            },
+            "dynamic": {
+                "width": {
+                    "kind": "percent",
+                    "value": 100,
+                    "base": "parentWidth"
+                }
+            },
+            "portraitAttrs": {
+                "height": 90,
+                "padding": 30,
+                "fontSize": 30
+            },
+            "androidLandscapeAttrs": {
+                "height": 60,
+                "padding": 40,
+                "fontSize": 25
+            },
+            "events": {}
+        },
+        {
+            "id": "action-title-border",
+            "type": "rect",
+            "parentId": "action-root",
+            "classes": [
+                "action-title-border"
+            ],
+            "attrs": {
+                "x": 30,
+                "y": 85,
+                "height": 2
+            },
+            "dynamic": {
+                "width": {
+                    "kind": "calc",
+                    "op": "-",
+                    "left": {
+                        "kind": "percent",
+                        "value": 100,
+                        "base": "parentWidth"
+                    },
+                    "right": {
+                        "kind": "static",
+                        "value": 60
+                    }
+                }
+            },
+            "portraitAttrs": {
+                "x": 30,
+                "y": 80
+            },
+            "portraitDynamic": {
+                "width": {
+                    "kind": "calc",
+                    "op": "-",
+                    "left": {
+                        "kind": "percent",
+                        "value": 100,
+                        "base": "parentWidth"
+                    },
+                    "right": {
+                        "kind": "static",
+                        "value": 60
+                    }
+                }
+            },
+            "androidLandscapeAttrs": {
+                "x": 20,
+                "y": 50
+            },
+            "androidLandscapeDynamic": {
+                "width": {
+                    "kind": "calc",
+                    "op": "-",
+                    "left": {
+                        "kind": "percent",
+                        "value": 100,
+                        "base": "parentWidth"
+                    },
+                    "right": {
+                        "kind": "static",
+                        "value": 40
+                    }
+                }
+            },
+            "events": {}
+        }
+    ]
+}

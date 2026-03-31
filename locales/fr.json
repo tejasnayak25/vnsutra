@@ -1,0 +1,52 @@
+{
+  "scene1": {
+    "hello": "Bonjour, développeur!",
+    "intro": "On m'a confié la tâche de vous présenter VN-Sutra.",
+    "introduction": "Avant de commencer, pourquoi ne pas nous présenter?",
+    "namePrompt": "Quel est votre prénom?",
+    "defaultName": "Cacahuète",
+    "correctGuess": "Vous avez vraiment choisi ma suggestion!",
+    "wrongGuess": "Bonjour, {{name}}. Enchanté de vous rencontrer!",
+    "maryIntro": "En tout cas, mon nom est Marie.",
+    "question": "Savez-vous ce qu'est VN-Sutra?",
+    "answerOptions": ["Biscuit", "SDK pour les Romans Visuels"],
+    "wrongAnswer": "Bien sûr que non. C'est un SDK pour les romans visuels.",
+    "rightAnswer": "Oui, vous avez raison.",
+    "question2": "Qu'est-ce que vous pouvez faire avec VN-Sutra?"
+  },
+  "scene2": {
+    "makeScenes": "Le même personnage, un décor différent, et une humeur différente.",
+    "addAssets": "Une scène reste une simple liste d'actions, mais le résultat peut sembler vivant.",
+    "movement": "Un peu de mouvement fait beaucoup dans une scène aussi petite.",
+    "question": "Qu'est-ce que je dois vous montrer ensuite?",
+    "tourOptions": ["Personnages", "Effets visuels", "Flux de l'histoire"],
+    "characters": "Vous avez choisi les personnages. L'expression et la pose changent immédiatement le rythme.",
+    "charactersFollowup": "Les sprites et les tenues restent lisibles quand elles font partie du script.",
+    "grayscale": "Vous avez choisi les effets visuels. Un filtre peut changer le ton de toute la scène.",
+    "grayscaleReset": "Même les effets forts restent faciles à suivre lorsqu'ils sont déclaratifs.",
+    "bgGrayscale": "L'arrière-plan peut changer aussi, pas seulement le personnage.",
+    "bgGrayscaleReset": "Et quand l'effet se termine, l'histoire continue d'avancer.",
+    "explanation": "Vous avez choisi le flux de l'histoire. Les choix, le stockage et les sauts font que la démo se souvient d'elle-même.",
+    "docs": "Ici, pas besoin de code spécial, seulement une liste d'actions propre.",
+    "goodbye": "Je vais maintenant fermer la visite et nous ramener dans la chambre.",
+    "maryGoodbye": "Au revoir, {{name}}!"
+  },
+  "scene3": {
+    "return": "Nous sommes de retour au point de départ, mais la scène a maintenant plus de contexte.",
+    "named": "Merci d'être resté avec moi, {{name}}.",
+    "characters": "Vous avez choisi les personnages. L'humeur et le mouvement restent flexibles quand ils vivent dans le script.",
+    "effects": "Vous avez choisi les effets. Un flash bref peut apporter beaucoup d'énergie.",
+    "flow": "Vous avez choisi le flux. C'est la base d'une démo jouable.",
+    "recap": "C'est le but de VN-Sutra : garder l'histoire lisible et le moteur invisible.",
+    "nextStepPrompt": "Que voulez-vous faire maintenant?",
+    "nextStepOptions": ["Ouvrir la documentation", "Parcourir les chapitres", "Relancer la démo"],
+    "nextDocs": "Bon choix. La documentation est le moyen le plus rapide d'aller plus loin.",
+    "nextChapters": "Parcourez les chapitres si vous voulez explorer la structure.",
+    "nextReplay": "Relancer la démo est utile aussi. Cela rend le flux plus clair.",
+    "final": "C'est suffisant pour une démo de départ. Le reste vous appartient."
+  },
+  "ui": {
+    "languageLabel": "Langue",
+    "languageName": "Français"
+  }
+}

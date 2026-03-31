@@ -1,3 +1,9 @@
+import "./konva.js";
+import { konvaStage } from "./stage.js";
+import errorTracking from "./error-tracking.js";
+
+const Konva = globalThis.Konva;
+
 class Game {
     constructor(ui) {
         this.ui = ui;
@@ -7,98 +13,175 @@ class Game {
      * @param {HTMLImageElement} img - Url of the image
      */
     set background(img) {
-        let image = this.ui.game.bg;
-        if(isMobile) {
-            let scale = konvaStage.height()/img.height;
-            image.scale({
-                x: scale,
-                y: scale
-            });
-        } else {
-            let scale = konvaStage.width()/img.width;
-            image.scale({
-                x: scale,
-                y: scale
+        const image = this.ui.game.bg;
+        const stageWidth = konvaStage.width();
+        const stageHeight = this.ui.game.container.height();
+        const scale = Math.max(stageWidth / img.width, stageHeight / img.height);
+
+        image.scale({
+            x: scale,
+            y: scale
+        });
+
+        image.x((stageWidth - (img.width * scale)) / 2);
+        image.y((stageHeight - (img.height * scale)) / 2);
+        image.image(img);
+        try {
+            image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
+        } catch (e) {
+            errorTracking?.captureError(e, {
+                message: "[Game.background] Cache failed",
+                context: {
+                    scope: "game",
+                    action: "background",
+                    imageState: {
+                        hasImage: !!image.image(),
+                        parent: !!image.getParent(),
+                        stage: !!image.getStage()
+                    }
+                }
             });
         }
-        image.image(img);
-        image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
     }
 
     /**
      * Properties
      */
     get background() {
-        let image = this.ui.game.bg;
+        const image = this.ui.game.bg;
         return {
             /**
              * @param {number} value 
              */
             set blurRadius (value) {
                 image.blurRadius(value);
-                image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
+                try {
+                    image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
+                } catch (e) {
+                    errorTracking?.captureError(e, {
+                        type: "warning",
+                        message: "[Game] Cache failed for blurRadius",
+                        context: { scope: "game", action: "background.blurRadius" }
+                    });
+                }
             },
             /**
              * @param {number} value - Default: 1
              */
             set pixelSize (value) {
                 image.pixelSize(value);
-                image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
+                try {
+                    image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
+                } catch (e) {
+                    errorTracking?.captureError(e, {
+                        type: "warning",
+                        message: "[Game] Cache failed for pixelSize",
+                        context: { scope: "game", action: "background.pixelSize" }
+                    });
+                }
             },
             /**
              * @param {number} value 
              */
             set noise (value) {
                 image.noise(value);
-                image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
+                try {
+                    image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
+                } catch (e) {
+                    errorTracking?.captureError(e, {
+                        type: "warning",
+                        message: "[Game] Cache failed for noise",
+                        context: { scope: "game", action: "background.noise" }
+                    });
+                }
             },
             /**
              * @param {number} value - [-1, 1] 
              */
             set brightness(value) {
                 image.brightness(value);
-                image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
+                try {
+                    image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
+                } catch (e) {
+                    errorTracking?.captureError(e, {
+                        type: "warning",
+                        message: "[Game] Cache failed for brightness",
+                        context: { scope: "game", action: "background.brightness" }
+                    });
+                }
             },
             /**
              * @param {number} value - [-100, 100] 
              */
             set contrast(value) {
                 image.contrast(value);
-                image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
+                try {
+                    image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
+                } catch (e) {
+                    errorTracking?.captureError(e, {
+                        type: "warning",
+                        message: "[Game] Cache failed for contrast",
+                        context: { scope: "game", action: "background.contrast" }
+                    });
+                }
             },
             /**
              * @param {number} value - [0, 259]
              */
             set hue(value) {
                 image.hue(value);
-                image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
+                try {
+                    image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
+                } catch (e) {
+                    errorTracking?.captureError(e, {
+                        type: "warning",
+                        message: "[Game] Cache failed for hue",
+                        context: { scope: "game", action: "background.hue" }
+                    });
+                }
             },
             /**
              * @param {number} value - [-2, 10]
              */
             set saturation(value) {
                 image.saturation(value);
-                image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
+                try {
+                    image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
+                } catch (e) {
+                    errorTracking?.captureError(e, {
+                        type: "warning",
+                        message: "[Game] Cache failed for saturation",
+                        context: { scope: "game", action: "background.saturation" }
+                    });
+                }
             },
             /**
              * @param {number} value - [-2, 2]
              */
             set luminance(value) {
                 image.luminance(value);
-                image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
+                try {
+                    image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
+                } catch (e) {
+                    errorTracking?.captureError(e, {
+                        type: "warning",
+                        message: "[Game] Cache failed for luminance",
+                        context: { scope: "game", action: "background.luminance" }
+                    });
+                }
             },
             /**
              * @param {boolean} value 
              */
             set grayscale(value) {
-                let filters = image.filters();
+                const filters = image.filters();
                 if(value) {
-                    let index = filters.indexOf(Konva.Filters.Grayscale);
+                    const index = filters.indexOf(Konva.Filters.Grayscale);
                     if(index < 0) {
                         filters.push(Konva.Filters.Grayscale);
                     }
                 } else {
-                    let index = filters.indexOf(Konva.Filters.Grayscale);
+                    const index = filters.indexOf(Konva.Filters.Grayscale);
                     if(index >= 0) {
                         filters.splice(index, 1);
                     }
@@ -111,14 +194,14 @@ class Game {
              * @param {boolean} value 
              */
             set invert(value) {
-                let filters = image.filters();
+                const filters = image.filters();
                 if(value) {
-                    let index = filters.indexOf(Konva.Filters.Invert);
+                    const index = filters.indexOf(Konva.Filters.Invert);
                     if(index < 0) {
                         filters.push(Konva.Filters.Invert);
                     }
                 } else {
-                    let index = filters.indexOf(Konva.Filters.Invert);
+                    const index = filters.indexOf(Konva.Filters.Invert);
                     if(index >= 0) {
                         filters.splice(index, 1);
                     }
@@ -134,10 +217,26 @@ class Game {
                             blurRadius: blurRadius,
                             duration: duration,
                             onUpdate: () => {
-                                image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
+                                try {
+                                    image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
+                                } catch (e) {
+                                    errorTracking?.captureError(e, {
+                                        type: "warning",
+                                        message: "[Game] Cache failed in blurRadius onUpdate",
+                                        context: { scope: "game", action: "background.blurRadius" }
+                                    });
+                                }
                             },
                             onFinish: () => {
-                                image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
+                                try {
+                                    image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
+                                } catch (e) {
+                                    errorTracking?.captureError(e, {
+                                        type: "warning",
+                                        message: "[Game] Cache failed in blurRadius onFinish",
+                                        context: { scope: "game", action: "background.blurRadius" }
+                                    });
+                                }
                                 resolve();
                             }
                         });
@@ -236,7 +335,7 @@ class Game {
                 });
             },
             reset: (except = []) => {
-                let attrs = {};
+                const attrs = {};
                 if(!except.includes("blurRadius")) attrs.blurRadius = 0;
                 if(!except.includes("noise")) attrs.noise = 0;
                 if(!except.includes("pixelSize")) attrs.pixelSize = 1;
@@ -249,6 +348,9 @@ class Game {
                 if(!except.includes("grayscale")) this.background.grayscale = false;
                 if(!except.includes("invert")) this.background.invert = false;
             }
-        }
+        };
     }
 }
+
+export { Game };
+export default Game;

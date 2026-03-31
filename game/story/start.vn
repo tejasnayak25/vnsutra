@@ -1,0 +1,82 @@
+[scene: start]
+transition: fade #000000 250
+# Note: For arrays/objects inside @ tags, the current generic KV parser treats them as strings. 
+# You may want to tweak the compiler to parse JSON literals for fields like args=[0.5,1] later!
+@background reset=true asset="futon_room"
+@actor.reset actor="mary" fields=["scale"]
+@sprite.apply actor="mary" sprite="casualSmile"
+@actor.set actor="mary" props={"x":-0.25,"y":{"portrait":0.1,"android":0.2,"default":0.4}}
+@actor.call actor="mary" method="slideIn" args=[0.5,1]
+
+mary: @scene1.hello
+mary: @scene1.intro
+mary: @scene1.introduction
+
+@input var="name" message="@scene1.namePrompt" placeholder="@scene1.defaultName" trim=true
+storage set: name = $name
+
+if $name === "Peanut":
+    @sprite.apply actor="mary" sprite="casualEyesClosed"
+    mary: @scene1.correctGuess
+else:
+    @dialog actor="mary" text="@scene1.wrongGuess" params={"name":{"fromVar":"name"}}
+
+@sprite.apply actor="mary" sprite="casualOpenSmile"
+mary: @scene1.maryIntro
+mary: @scene1.question
+
+# Notice we use the generic @choice here because it has i18n keys and vars that our simple > choice shorthand doesn't cover natively
+@choice var="que1" message="What do you think is VN-Sutra?" options='["Cookie","SDK for Visual Novels"]' optionsI18nKey="scene1.answerOptions" firstOptionVar="firstAnswer"
+
+if $que1 === $firstAnswer:
+    mary: @scene1.wrongAnswer
+else:
+    mary: @scene1.rightAnswer
+
+mary: @scene1.question2
+flash screen #ffffff 120
+jump: scene2
+
+
+[scene: scene2]
+transition: fade #111111 250
+@background reset=true asset="apartment_ext"
+@actor.reset actor="mary" fields=["scale","y"]
+@sprite.apply actor="mary" sprite="casualOpenSmile" options={"duration":0}
+@actor.set actor="mary" props={"x":0.5}
+actor show: mary
+
+mary: @scene2.makeScenes
+mary: @scene2.addAssets
+
+# Parallel blocks aren't natively supported with indentation yet, so we use the generic
+@parallel sequences='[[{"type":"effect.screen-shake","intensity":3,"duration":180}],[{"type":"wait","duration":120},{"type":"actor.call","actor":"mary","method":"slideIn","args":[0.48,0.2]}]]'
+
+mary: @scene2.movement
+
+@choice var="tourFocus" message="@scene2.question" options='["Characters","Visual effects","Story flow"]' optionsI18nKey="scene2.tourOptions"
+storage set: demo-tour-focus = $tourFocus
+
+if $tourFocus === "Characters":
+    @sprite.apply actor="mary" sprite="casualEyesClosed"
+    mary: @scene2.characters
+    @sprite.apply actor="mary" sprite="casualOpenSmile"
+    mary: @scene2.charactersFollowup
+else:
+    if $tourFocus === "Visual effects":
+        @actor.prop actor="mary" prop="grayscale" value=true
+        mary: @scene2.grayscale
+        @background.prop prop="grayscale" value=true
+        mary: @scene2.bgGrayscale
+        @actor.prop actor="mary" prop="grayscale" value=false
+        @background.prop prop="grayscale" value=false
+        mary: @scene2.grayscaleReset
+        mary: @scene2.bgGrayscaleReset
+    else:
+        mary: @scene2.explanation
+        mary: @scene2.docs
+
+mary: @scene2.goodbye
+@actor.call actor="mary" method="slideOut"
+flash screen #f8f8ff 140
+jump: scene3

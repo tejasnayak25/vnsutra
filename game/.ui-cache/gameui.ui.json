@@ -1,0 +1,360 @@
+{
+    "engineVersion": "0.1.0",
+    "screen": "gameui",
+    "hash": "sha256:ad3ee9c05081b16f5f40121dcdeefb401ffe597239bfde7834d2d366305cbc16",
+    "nodeCount": 11,
+    "nodes": [
+        {
+            "id": "gameui-root",
+            "type": "view",
+            "parentId": null,
+            "classes": [
+                "gameui-root"
+            ],
+            "attrs": {},
+            "dynamic": {
+                "width": {
+                    "kind": "percent",
+                    "value": 100,
+                    "base": "parentWidth"
+                },
+                "height": {
+                    "kind": "percent",
+                    "value": 100,
+                    "base": "parentHeight"
+                }
+            },
+            "events": {}
+        },
+        {
+            "id": "gameui-topbar-container",
+            "type": "view",
+            "parentId": "gameui-root",
+            "classes": [
+                "topbar-container"
+            ],
+            "attrs": {
+                "x": 0,
+                "y": 0,
+                "height": 50
+            },
+            "dynamic": {
+                "width": {
+                    "kind": "percent",
+                    "value": 100,
+                    "base": "parentWidth"
+                }
+            },
+            "portraitAttrs": {
+                "height": 50
+            },
+            "androidLandscapeAttrs": {
+                "height": 40
+            },
+            "events": {}
+        },
+        {
+            "id": "gameui-topbar-bg",
+            "type": "rect",
+            "parentId": "gameui-topbar-container",
+            "classes": [
+                "topbar-bg"
+            ],
+            "attrs": {
+                "x": 0,
+                "y": 0
+            },
+            "dynamic": {
+                "width": {
+                    "kind": "percent",
+                    "value": 100,
+                    "base": "parentWidth"
+                },
+                "height": {
+                    "kind": "percent",
+                    "value": 100,
+                    "base": "parentHeight"
+                }
+            },
+            "events": {}
+        },
+        {
+            "id": "gameui-topbar-border",
+            "type": "rect",
+            "parentId": "gameui-topbar-container",
+            "classes": [
+                "topbar-border"
+            ],
+            "attrs": {
+                "x": 0,
+                "height": 2
+            },
+            "dynamic": {
+                "y": {
+                    "kind": "calc",
+                    "op": "-",
+                    "left": {
+                        "kind": "percent",
+                        "value": 100,
+                        "base": "parentHeight"
+                    },
+                    "right": {
+                        "kind": "static",
+                        "value": 2
+                    }
+                },
+                "width": {
+                    "kind": "percent",
+                    "value": 100,
+                    "base": "parentWidth"
+                }
+            },
+            "events": {}
+        },
+        {
+            "id": "dialog-box",
+            "type": "view",
+            "parentId": "gameui-root",
+            "classes": [
+                "dialog-box"
+            ],
+            "attrs": {
+                "x": 0,
+                "height": 180,
+                "visible": false
+            },
+            "dynamic": {
+                "y": {
+                    "kind": "percent",
+                    "value": 100,
+                    "base": "parentHeight"
+                },
+                "width": {
+                    "kind": "percent",
+                    "value": 100,
+                    "base": "parentWidth"
+                }
+            },
+            "events": {}
+        },
+        {
+            "id": "dialog-bg",
+            "type": "rect",
+            "parentId": "dialog-box",
+            "classes": [
+                "dialog-bg"
+            ],
+            "attrs": {
+                "x": 0,
+                "y": 0,
+                "strokeWidth": 4,
+                "fillAfterStrokeEnabled": true
+            },
+            "dynamic": {
+                "width": {
+                    "kind": "percent",
+                    "value": 100,
+                    "base": "parentWidth"
+                },
+                "height": {
+                    "kind": "percent",
+                    "value": 100,
+                    "base": "parentHeight"
+                }
+            },
+            "events": {}
+        },
+        {
+            "id": "dialog-name-group",
+            "type": "view",
+            "parentId": "dialog-box",
+            "classes": [
+                "dialog-name-group"
+            ],
+            "attrs": {
+                "x": 0,
+                "y": 0
+            },
+            "dynamic": {
+                "width": {
+                    "kind": "percent",
+                    "value": 100,
+                    "base": "parentWidth"
+                },
+                "height": {
+                    "kind": "percent",
+                    "value": 100,
+                    "base": "parentHeight"
+                }
+            },
+            "events": {}
+        },
+        {
+            "id": "name-bg",
+            "type": "rect",
+            "parentId": "dialog-name-group",
+            "classes": [
+                "name-bg"
+            ],
+            "attrs": {
+                "x": 0,
+                "y": 0,
+                "strokeWidth": 4,
+                "fillAfterStrokeEnabled": true
+            },
+            "dynamic": {
+                "width": {
+                    "kind": "percent",
+                    "value": 100,
+                    "base": "parentWidth"
+                },
+                "height": {
+                    "kind": "percent",
+                    "value": 100,
+                    "base": "parentHeight"
+                }
+            },
+            "events": {}
+        },
+        {
+            "id": "dialog-name-border",
+            "type": "rect",
+            "parentId": "dialog-name-group",
+            "classes": [
+                "dialog-name-border"
+            ],
+            "attrs": {
+                "x": 0,
+                "height": 4,
+                "opacity": 0.9
+            },
+            "dynamic": {
+                "y": {
+                    "kind": "percent",
+                    "value": 100,
+                    "base": "parentHeight"
+                },
+                "width": {
+                    "kind": "percent",
+                    "value": 100,
+                    "base": "parentWidth"
+                }
+            },
+            "portraitAttrs": {
+                "height": 5
+            },
+            "androidLandscapeAttrs": {
+                "height": 4
+            },
+            "events": {}
+        },
+        {
+            "id": "dialog-name",
+            "type": "text",
+            "parentId": "dialog-name-group",
+            "classes": [
+                "dialog-name"
+            ],
+            "attrs": {
+                "text": "Alex",
+                "x": 200,
+                "y": 0,
+                "align": "center",
+                "verticalAlign": "middle",
+                "padding": 15,
+                "fontSize": 25,
+                "fontFamily": "YanoneKaffeesatz",
+                "wrap": "none",
+                "fillAfterStrokeEnabled": true
+            },
+            "dynamic": {},
+            "portraitAttrs": {
+                "x": 0,
+                "padding": 15,
+                "fontSize": 23
+            },
+            "androidLandscapeAttrs": {
+                "x": 100,
+                "padding": 10,
+                "fontSize": 22
+            },
+            "events": {}
+        },
+        {
+            "id": "dialog-message",
+            "type": "text",
+            "parentId": "dialog-box",
+            "classes": [
+                "dialog-message"
+            ],
+            "attrs": {
+                "text": "",
+                "x": 100,
+                "y": 0,
+                "align": "left",
+                "verticalAlign": "middle",
+                "padding": 10,
+                "fontSize": 25,
+                "fontFamily": "YanoneKaffeesatz",
+                "wrap": "word",
+                "fillAfterStrokeEnabled": true
+            },
+            "dynamic": {
+                "width": {
+                    "kind": "calc",
+                    "op": "-",
+                    "left": {
+                        "kind": "percent",
+                        "value": 100,
+                        "base": "parentWidth"
+                    },
+                    "right": {
+                        "kind": "static",
+                        "value": 200
+                    }
+                }
+            },
+            "portraitAttrs": {
+                "x": 15,
+                "padding": 10,
+                "fontSize": 23
+            },
+            "portraitDynamic": {
+                "width": {
+                    "kind": "calc",
+                    "op": "-",
+                    "left": {
+                        "kind": "percent",
+                        "value": 100,
+                        "base": "parentWidth"
+                    },
+                    "right": {
+                        "kind": "static",
+                        "value": 30
+                    }
+                }
+            },
+            "androidLandscapeAttrs": {
+                "x": 100,
+                "padding": 5,
+                "fontSize": 22
+            },
+            "androidLandscapeDynamic": {
+                "width": {
+                    "kind": "calc",
+                    "op": "-",
+                    "left": {
+                        "kind": "percent",
+                        "value": 100,
+                        "base": "parentWidth"
+                    },
+                    "right": {
+                        "kind": "static",
+                        "value": 200
+                    }
+                }
+            },
+            "events": {}
+        }
+    ]
+}

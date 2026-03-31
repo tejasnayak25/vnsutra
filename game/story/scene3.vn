@@ -1,0 +1,38 @@
+[scene: scene3]
+transition: fade #000000 250
+@background reset=true asset="futon_room"
+@actor.reset actor="mary" fields='["scale"]'
+@sprite.apply actor="mary" sprite="casualSmile" options='{"duration":0}' fallback='{"outfit":"Casual","mood":"Rin_Casual_Smile"}'
+@actor.set actor="mary" props='{"x":-0.25,"y":{"portrait":0.1,"android":0.2,"default":0.4}}'
+@actor.call actor="mary" method="slideIn" args='[0.48,0.8]'
+
+storage get: name = $playerName
+storage get: demo-tour-focus = $tourFocus
+
+mary: @scene3.return
+@dialog actor="mary" text="@scene3.named" params='{"name":{"fromVar":"playerName"}}'
+
+if $tourFocus === "Characters":
+    mary: @scene3.characters
+else:
+    if $tourFocus === "Visual effects":
+        mary: @scene3.effects
+    else:
+        mary: @scene3.flow
+
+mary: @scene3.recap
+
+@choice var="nextStep" message="@scene3.nextStepPrompt" options='["Open the docs","Browse chapters","Replay the demo"]' optionsI18nKey="scene3.nextStepOptions"
+
+if $nextStep === "Open the docs":
+    mary: @scene3.nextDocs
+else:
+    if $nextStep === "Browse chapters":
+        mary: @scene3.nextChapters
+    else:
+        mary: @scene3.nextReplay
+
+mary: @scene3.final
+@actor.call actor="mary" method="slideOut"
+@achievement id="story.chapter-complete" amount=1
+end

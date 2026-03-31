@@ -1,0 +1,6 @@
+<view id="action-root" class="action-root">
+    <rect id="action-bg" class="action-bg" />
+    <rect id="action-top-border" class="action-top-border" />
+    <text id="action-title" class="action-title" text="Action Menu" />
+    <rect id="action-title-border" class="action-title-border" />
+</view>

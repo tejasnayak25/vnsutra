@@ -8,13 +8,17 @@
 ## ✨ Features
 
 - **Modular JavaScript SDK** for game logic, UI, storage, and asset management ([`vnsutra_modules/`](./vnsutra_modules))
+- **Modern ES module architecture** with singleton and named exports for maintainability and IDE support
 - **Customizable UI** with [Konva.js](https://konvajs.org/)
-- **Asset management** for images, music, fonts, and game assets
-- **Save/load system** for game state
+- **Modular asset system**: backgrounds, characters, outfits, music, SFX ([`vnsutra_modules/assets/`](./vnsutra_modules/assets))
+- **Save/load system** for game state (IndexedDB, localStorage fallback)
+- **Accessibility features**: high contrast mode, font scaling, reduce motion ([`vnsutra_modules/accessibility.js`](./vnsutra_modules/accessibility.js))
+- **Performance monitoring**: FPS, memory, operation timing ([`vnsutra_modules/performance.js`](./vnsutra_modules/performance.js))
 - **Cross-platform**: works in modern browsers, supports mobile and desktop
 - **Node.js (Express) server** for asset delivery and packaging
 - **Tailwind CSS** for rapid UI styling
 - **Vercel-ready** with middleware and deployment config
+- **Centralized error handling** and JSDoc documentation for core APIs
 
 ---
 
@@ -26,6 +30,10 @@ assets/             # Game assets: images, music, fonts, backgrounds, characters
 css/                # Tailwind CSS input and output
 game/               # Game configuration, manifest, and story scripts
 vnsutra_modules/    # Core SDK modules (game logic, UI, storage, etc.)
+  assets/           # Modular asset system (background, character, outfit, music, sfx)
+  accessibility.js  # Accessibility features
+  performance.js    # Performance monitoring
+  constants.js      # Centralized string constants
 middleware.js       # Vercel Edge middleware
 package.json        # Node.js dependencies and scripts
 vercel.json         # Vercel deployment config
@@ -48,7 +56,7 @@ npm run tailwindcss
 ### Defining Assets ([`game/assets.js`](./game/assets.js))
 
 ```js
-import { Background, Character, Music, IMG, Sfx } from "../vnsutra_modules/asset-utils.js";
+import { Background, Character, Music, IMG, Sfx } from "../vnsutra_modules/assets/index.js";
 let futon_room = new Background("backgrounds/Noraneko_Background_Pack_1/Futon_Room.png");
 let mary = new Character({ name: "Mary", folder: "characters/Rin", scale: 1.5 });
 let music = new Music("../assets/music/bgm.mp3");
@@ -59,26 +67,28 @@ export { futon_room, mary, music, logo, clickSound };
 
 ### Writing the Story ([`game/story.js`](./game/story.js))
 
-```js
-import { futon_room, mary, music } from "./assets.js";
-import { dialog, next, input, choice, storage, end, wait, loading } from "../vnsutra_modules/game-utils.js";
+You can now write stories using a **declarative action format** (writer-friendly) instead of full async JavaScript control flow.  
+See [`docs/STORY_SCRIPTING.md`](./docs/STORY_SCRIPTING.md) for all supported action types.
+For planned XML/CSS-driven home/game shell UI compilation, see [`docs/UI_LAYOUT_WORKFLOW.md`](./docs/UI_LAYOUT_WORKFLOW.md).
 
-export const story = {
-  start: async function () {
-    game.background = futon_room;
-    await dialog(mary, "Hello! Welcome to my story.");
-    let name = await input("What's your name?", "Player");
-    storage.setItem("name", name);
-    await dialog(mary, `Nice to meet you, ${name}!`);
-    let answer = await choice("Do you like visual novels?", ["Yes", "No"]);
-    if(answer === "Yes") {
-      await dialog(mary, "That's great!");
-    } else {
-      await dialog(mary, "Give it a try, you might like it!");
-    }
-    end();
-  }
+```js
+import { createStoryFromScript } from "../vnsutra_modules/story-script-runner.js";
+
+const scenes = {
+  start: [
+    { type: "dialog", actor: "mary", text: "@scene1.hello" },
+    { type: "input", var: "name", message: "@scene1.namePrompt", trim: true },
+    { type: "storage-set", key: "name", value: { fromVar: "name" } },
+    { type: "dialog", actor: "mary", text: "@scene1.greeting", params: { name: { fromVar: "name" } } },
+    { type: "jump", scene: "scene2" }
+  ],
+  scene2: [
+    { type: "dialog", actor: "mary", text: "@scene2.goodbye" },
+    { type: "end" }
+  ]
 };
+
+export const story = createStoryFromScript({ scenes, actors: { mary }, assets: { futon_room } });
 ```
 
 ---
@@ -120,11 +130,15 @@ export const story = {
 </details>
 
 <details>
-<summary><b>Utilities</b></summary>
+<summary><b>Utilities & Patterns</b></summary>
 
 - `load(path)` — Fetch a file (Promise)
 - `loadJSON(path)` — Fetch and parse a JSON file
 - `loadFonts(fonts, root)` — Load custom fonts
+- **Singleton pattern** for stateful modules (see IMPROVEMENTS.md)
+- **Named exports** for utilities (see IMPROVEMENTS.md)
+- **Centralized error handling** via `errorTracking.captureError()`
+- **JSDoc documentation** for all public APIs
 </details>
 
 ---

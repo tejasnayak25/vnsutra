@@ -1,60 +1,212 @@
-function actionBar(config, siderect, width, height, fonts, close_square_img, add_img) {
-    let actionrect = new Konva.Group({
-        width: isMobile ? width : (width - siderect.width()),
+import "../konva.js";
+import { animateBtn, closeBar } from "./utils.js";
+import { cleanupActionbarScroll } from "./scrollable-content.js";
+import { getIsPortrait, getIsAndroid, setOpenWindow, scaleFontSize } from "../runtime-state.js";
+import errorTracking from "../error-tracking.js";
+import { createKonvaNodesFromPlan } from "../ui-layout/runtime.js";
+
+const Konva = globalThis.Konva;
+
+let actionbarLayoutPlanCache = null;
+let actionbarLayoutPlanPromise = null;
+
+function isXmlLayoutEnabled(config) {
+    return config?.ui?.["xml-mode"] !== false;
+}
+
+async function loadActionbarLayoutPlan() {
+    if (actionbarLayoutPlanCache) {
+        return actionbarLayoutPlanCache;
+    }
+
+    if (actionbarLayoutPlanPromise) {
+        return actionbarLayoutPlanPromise;
+    }
+
+    actionbarLayoutPlanPromise = (async () => {
+        try {
+            const response = await fetch("../game/.ui-cache/actionbar.ui.json", { cache: "no-store" });
+            if (!response.ok) {
+                return null;
+            }
+
+            const plan = await response.json();
+            if (!plan || !Array.isArray(plan.nodes)) {
+                return null;
+            }
+
+            actionbarLayoutPlanCache = plan;
+            return plan;
+        } catch {
+            return null;
+        }
+    })();
+
+    try {
+        return await actionbarLayoutPlanPromise;
+    } finally {
+        actionbarLayoutPlanPromise = null;
+    }
+}
+
+function getPlanNode(nodesById, nodeId) {
+    const entry = nodesById.get(nodeId);
+    return entry?.node ?? null;
+}
+
+async function buildActionbarCompiledLayout({
+    stageWidth,
+    stageHeight,
+    parentWidth,
+    parentHeight,
+    isPortrait,
+    isAndroid
+}) {
+    const plan = await loadActionbarLayoutPlan();
+    if (!plan || !Konva) {
+        return null;
+    }
+
+    try {
+        const { nodesById } = createKonvaNodesFromPlan({
+            Konva,
+            plan,
+            context: {
+                stageWidth,
+                stageHeight,
+                parentWidth,
+                parentHeight,
+                isPortrait,
+                isAndroid
+            }
+        });
+
+        const actionRoot = getPlanNode(nodesById, "action-root");
+        const actionBg = getPlanNode(nodesById, "action-bg");
+        const actionTopBorder = getPlanNode(nodesById, "action-top-border");
+        const actionTitle = getPlanNode(nodesById, "action-title");
+        const actionTitleBorder = getPlanNode(nodesById, "action-title-border");
+
+        if (!actionRoot || !actionBg || !actionTopBorder || !actionTitle || !actionTitleBorder) {
+            return null;
+        }
+
+        return {
+            actionRoot,
+            actionBg,
+            actionTopBorder,
+            actionTitle,
+            actionTitleBorder
+        };
+    } catch (error) {
+        errorTracking?.captureError(error, {
+            type: "warning",
+            message: "[ActionBar] Failed to build compiled actionbar layout; falling back to imperative UI",
+            context: { scope: "actionbar", stage: "layout" }
+        });
+        return null;
+    }
+}
+
+async function actionBar(config, siderect, width, height, fonts, close_square_img, add_img) {
+    if (!Konva) {
+        errorTracking?.captureError("Konva not available", {
+            message: "[ActionBar] Konva not available",
+            context: { scope: "actionbar" }
+        });
+        return null;
+    }
+
+    const isPortrait = getIsPortrait();
+    const isAndroid = getIsAndroid();
+    const actionWidth = isPortrait ? width : (width - siderect.width());
+
+    const compiledActionbarLayout = isXmlLayoutEnabled(config)
+        ? await buildActionbarCompiledLayout({
+            stageWidth: width,
+            stageHeight: height,
+            parentWidth: actionWidth,
+            parentHeight: height,
+            isPortrait,
+            isAndroid
+        })
+        : null;
+
+    const actionrect = compiledActionbarLayout?.actionRoot ?? new Konva.Group({
+        width: actionWidth,
         height: height,
-        x: isMobile ? 0 : siderect.width(),
+        x: isPortrait ? 0 : siderect.width(),
         visible: false
     });
+    actionrect.width(actionWidth);
+    actionrect.height(height);
+    actionrect.x(isPortrait ? 0 : siderect.width());
+    actionrect.visible(false);
 
-    let actionbar = new Konva.Rect({
-        width: isMobile ? width : (width - siderect.width()),
-        height: height,
+    const actionbar = compiledActionbarLayout?.actionBg ?? new Konva.Rect({
+        width: actionWidth,
+        height: height
+    });
+    actionbar.setAttrs({
         fill: config.colors.menu,
-        opacity: isMobile ? config.ui.mobile.sidebar.opacity : config.ui.sidebar.opacity
+        opacity: isPortrait ? config.ui.mobile.sidebar.opacity : config.ui.sidebar.opacity
     });
 
-    let actionbar_border = new Konva.Rect({
+    const actionbar_border = compiledActionbarLayout?.actionTopBorder ?? new Konva.Rect({
         width: actionbar.width(),
-        height: 6,
+        height: 6
+    });
+    actionbar_border.setAttrs({
+        width: actionbar.width(),
         fill: config.colors.primary
     });
 
-    let actionbar_title = new Konva.Text({
+    const actionbar_title = compiledActionbarLayout?.actionTitle ?? new Konva.Text({
         align: "left",
         verticalAlign: "middle",
-        padding: isMobile ? 30 : (isAndroid ? 40 : 60),
+        padding: isPortrait ? 30 : (isAndroid ? 40 : 60),
         width: actionbar.width(),
-        height: isMobile ? 90 : (isAndroid ? 60 : 95),
+        height: isPortrait ? 90 : (isAndroid ? 60 : 95),
         text: "Action Menu",
-        fontFamily: fonts['other'],
-        fontSize: isMobile ? 30 : (isAndroid ? 25 : 30),
+        fontFamily: fonts["other"],
+        fontSize: isPortrait ? 30 : (isAndroid ? 25 : 30)
+    });
+    actionbar_title.fontSize(scaleFontSize(actionbar_title.fontSize()));
+    actionbar_title.setAttrs({
+        width: actionbar.width(),
+        text: "Action Menu",
         fill: config.colors.text,
         fillAfterStrokeEnabled: true
     });
 
-    let borderPadding = isMobile ? 30 : (isAndroid ? 20 : 30);
+    const borderPadding = isPortrait ? 30 : (isAndroid ? 20 : 30);
 
-    let actionbar_title_border = new Konva.Rect({
+    const actionbar_title_border = compiledActionbarLayout?.actionTitleBorder ?? new Konva.Rect({
         x: borderPadding,
         y: actionbar_title.height() - 10,
         height: 2,
+        width: actionbar.width() - 2*borderPadding
+    });
+    actionbar_title_border.setAttrs({
+        x: borderPadding,
+        y: actionbar_title.height() - 10,
         width: actionbar.width() - 2*borderPadding,
         fill: config.colors["menu-border"]
     });
 
-    let closeActionMenuBtn = new Konva.Image({
-        width: isMobile ? 50 : (isAndroid ? 30 : 40),
-        height: isMobile ? 50 : (isAndroid ? 30 : 40),
-        x: actionrect.width() - (isMobile ? 70 : (isAndroid ? 70 : 90)),
-        y: isMobile ? 15 : (isAndroid ? 15 : 25),
+    const closeActionMenuBtn = new Konva.Image({
+        width: isPortrait ? 50 : (isAndroid ? 30 : 40),
+        height: isPortrait ? 50 : (isAndroid ? 30 : 40),
+        x: actionrect.width() - (isPortrait ? 70 : (isAndroid ? 70 : 90)),
+        y: isPortrait ? 15 : (isAndroid ? 15 : 25),
         image: close_square_img.cloneNode(true)
     });
 
-    let addBtn = new Konva.Image({
-        width: isMobile ? 55 : (isAndroid ? 35 : 45),
-        height: isMobile ? 55 : (isAndroid ? 35 : 45),
-        x: actionrect.width() - closeActionMenuBtn.width() - (isMobile ? 70 : (isAndroid ? 70 : 90)) - 15,
-        y: isMobile ? 13 : (isAndroid ? 13 : 23),
+    const addBtn = new Konva.Image({
+        width: isPortrait ? 55 : (isAndroid ? 35 : 45),
+        height: isPortrait ? 55 : (isAndroid ? 35 : 45),
+        x: actionrect.width() - closeActionMenuBtn.width() - (isPortrait ? 70 : (isAndroid ? 70 : 90)) - 15,
+        y: isPortrait ? 13 : (isAndroid ? 13 : 23),
         image: add_img.cloneNode(true),
         visible: false
     });
@@ -76,15 +228,16 @@ function actionBar(config, siderect, width, height, fonts, close_square_img, add
     });
 
     closeActionMenuBtn.on("click touchstart", () => {
+        setOpenWindow(null);
         animateBtn(closeActionMenuBtn);
         closeBar(actionrect);
     });
 
-    let padding = 30;
+    const padding = 30;
 
-    let contentWidth = actionrect.width() - 2*padding;
-    let contentHeight = height - actionbar_title.height() - 2*padding;
-    let actionContent = new Konva.Group({
+    const contentWidth = actionrect.width() - 2*padding;
+    const contentHeight = height - actionbar_title.height() - 2*padding;
+    const actionContent = new Konva.Group({
         width: contentWidth,
         height: contentHeight,
         x: padding,
@@ -96,14 +249,14 @@ function actionBar(config, siderect, width, height, fonts, close_square_img, add
         clipHeight: contentHeight
     });
 
-    let scrollContainer = new Konva.Group({
+    const scrollContainer = new Konva.Group({
         width: 4,
         height: contentHeight,
         x: contentWidth + padding,
         y: actionContent.y()
     });
 
-    let scrollbarBg = new Konva.Rect({
+    const scrollbarBg = new Konva.Rect({
         width: 4,
         height: contentHeight,
         fill: config.colors.primary,
@@ -112,7 +265,7 @@ function actionBar(config, siderect, width, height, fonts, close_square_img, add
 
     scrollContainer.add(scrollbarBg);
 
-    let scrollbar = new Konva.Rect({
+    const scrollbar = new Konva.Rect({
         width: 4,
         height: scrollContainer.height(),
         fill: config.colors.primary,
@@ -120,16 +273,16 @@ function actionBar(config, siderect, width, height, fonts, close_square_img, add
     });
 
     scrollbar.dragBoundFunc(function(pos){
-        let actionHeight = actionbar_title.height();
-        let totalHeight = actionHeight + actionContent.height() + padding;
+        const actionHeight = actionbar_title.height();
+        const totalHeight = actionHeight + actionContent.height() + padding;
         if(pos.y < actionHeight + padding) {
             pos.y = actionHeight + padding;
         } else if(pos.y > (totalHeight - scrollbar.height())) {
             pos.y = totalHeight - scrollbar.height();
         }
         return {
-          x: this.absolutePosition().x,
-          y: pos.y
+            x: this.absolutePosition().x,
+            y: pos.y
         };
     });
 
@@ -143,7 +296,11 @@ function actionBar(config, siderect, width, height, fonts, close_square_img, add
 
     scrollContainer.add(scrollbar);
 
-    actionrect.add(actionbar, actionbar_border, actionbar_title, actionbar_title_border, addBtn, closeActionMenuBtn, actionContent, scrollContainer);
+    if (compiledActionbarLayout?.actionRoot) {
+        actionrect.add(addBtn, closeActionMenuBtn, actionContent, scrollContainer);
+    } else {
+        actionrect.add(actionbar, actionbar_border, actionbar_title, actionbar_title_border, addBtn, closeActionMenuBtn, actionContent, scrollContainer);
+    }
 
     return ({
         addBtn,
@@ -194,12 +351,20 @@ function actionBar(config, siderect, width, height, fonts, close_square_img, add
         },
         clear() {
             actionbar_title.text("");
+            cleanupActionbarScroll(this);
             actionContent.removeChildren();
             this.scrollbarHeight = 0;
         },
-        close() {
-            animateBtn(closeActionMenuBtn);
-            closeBar(actionrect);
+        close(done = () => {}, options = {}) {
+            const { animateButton = true } = options;
+            cleanupActionbarScroll(this);
+            if (animateButton) {
+                animateBtn(closeActionMenuBtn);
+            }
+            closeBar(actionrect, done);
         }
     });
 }
+
+export { actionBar };
+export default actionBar;

@@ -1,0 +1,52 @@
+{
+  "scene1": {
+    "hello": "Hey there.",
+    "intro": "I am Mary, and I will guide you through a tiny VN-Sutra demo.",
+    "introduction": "Before we start, what should I call you?",
+    "namePrompt": "What's your name?",
+    "defaultName": "Peanut",
+    "correctGuess": "You left the default name in place. Efficient.",
+    "wrongGuess": "Hello, {{name}}. Nice to meet you.",
+    "maryIntro": "Good. I am Mary, and this is a miniature story built entirely from actions.",
+    "question": "So, what is VN-Sutra to you?",
+    "answerOptions": ["Cookie", "A visual novel SDK"],
+    "wrongAnswer": "Bold answer. Not correct, but memorable.",
+    "rightAnswer": "Exactly. A small SDK that lets the scene do the talking.",
+    "question2": "Now watch how the scene changes with just a few actions."
+  },
+  "scene2": {
+    "makeScenes": "The same character, a different background, and a different mood.",
+    "addAssets": "A scene is still just a list of actions, but the result can feel alive.",
+    "movement": "A little motion goes a long way when the scene is this small.",
+    "question": "What should I show you next?",
+    "tourOptions": ["Characters", "Visual effects", "Story flow"],
+    "characters": "You picked characters. Expression and pose are the fastest way to change the beat.",
+    "charactersFollowup": "Sprites and outfits stay readable because they are part of the script.",
+    "grayscale": "You picked visual effects. A filter can change the tone of the whole scene.",
+    "grayscaleReset": "Even strong effects stay easy to follow when they are declarative.",
+    "bgGrayscale": "The background can shift too, not just the character.",
+    "bgGrayscaleReset": "And when the effect ends, the story keeps moving.",
+    "explanation": "You picked story flow. Choices, storage, and jumps are how the demo remembers itself.",
+    "docs": "Nothing here needs special code paths, just a clean action list.",
+    "goodbye": "Now I will close the tour and take us back to the room.",
+    "maryGoodbye": "See you soon, {{name}}."
+  },
+  "scene3": {
+    "return": "We are back where we started, but the scene has more context now.",
+    "named": "Thanks for sticking with me, {{name}}.",
+    "characters": "You picked characters. Mood and motion stay flexible when they live in the script.",
+    "effects": "You picked effects. Short flashes can carry a lot of energy.",
+    "flow": "You picked flow. That is the backbone of a playable demo.",
+    "recap": "That is the point of VN-Sutra: keep the story readable and the engine invisible.",
+    "nextStepPrompt": "What do you want to do next?",
+    "nextStepOptions": ["Open the docs", "Browse chapters", "Replay the demo"],
+    "nextDocs": "Good call. The docs are the fastest way to go deeper.",
+    "nextChapters": "Browse the chapters if you want to jump around the structure.",
+    "nextReplay": "Replaying the demo is useful too. It makes the flow easier to see.",
+    "final": "That is enough for a starter demo. The rest is yours."
+  },
+  "ui": {
+    "languageLabel": "Language",
+    "languageName": "English"
+  }
+}

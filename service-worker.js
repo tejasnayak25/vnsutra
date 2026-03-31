@@ -1,72 +1,149 @@
-const CACHE_NAME = 'vnsutra-cache-v2'; // Update cache name to reflect version change
-const urlsToCache = [
-    '/', 
-    '/index.html', 
-    '/css/output.css',
-    '/assets/music/bgm.mp3'
+const CACHE_VERSION = "vnsutra-v3";
+const PRECACHE_NAME = `${CACHE_VERSION}-precache`;
+const RUNTIME_NAME = `${CACHE_VERSION}-runtime`;
+const MAX_RUNTIME_ENTRIES = 120;
+
+const PRECACHE_URLS = [
+    "/",
+    "/index.html",
+    "/api",
+    "/css/output.css",
+    "/game/config.json",
+    "/game/manifest.json",
+    "/assets/images/logo.png"
 ];
 
-// Install the service worker and cache initial assets
-self.addEventListener('install', event => {
-    self.skipWaiting(); // Activate new SW immediately
+self.addEventListener("install", (event) => {
+    self.skipWaiting();
     event.waitUntil(
-        caches.open(CACHE_NAME)
-            .then(cache => {
-                return cache.addAll(urlsToCache);
-            })
+        caches.open(PRECACHE_NAME).then((cache) => cache.addAll(PRECACHE_URLS))
     );
 });
 
-// Fetch event to serve cached content and cache new requests dynamically
-self.addEventListener('fetch', event => {
-    event.respondWith(
-        caches.match(event.request)
-            .then(response => {
-                // Cache hit - return the response
-                if (response) {
-                    return response;
-                }
-
-                // Clone the request
-                let fetchRequest = event.request.clone();
-
-                return fetch(fetchRequest).then(
-                    response => {
-                        // Check if we received a valid response
-                        if (!response || response.status !== 200 || response.type !== 'basic') {
-                            return response;
-                        }
-
-                        // Clone the response
-                        let responseToCache = response.clone();
-
-                        caches.open(CACHE_NAME)
-                            .then(cache => {
-                                cache.put(event.request, responseToCache);
-                            });
-
-                        return response;
-                    }
-                );
-            })
-    );
+self.addEventListener("activate", (event) => {
+    event.waitUntil((async () => {
+        const cacheNames = await caches.keys();
+        const valid = new Set([PRECACHE_NAME, RUNTIME_NAME]);
+        await Promise.all(cacheNames.map((cacheName) => {
+            if (!valid.has(cacheName)) {
+                return caches.delete(cacheName);
+            }
+            return Promise.resolve();
+        }));
+        await self.clients.claim();
+    })());
 });
 
-// Activate event to update the service worker
-self.addEventListener('activate', event => {
-    const cacheWhitelist = [CACHE_NAME];
+self.addEventListener("fetch", (event) => {
+    const request = event.request;
 
-    event.waitUntil(
-        caches.keys().then(cacheNames => {
-            return Promise.all(
-                cacheNames.map(cacheName => {
-                    if (cacheWhitelist.indexOf(cacheName) === -1) {
-                        return caches.delete(cacheName);
-                    }
-                })
-            );
+    if (request.method !== "GET") {
+        return;
+    }
+
+    const url = new URL(request.url);
+    const isSameOrigin = url.origin === self.location.origin;
+
+    if (!isSameOrigin) {
+        return;
+    }
+
+    if (isApiRequest(url)) {
+        event.respondWith(networkFirst(request));
+        return;
+    }
+
+    if (isStaticAssetRequest(url)) {
+        event.respondWith(cacheFirst(request));
+        return;
+    }
+
+    if (isScriptOrStyleRequest(request)) {
+        event.respondWith(staleWhileRevalidate(request));
+        return;
+    }
+
+    event.respondWith(networkFirst(request));
+});
+
+function isApiRequest(url) {
+    return url.pathname.startsWith("/folder") || url.pathname.startsWith("/api");
+}
+
+function isScriptOrStyleRequest(request) {
+    return request.destination === "script" || request.destination === "style";
+}
+
+function isStaticAssetRequest(url) {
+    if (url.pathname.startsWith("/assets/")) {
+        return true;
+    }
+
+    return /\.(png|jpg|jpeg|gif|webp|svg|ico|woff2?|ttf|otf|mp3|wav)$/i.test(url.pathname);
+}
+
+async function networkFirst(request) {
+    const runtimeCache = await caches.open(RUNTIME_NAME);
+
+    try {
+        const networkResponse = await fetch(request);
+        if (networkResponse && networkResponse.ok) {
+            await runtimeCache.put(request, networkResponse.clone());
+            await enforceRuntimeLimit(runtimeCache);
+        }
+        return networkResponse;
+    } catch (error) {
+        const cachedResponse = await runtimeCache.match(request);
+        if (cachedResponse) {
+            return cachedResponse;
+        }
+        const precachedResponse = await caches.match(request);
+        if (precachedResponse) {
+            return precachedResponse;
+        }
+        return new Response("Offline", { status: 503, statusText: "Service Unavailable" });
+    }
+}
+
+async function cacheFirst(request) {
+    const runtimeCache = await caches.open(RUNTIME_NAME);
+    const cachedResponse = await runtimeCache.match(request);
+
+    if (cachedResponse) {
+        return cachedResponse;
+    }
+
+    const networkResponse = await fetch(request);
+    if (networkResponse && networkResponse.ok) {
+        await runtimeCache.put(request, networkResponse.clone());
+        await enforceRuntimeLimit(runtimeCache);
+    }
+    return networkResponse;
+}
+
+async function staleWhileRevalidate(request) {
+    const runtimeCache = await caches.open(RUNTIME_NAME);
+    const cachedResponse = await runtimeCache.match(request);
+
+    const networkPromise = fetch(request)
+        .then(async (networkResponse) => {
+            if (networkResponse && networkResponse.ok) {
+                await runtimeCache.put(request, networkResponse.clone());
+                await enforceRuntimeLimit(runtimeCache);
+            }
+            return networkResponse;
         })
-    );
+        .catch(() => cachedResponse);
 
-    return self.clients.claim(); // Take control of the clients immediately
-});
+    return cachedResponse || networkPromise;
+}
+
+async function enforceRuntimeLimit(cache) {
+    const keys = await cache.keys();
+    if (keys.length <= MAX_RUNTIME_ENTRIES) {
+        return;
+    }
+
+    const staleKeys = keys.slice(0, keys.length - MAX_RUNTIME_ENTRIES);
+    await Promise.all(staleKeys.map((key) => cache.delete(key)));
+}

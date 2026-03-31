@@ -1,0 +1,66 @@
+/* Docs overrides for VN-Sutra markdown rendering
+   Purpose: improve TOC, code blocks, tables, headings, and overall readability
+*/
+:root{
+  --docs-bg: #ffffff;
+  --docs-ink: #0f172a;
+  --muted: #6b7280;
+  --brand: #0ea5e9;
+  --code-bg: #0b1220;
+  --code-ink: #f8fafc;
+  --panel-shadow: 0 6px 18px rgba(2,6,23,0.06);
+}
+
+/* Collapsible Table of Contents */
+details.toc{margin:0 0 1rem 0;padding:0.6rem;border-radius:0.6rem;background:linear-gradient(180deg,#f8fafc, #ffffff);border:1px solid #e6eef7}
+details.toc summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:0.6rem;padding:0.4rem 0.6rem;font-weight:700;color:var(--docs-ink)}
+details.toc summary::-webkit-details-marker{display:none}
+details.toc summary:before{content:"▸";display:inline-block;transform:rotate(0);transition:transform .18s ease}
+details.toc[open] summary:before{transform:rotate(90deg)}
+
+details.toc ul{margin:0.6rem 0 0 1rem;padding:0}
+details.toc li{margin:0.25rem 0}
+details.toc a{color:var(--brand);text-decoration:underline}
+
+/* Prose base improvements */
+.prose{line-height:1.75;color:var(--docs-ink)}
+.prose h1{font-size:2.1rem;margin-top:0;margin-bottom:0.6rem;font-weight:800}
+.prose h2{font-size:1.6rem;margin-top:1.1rem;margin-bottom:0.5rem;font-weight:700}
+.prose h3{font-size:1.15rem;margin-top:0.9rem;margin-bottom:0.45rem;font-weight:600}
+.prose p{margin-bottom:1rem}
+.prose a{color:var(--brand)}
+
+/* Blockquote */
+.prose blockquote{border-left:4px solid #60a5fa;background:#e9f8ff;padding:0.8rem 1rem;border-radius:0.45rem}
+
+/* Code - inline and blocks */
+.prose code{background:#f1f5f9;padding:0.12em 0.35em;border-radius:0.28em;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', 'Courier New', monospace}
+
+.prose pre{background:var(--code-bg);color:var(--code-ink);padding:1rem 1.25rem;border-radius:0.6rem;overflow:auto;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', 'Courier New', monospace;font-size:0.95rem;line-height:1.8;tab-size:4}
+.prose pre code{background:transparent;padding:0;color:inherit;display:block;white-space:pre}
+
+/* Tables */
+.prose table{width:100%;border-collapse:collapse;margin:1rem 0}
+.prose thead th{background:#f8fafc;padding:0.6rem 0.9rem;text-align:left;border-bottom:1px solid #e6e9ee}
+.prose tbody td{padding:0.6rem 0.9rem;border-bottom:1px solid #eef2f7}
+.prose caption{caption-side:bottom;color:var(--muted);font-size:0.88rem;padding-top:0.5rem}
+
+/* Images */
+.prose img{border-radius:0.5rem;box-shadow:var(--panel-shadow);max-width:100%;height:auto}
+
+/* Back to top link */
+.back-to-top{display:inline-block;margin-top:1rem;color:var(--muted);font-size:0.92rem}
+.back-to-top:hover{color:var(--brand)}
+
+/* Small helpers to ensure readable list spacing */
+.prose ol, .prose ul{padding-left:1.15rem;margin-bottom:1rem}
+
+/* Responsive tweaks */
+@media (min-width:1024px){
+  .prose{font-size:1.05rem}
+}
+
+/* Floating Back-to-top button */
+.doc-top-btn{position:fixed;right:20px;bottom:20px;background:var(--brand);color:white;border:none;padding:0.55rem 0.7rem;border-radius:9999px;box-shadow:var(--panel-shadow);cursor:pointer;z-index:9999;font-size:1.05rem;display:none;aspect-ratio: 1 / 1;width: 3rem;height: 3rem}
+.doc-top-btn:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(2,6,23,0.12)}
+.doc-top-btn:active{transform:translateY(0)}

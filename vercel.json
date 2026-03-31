@@ -1,6 +1,56 @@
 {
 	"version": 2,
-	"rewrites": [
-		{ "source": "/(.*)", "destination": "/api" }
+	"buildCommand": "npm run build",
+	"builds": [
+		{
+			"src": "api/index.js",
+			"use": "@vercel/node"
+		}
+	],
+	"routes": [
+		{
+			"src": "/api/(.*)",
+			"dest": "/api/index.js"
+		},
+		{
+			"src": "/(css|assets|game|locales|vnsutra_modules)/(.*)",
+			"dest": "/dist/$1/$2"
+		},
+		{
+			"src": "/service-worker.js",
+			"dest": "/dist/service-worker.js"
+		},
+		{
+			"src": "/(.*)",
+			"dest": "/dist/index.html"
+		}
+	],
+	"headers": [
+		{
+			"source": "/(.*)",
+			"headers": [
+				{
+					"key": "X-Content-Type-Options",
+					"value": "nosniff"
+				},
+				{
+					"key": "X-Frame-Options",
+					"value": "DENY"
+				},
+				{
+					"key": "X-XSS-Protection",
+					"value": "1; mode=block"
+				}
+			]
+		},
+		{
+			"source": "/assets/(.*)",
+			"headers": [
+				{
+					"key": "Cache-Control",
+					"value": "public, max-age=31536000, immutable"
+				}
+			]
+		}
 	]
 }

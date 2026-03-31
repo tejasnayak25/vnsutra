@@ -1,0 +1,20 @@
+<view id="home-root" class="home-root">
+    <view id="home-sidebar-root" class="sidebar-root">
+        <rect id="home-sidebar" class="sidebar" />
+        <rect id="home-sidebar-top-border" class="sidebar-top-border" />
+        <text id="home-sidebar-title" class="sidebar-title" text="Menu" />
+        <rect id="home-sidebar-title-border" class="sidebar-title-border" />
+        <rect id="home-sidebar-divider" class="sidebar-divider" />
+        <image id="home-close-menu-btn" class="close-menu-btn" src="./assets/svgs/close-square.svg" />
+        <view id="home-opts-viewport" class="opts-viewport">
+            <view id="home-opts-group" class="opts-group" />
+        </view>
+    </view>
+    <view id="home-main-root" class="main-root">
+        <view id="home-title-group" class="title-group">
+            <text id="home-title" class="home-title" text="VN-Sutra" />
+            <text id="home-subtitle" class="home-subtitle" text="" />
+        </view>
+        <view id="home-mobile-buttons" class="mobile-buttons" />
+    </view>
+</view>

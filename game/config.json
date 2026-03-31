@@ -33,11 +33,57 @@
         "remove-icon": "./assets/svgs/save-remove.svg",
         "load-icon": "./assets/svgs/load-list-alt.svg",
         "screenshot-icon": "./assets/svgs/screen-capture.svg",
+        "expand-icon": "./assets/svgs/expand.svg",
         "add-icon": "./assets/svgs/plus-square.svg",
-        "loading-spinner-icon": "./assets/svgs/spinner.svg"
+        "loading-spinner-icon": "./assets/svgs/spinner.svg",
+        "settings-icon": "./assets/svgs/settings.svg",
+        "group-icon": "./assets/svgs/group.svg",
+        "info-icon": "./assets/svgs/info.svg"
     },
     "ui": {
+        "xml-mode": false,
         "vnsutra-label": true,
+        "portrait-compatible": true,
+        "portrait-block-message": "This story supports landscape mode only. Please rotate your device.",
+        "disclaimer": {
+            "enabled": true,
+            "path": "game/disclaimer.md"
+        },
+        "achievements": {
+            "enabled": true
+        },
+        "locales": {
+            "path": "locales/{lang}.json",
+            "supported": ["en", "ja", "es", "fr"],
+            "fallback": "en"
+        },
+        "chapters": {
+            "enabled": true,
+            "mode": "progressive",
+            "title": "Chapters",
+            "sidebarLabel": "Chapters",
+            "path": "game/chapters.json"
+        },
+        "end": {
+            "mode": "credits-then-end",
+            "creditsDurationMs": 9000,
+            "endHoldMs": 900,
+            "allowSkip": true
+        },
+        "splash": {
+            "enabled": true,
+            "durationMs": 4000,
+            "logos": [
+                {
+                    "src": "./assets/images/logo.png",
+                    "label": "Tejas Nayak"
+                },
+                {
+                    "src": "./assets/images/logo.png",
+                    "label": "VN-Sutra"
+                }
+            ]
+        },
         "sidebar": {
             "opacity": 0.8
         },
@@ -71,6 +117,23 @@
             "speech": {
                 "align": "center"
             }
+        }
+    },
+    "security": {
+        "disableDevTools": false,
+        "disableContextMenu": false
+    },
+    "monitoring": {
+        "performance": {
+            "enabled": true,
+            "maxEntries": 120,
+            "fpsSampleInterval": 1000,
+            "memorySampleInterval": 5000
+        },
+        "errorTracking": {
+            "enableReporting": false,
+            "endpoint": "",
+            "maxEntries": 100
         }
     },
     "colors": {

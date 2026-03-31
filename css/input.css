@@ -2,3 +2,55 @@
 @plugin "daisyui";
 @plugin "flowbite/plugin";
 @source "../node_modules/flowbite";
+
+@layer components {
+  #disclaimer-modal {
+    @apply bg-slate-950/70;
+  }
+
+  #disclaimer-modal.hidden {
+    @apply hidden;
+  }
+
+  #disclaimer-card {
+    @apply max-w-md;
+  }
+
+  #disclaimer-body {
+    @apply w-full text-sm leading-relaxed;
+  }
+
+  #disclaimer-body h2,
+  #disclaimer-body h4 {
+    @apply text-lg font-bold mt-4 mb-2;
+  }
+
+  #disclaimer-body h3 {
+    @apply text-base font-semibold mt-3 mb-1;
+  }
+
+  #disclaimer-body p {
+    @apply mb-3;
+  }
+
+  #disclaimer-body ul,
+  #disclaimer-body ol {
+    @apply ml-5 mb-3;
+  }
+
+  #disclaimer-body li {
+    @apply mb-1;
+  }
+
+  #disclaimer-body a {
+    @apply underline hover:opacity-80 transition-opacity;
+  }
+
+  #disclaimer-body strong {
+    @apply font-semibold;
+  }
+
+  #disclaimer-body em {
+    @apply italic;
+  }
+}

@@ -1,4 +1,6 @@
 // Function to open the IndexedDB database
+import errorTracking from "./error-tracking.js";
+
 function openDatabase(dbName) {
 
     return new Promise((resolve, reject) => {
@@ -9,7 +11,7 @@ function openDatabase(dbName) {
             const db = event.target.result;
 
             // Create an object store with auto-incrementing key
-            const objectStore = db.createObjectStore("DataStore", { keyPath: "key" });
+            db.createObjectStore("DataStore", { keyPath: "key" });
 
             // You can create indexes for efficient data retrieval
             // objectStore.createIndex("key", "key", { unique: true });
@@ -22,6 +24,10 @@ function openDatabase(dbName) {
         };
 
         request.onerror = (event) => {
+            errorTracking?.captureError(event.target.error, {
+                message: "[StorageUtils] Error opening database",
+                context: { scope: "storage", action: "openDatabase", dbName }
+            });
             reject(`Error opening database: ${event.target.error}`);
         };
     });
@@ -40,38 +46,54 @@ async function keyExists(db, key) {
         };
 
         getRequest.onerror = () => {
+            errorTracking?.captureError("Error checking if key exists", {
+                type: "warning",
+                message: "[StorageUtils] Error checking if key exists",
+                context: { scope: "storage", action: "keyExists", key }
+            });
             reject("Error checking if key exists");
         };
     });
 }
 
 // Function to add data to the IndexedDB
-function addData(db, data) {
-    return new Promise(async (resolve, reject) => {
+async function addData(db, data) {
+    try {
         // Add data to the object store
-        let exists = await keyExists(db, data['key']);
+        const exists = await keyExists(db, data["key"]);
 
         let addRequest;
 
         if(exists) {
-            addRequest = await updateData(db, data['key'], data);
-
-            resolve(addRequest);
+            addRequest = await updateData(db, data["key"], data);
+            return addRequest;
         } else {
-            const transaction = db.transaction("DataStore", "readwrite");
-            const objectStore = transaction.objectStore("DataStore");
-            
-            addRequest = objectStore.add(data);
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction("DataStore", "readwrite");
+                const objectStore = transaction.objectStore("DataStore");
+                
+                addRequest = objectStore.add(data);
 
-            addRequest.onsuccess = () => {
-                resolve("Data added successfully");
-            };
-    
-            addRequest.onerror = (event) => {
-                reject(`Error adding data: ${event.target.error}`);
-            };
+                addRequest.onsuccess = () => {
+                    resolve("Data added successfully");
+                };
+        
+                addRequest.onerror = (event) => {
+                    errorTracking?.captureError(event.target.error, {
+                        message: "[StorageUtils] Error adding data",
+                        context: { scope: "storage", action: "addData", key: data?.key }
+                    });
+                    reject(`Error adding data: ${event.target.error}`);
+                };
+            });
         }
-    });
+    } catch (error) {
+        errorTracking?.captureError(error, {
+            message: "[StorageUtils] Failed to add data",
+            context: { scope: "storage", action: "addData", key: data?.key }
+        });
+        throw new Error(`Failed to add data: ${error.message}`);
+    }
 }
 
 // Function to retrieve data from the IndexedDB
@@ -89,6 +111,11 @@ function getData(db, id) {
         };
 
         getRequest.onerror = (event) => {
+            errorTracking?.captureError(event.target.error, {
+                type: "warning",
+                message: "[StorageUtils] Error getting data",
+                context: { scope: "storage", action: "getData", key: id }
+            });
             reject(`Error getting data: ${event.target.error}`);
         };
     });
@@ -121,14 +148,27 @@ function updateData(db, id, newData) {
                 };
 
                 putRequest.onerror = (event) => {
+                    errorTracking?.captureError(event.target.error, {
+                        message: "[StorageUtils] Error updating data",
+                        context: { scope: "storage", action: "updateData", key: id }
+                    });
                     reject(`Error updating data: ${event.target.error}`);
                 };
             } else {
+                errorTracking?.captureError(`Data with ID ${id} not found`, {
+                    type: "warning",
+                    message: "[StorageUtils] Data not found",
+                    context: { scope: "storage", action: "updateData", key: id }
+                });
                 reject(`Data with ID ${id} not found`);
             }
         };
 
         getRequest.onerror = (event) => {
+            errorTracking?.captureError(event.target.error, {
+                message: "[StorageUtils] Error getting data",
+                context: { scope: "storage", action: "updateData", key: id }
+            });
             reject(`Error getting data: ${event.target.error}`);
         };
     });
@@ -148,6 +188,10 @@ function deleteData(db, id) {
         };
 
         deleteRequest.onerror = (event) => {
+            errorTracking?.captureError(event.target.error, {
+                message: "[StorageUtils] Error deleting data",
+                context: { scope: "storage", action: "deleteData", key: id }
+            });
             reject(`Error deleting data: ${event.target.error}`);
         };
     });
@@ -188,6 +232,11 @@ async function getKeyAt(db, index) {
         };
 
         request.onerror = () => {
+            errorTracking?.captureError("Error getting key at index", {
+                type: "warning",
+                message: "[StorageUtils] Error getting key at index",
+                context: { scope: "storage", action: "getKeyAt", index }
+            });
             reject("Error getting key at index");
         };
     });
@@ -205,7 +254,25 @@ async function getDataLength(db) {
         };
 
         request.onerror = () => {
+            errorTracking?.captureError("Error getting data length", {
+                type: "warning",
+                message: "[StorageUtils] Error getting data length",
+                context: { scope: "storage", action: "getDataLength" }
+            });
             reject("Error getting data length");
         };
     });
 }
+
+// Export all functions as ES module
+export {
+    openDatabase,
+    keyExists,
+    addData,
+    getData,
+    updateData,
+    deleteData,
+    clearData,
+    getKeyAt,
+    getDataLength
+};

@@ -1,0 +1,137 @@
+.gameui-root {
+    width: 100%;
+    height: 100%;
+}
+
+.topbar-container {
+    left: 0px;
+    top: 0px;
+    width: 100%;
+    height: 50px;
+}
+
+.topbar-bg {
+    left: 0px;
+    top: 0px;
+    width: 100%;
+    height: 100%;
+}
+
+.topbar-border {
+    left: 0px;
+    top: calc(100% - 2px);
+    width: 100%;
+    height: 2px;
+}
+
+.dialog-box {
+    left: 0px;
+    top: 100%;
+    width: 100%;
+    height: 180px;
+    visible: false;
+}
+
+.dialog-bg {
+    left: 0px;
+    top: 0px;
+    width: 100%;
+    height: 100%;
+    stroke-width: 4px;
+    fill-after-stroke-enabled: true;
+}
+
+.dialog-name-group {
+    left: 0px;
+    top: 0px;
+    width: 100%;
+    height: 100%;
+}
+
+.name-bg {
+    left: 0px;
+    top: 0px;
+    width: 100%;
+    height: 100%;
+    stroke-width: 4px;
+    fill-after-stroke-enabled: true;
+}
+
+.dialog-name-border {
+    left: 0px;
+    top: 100%;
+    width: 100%;
+    height: 4px;
+    opacity: 0.9;
+}
+
+.dialog-name {
+    left: 200px;
+    top: 0px;
+    text-align: center;
+    vertical-align: middle;
+    padding: 15px;
+    font-size: 25px;
+    font-family: "YanoneKaffeesatz";
+    wrap: none;
+    fill-after-stroke-enabled: true;
+}
+
+.dialog-message {
+    left: 100px;
+    top: 0px;
+    width: calc(100% - 200px);
+    text-align: left;
+    vertical-align: middle;
+    padding: 10px;
+    font-size: 25px;
+    font-family: "YanoneKaffeesatz";
+    wrap: word;
+    fill-after-stroke-enabled: true;
+}
+
+@portrait {
+    .topbar-container {
+        height: 50px;
+    }
+
+    .dialog-name-border {
+        height: 5px;
+    }
+
+    .dialog-name {
+        left: 0px;
+        padding: 15px;
+        font-size: 23px;
+    }
+
+    .dialog-message {
+        left: 15px;
+        width: calc(100% - 30px);
+        padding: 10px;
+        font-size: 23px;
+    }
+}
+
+@android-landscape {
+    .topbar-container {
+        height: 40px;
+    }
+
+    .dialog-name-border {
+        height: 4px;
+    }
+
+    .dialog-name {
+        left: 100px;
+        padding: 10px;
+        font-size: 22px;
+    }
+
+    .dialog-message {
+        left: 100px;
+        width: calc(100% - 200px);
+        padding: 5px;
+        font-size: 22px;
+    }
+}

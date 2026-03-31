@@ -1,0 +1,15 @@
+<view id="gameui-root" class="gameui-root">
+    <view id="gameui-topbar-container" class="topbar-container">
+        <rect id="gameui-topbar-bg" class="topbar-bg" />
+        <rect id="gameui-topbar-border" class="topbar-border" />
+    </view>
+    <view id="dialog-box" class="dialog-box">
+        <rect id="dialog-bg" class="dialog-bg" />
+        <view id="dialog-name-group" class="dialog-name-group">
+            <rect id="name-bg" class="name-bg" />
+            <rect id="dialog-name-border" class="dialog-name-border" />
+            <text id="dialog-name" class="dialog-name" text="Alex" />
+        </view>
+        <text id="dialog-message" class="dialog-message" text="" />
+    </view>
+</view>

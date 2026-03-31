@@ -1,3 +1,15 @@
 node_modules
 python_modules
 zipfiles
+
+.env
+.env.local
+.env.*.local
+coverage/
+dist/
+*.log
+lint-output.txt
+lint-report.json
+test-result.txt
+.DS_Store
+
