@@ -59,34 +59,24 @@ async function keyExists(db, key) {
 // Function to add data to the IndexedDB
 async function addData(db, data) {
     try {
-        // Add data to the object store
-        const exists = await keyExists(db, data["key"]);
+        // Use put() for atomic upsert to avoid add-vs-update races across concurrent writes.
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction("DataStore", "readwrite");
+            const objectStore = transaction.objectStore("DataStore");
+            const putRequest = objectStore.put(data);
 
-        let addRequest;
+            putRequest.onsuccess = () => {
+                resolve("Data upserted successfully");
+            };
 
-        if(exists) {
-            addRequest = await updateData(db, data["key"], data);
-            return addRequest;
-        } else {
-            return new Promise((resolve, reject) => {
-                const transaction = db.transaction("DataStore", "readwrite");
-                const objectStore = transaction.objectStore("DataStore");
-                
-                addRequest = objectStore.add(data);
-
-                addRequest.onsuccess = () => {
-                    resolve("Data added successfully");
-                };
-        
-                addRequest.onerror = (event) => {
-                    errorTracking?.captureError(event.target.error, {
-                        message: "[StorageUtils] Error adding data",
-                        context: { scope: "storage", action: "addData", key: data?.key }
-                    });
-                    reject(`Error adding data: ${event.target.error}`);
-                };
-            });
-        }
+            putRequest.onerror = (event) => {
+                errorTracking?.captureError(event.target.error, {
+                    message: "[StorageUtils] Error adding data",
+                    context: { scope: "storage", action: "addData", key: data?.key }
+                });
+                reject(`Error adding data: ${event.target.error}`);
+            };
+        });
     } catch (error) {
         errorTracking?.captureError(error, {
             message: "[StorageUtils] Failed to add data",
