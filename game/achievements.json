@@ -22,23 +22,5 @@
         "title": "Introduction Complete",
         "description": "Finish the starter chapter.",
         "target": 1
-    },
-    {
-        "id": "story.achievement-hunter",
-        "title": "Achievement Hunter",
-        "description": "Unlock all achievements in the starter chapter.",
-        "target": 4
-    },
-    {
-        "id": "story.true-ender",
-        "title": "True End Achiever",
-        "description": "Unlock the true ending of the starter chapter.",
-        "target": 1
-    },
-    {
-        "id": "story.secret-finder",
-        "title": "Secret Finder",
-        "description": "Discover the hidden secret in the starter chapter.",
-        "target": 1
     }
 ]
