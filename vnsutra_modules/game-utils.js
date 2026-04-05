@@ -787,7 +787,47 @@ function choice(message, opts, params = {}) {
  *   readonly length: number
  * }}
  */
-const storage = getStoryDb();
+const storage = {
+    async setItem(key, value) {
+        const storyDb = getStoryDb();
+        if (!storyDb?.setItem) {
+            throw new Error("Story storage not initialized");
+        }
+        return storyDb.setItem(key, value);
+    },
+    async getItem(key) {
+        const storyDb = getStoryDb();
+        if (!storyDb?.getItem) {
+            return null;
+        }
+        return storyDb.getItem(key);
+    },
+    async removeItem(key) {
+        const storyDb = getStoryDb();
+        if (!storyDb?.removeItem) {
+            return;
+        }
+        return storyDb.removeItem(key);
+    },
+    async clear() {
+        const storyDb = getStoryDb();
+        if (!storyDb?.clear) {
+            return;
+        }
+        return storyDb.clear();
+    },
+    async key(index) {
+        const storyDb = getStoryDb();
+        if (!storyDb?.key) {
+            return null;
+        }
+        return storyDb.key(index);
+    },
+    get length() {
+        const storyDb = getStoryDb();
+        return storyDb?.length ?? 0;
+    }
+};
 
 /**
  * Shows the end screen UI layer.
