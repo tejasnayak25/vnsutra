@@ -1,11 +1,12 @@
 /**
- * Main Entry Point (Backward Compatibility)
- * Routes to dev.js or prod.js based on NODE_ENV
+ * Vercel serverless entrypoint.
+ * Export the Express app instead of calling app.listen().
  */
-const env = process.env.NODE_ENV || "development";
+import { createApp } from "./config.js";
 
-if (env === "production") {
-    await import("./prod.js");
-} else {
-    await import("./dev.js");
-}
+const { app, cleanupOldZips } = createApp();
+
+// Best effort cleanup per cold start.
+cleanupOldZips().catch(() => {});
+
+export default app;
