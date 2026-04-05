@@ -831,7 +831,8 @@ async function gameUI(config, fonts, navigate) {
         filters: [Konva.Filters.Blur, Konva.Filters.Noise, Konva.Filters.Pixelate, Konva.Filters.Brighten, Konva.Filters.Contrast, Konva.Filters.HSL],
         noise: 0,
         blurRadius: 0,
-        pixelSize: 1
+        pixelSize: 1,
+        listening: false
     });
 
     const transitionOverlay = new Konva.Rect({
@@ -891,11 +892,9 @@ async function gameUI(config, fonts, navigate) {
         });
     });
 
-    game_rect.add(game_bg);
-
-    // Keep overlays in the full game viewport so effects still cover content under dialog,
-    // while staying below dialog/topbar UI layers.
-    game_container.add(game_rect, transitionOverlay, flashOverlay, dialogContainer);
+    // Keep background in the full viewport so translucent dialog always has scene content behind it,
+    // while gameplay nodes can still shrink via game_rect height when dialog is open.
+    game_container.add(game_bg, game_rect, transitionOverlay, flashOverlay, dialogContainer);
 
     // The End
 
@@ -964,6 +963,17 @@ async function gameUI(config, fonts, navigate) {
         y: 0
     });
 
+    const toEndingCreditText = (value) => {
+        if (value == null) {
+            return "";
+        }
+
+        const raw = String(value);
+        const withMarkdownLabels = raw.replace(/\[([^\]]+)\]\(((?:https?:\/\/|www\.)[^\s)]+)\)/gi, "$1");
+        const withoutUrls = withMarkdownLabels.replace(/(?:https?:\/\/|www\.)[^\s]+/gi, "");
+        return withoutUrls.replace(/\s{2,}/g, " ").trim();
+    };
+
     const creditsEntries = Object.entries(config.credits || {});
     let creditsY = 0;
 
@@ -1001,7 +1011,7 @@ async function gameUI(config, fonts, navigate) {
                 align: "center",
                 width: creditsContent.width(),
                 y: creditKey.y() + creditKey.height() + titleGap,
-                text: String(value),
+                text: toEndingCreditText(value),
                 fontFamily: fonts["other"],
                 fontSize: scaleFontSize(isPortrait ? 21 : (isAndroid ? 18 : 21)),
                 fill: config.colors.text,

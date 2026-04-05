@@ -7,6 +7,7 @@ const Konva = globalThis.Konva;
 class Game {
     constructor(ui) {
         this.ui = ui;
+        this._backgroundRequestId = 0;
     }
 
     /**
@@ -14,34 +15,77 @@ class Game {
      */
     set background(img) {
         const image = this.ui.game.bg;
-        const stageWidth = konvaStage.width();
-        const stageHeight = this.ui.game.container.height();
-        const scale = Math.max(stageWidth / img.width, stageHeight / img.height);
-
-        image.scale({
-            x: scale,
-            y: scale
-        });
-
-        image.x((stageWidth - (img.width * scale)) / 2);
-        image.y((stageHeight - (img.height * scale)) / 2);
+        const requestId = ++this._backgroundRequestId;
         image.image(img);
-        try {
-            image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
-        } catch (e) {
-            errorTracking?.captureError(e, {
-                message: "[Game.background] Cache failed",
-                context: {
-                    scope: "game",
-                    action: "background",
-                    imageState: {
-                        hasImage: !!image.image(),
-                        parent: !!image.getParent(),
-                        stage: !!image.getStage()
-                    }
-                }
+
+        const applyCoverScale = () => {
+            if (requestId !== this._backgroundRequestId) {
+                return;
+            }
+
+            const sourceWidth = img?.naturalWidth || img?.width || 0;
+            const sourceHeight = img?.naturalHeight || img?.height || 0;
+            const viewportWidth = this.ui?.game?.viewport?.width?.();
+            const viewportHeight = this.ui?.game?.viewport?.height?.();
+            const stageWidth = viewportWidth || this.ui?.game?.container?.width?.() || konvaStage.width();
+            const stageHeight = viewportHeight || this.ui?.game?.container?.height?.() || konvaStage.height();
+
+            if (!sourceWidth || !sourceHeight || !stageWidth || !stageHeight) {
+                return;
+            }
+
+            const scale = Math.max(stageWidth / sourceWidth, stageHeight / sourceHeight);
+
+            image.scale({
+                x: scale,
+                y: scale
             });
+
+            image.x((stageWidth - (sourceWidth * scale)) / 2);
+            image.y((stageHeight - (sourceHeight * scale)) / 2);
+
+            try {
+                image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
+            } catch (e) {
+                errorTracking?.captureError(e, {
+                    message: "[Game.background] Cache failed",
+                    context: {
+                        scope: "game",
+                        action: "background",
+                        imageState: {
+                            hasImage: !!image.image(),
+                            parent: !!image.getParent(),
+                            stage: !!image.getStage()
+                        }
+                    }
+                });
+            }
+        };
+
+        if ((img?.naturalWidth || img?.width) && (img?.naturalHeight || img?.height)) {
+            applyCoverScale();
+            return;
         }
+
+        // If the image isn't ready yet, apply cover scaling as soon as it loads.
+        const onLoad = () => {
+            img?.removeEventListener?.("load", onLoad);
+            img?.removeEventListener?.("error", onError);
+            applyCoverScale();
+        };
+
+        const onError = (event) => {
+            img?.removeEventListener?.("load", onLoad);
+            img?.removeEventListener?.("error", onError);
+            errorTracking?.captureError(event?.error || "Background image failed to load", {
+                type: "warning",
+                message: "[Game.background] Failed to load background image",
+                context: { scope: "game", action: "background" }
+            });
+        };
+
+        img?.addEventListener?.("load", onLoad, { once: true });
+        img?.addEventListener?.("error", onError, { once: true });
     }
 
     /**
