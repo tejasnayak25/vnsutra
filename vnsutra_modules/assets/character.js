@@ -8,12 +8,20 @@ const Konva = globalThis.Konva;
 const JSZip = globalThis.JSZip;
 
 let updateObjects = [];
+const repositionObjects = new Set(); // Persistent list for repositioning on every game-ui-ready (for fullscreen/resize)
 
 globalThis.addEventListener("game-ui-ready", () => {
+    const game = getGame();
+    // One-time initialization for new objects
     updateObjects.forEach(obj => {
-        obj(getGame());
+        obj(game);
     });
     updateObjects = [];
+    
+    // Persistent repositioning for fullscreen/resize transitions
+    repositionObjects.forEach(obj => {
+        obj(game);
+    });
 });
 class Character {
     /**
@@ -27,21 +35,42 @@ class Character {
         this.outfits = {};
         
         this._outfit = undefined;
+        this._initialized = false; // Track if initial positioning has been applied
+        this._disposed = false;
         this.img = new Konva.Image({
             filters: [Konva.Filters.Blur, Konva.Filters.Noise, Konva.Filters.Pixelate, Konva.Filters.Brighten, Konva.Filters.Contrast, Konva.Filters.HSL],
             blurRadius: 0,
             noise: 0,
             pixelSize: 1
         });
-        updateObjects.push((game) => {
-            const img = this.img.image();
-            if(img) {
-                const movableWidth = game.ui.game.container.width() - (img.width * this.img.scale().x);
-                const movableHeight = game.ui.game.container.height() - (img.height * this.img.scale().y);
-                this.img.x(this.data.x * movableWidth);
-                this.img.y(this.data.y * movableHeight);
+        // Use persistent repositioning list so y position updates on fullscreen/resize
+        this._repositionCallback = (game) => {
+            if (this._disposed) {
+                return;
             }
-        });
+            const img = this.img.image();
+            if(img && this.img.getParent()) {
+                // Recalculate position for current container dimensions
+                // This handles fullscreen/resize transitions where dimensions change
+                const scaleX = this.img.scale().x || 1;
+                const containerWidth = game.ui.game.container.width();
+                const containerHeight = game.ui.game.container.height();
+                const movableWidth = containerWidth - (img.width * scaleX);
+                // For x: relative to movableWidth; for y: relative to containerHeight
+                const pixelX = this.data.x * movableWidth;
+                const pixelY = this.data.y * containerHeight;
+                this.img.x(pixelX);
+                this.img.y(pixelY);
+            }
+        };
+        repositionObjects.add(this._repositionCallback);
+    }
+
+    dispose() {
+        this._disposed = true;
+        if (this._repositionCallback) {
+            repositionObjects.delete(this._repositionCallback);
+        }
     }
 
     show() {
@@ -120,6 +149,10 @@ class Character {
             if(game) {
                 this.img.opacity(0);
                 game.ui.game.container.add(this.img);
+                // Apply stored y position if set before image was loaded
+                if(typeof this.data.y === 'number') {
+                    this.img.y(this.getValue("y", this.data.y));
+                }
                 this.img.to({
                     opacity: 1,
                     x: this.getValue("x", x),
@@ -340,8 +373,12 @@ class Character {
             const img = this.img.image();
             const scaleY = this.img.scale().y || this.img.scale().x || 1;
             const imgHeight = img?.height || 0;
-            const movableHeight = game.ui.game.container.height() - (imgHeight * scaleY);
-            value = val * movableHeight;
+            const containerHeight = game.ui.game.container.height();
+            // For y: use container height directly, NOT movableHeight
+            // This allows positioning relative to screen, even with full-height images
+            // y: 0 = top (0px), y: 1 = bottom (containerHeight), y: -0.9 = off-screen
+            const pixelY = val * containerHeight;
+            value = pixelY;
             break;
         }
         case "scale": {
@@ -369,10 +406,10 @@ class Character {
      * @param {number} value 
      */
     set x(value) {
+        this.data.x = value;
         const img = this.img.image();
         if(img) {
             const x = this.getValue("x", value);
-            this.data.x = value;
             this.img.x(x);
         }
     }
@@ -381,10 +418,10 @@ class Character {
      * @param {number} value 
      */
     set y(value) {
+        this.data.y = value;
         const img = this.img.image();
         if(img) {
             const y = this.getValue("y", value);
-            this.data.y = value;
             this.img.y(y);
         }
     }
@@ -393,10 +430,10 @@ class Character {
      * @param {number} value 
      */
     set scale(value) {
+        this.data.scale = value;
         const img = this.img.image();
         if(img) {
             const scale = this.getValue("scale", value);
-            this.data.scale = value;
             this.img.scale({ x: scale, y: scale });
         }
     }
@@ -597,6 +634,9 @@ class IMG {
             src, x, y, scale
         };
 
+        this._initialized = false; // Track if initial positioning has been applied
+        this._disposed = false;
+
         this.img = new Konva.Image({
             filters: [Konva.Filters.Blur, Konva.Filters.Noise, Konva.Filters.Pixelate, Konva.Filters.Brighten, Konva.Filters.Contrast, Konva.Filters.HSL],
             blurRadius: 0,
@@ -606,21 +646,48 @@ class IMG {
 
         const html_img = loadImg(src);
         this.img.image(html_img);
-        updateObjects.push((game) => {
-            const img = this.img.image();
-            if(img) {
-                const movableWidth = game.ui.game.container.width() - (img.width * this.img.scale().x);
-                const movableHeight = game.ui.game.container.height() - (img.height * this.img.scale().y);
-                this.img.x(this.data.x * movableWidth);
-                this.img.y(this.data.y * movableHeight);
+        // Use persistent repositioning list so position updates on fullscreen/resize
+        this._repositionCallback = (game) => {
+            if (this._disposed) {
+                return;
             }
-        });
+            const img = this.img.image();
+            if(img && this.img.getParent()) {
+                // Recalculate position for current container dimensions
+                // This handles fullscreen/resize transitions where dimensions change
+                const scaleX = this.img.scale().x || 1;
+                const containerWidth = game.ui.game.container.width();
+                const containerHeight = game.ui.game.container.height();
+                const movableWidth = containerWidth - (img.width * scaleX);
+                // For x: relative to movableWidth; for y: relative to containerHeight
+                const pixelX = this.data.x * movableWidth;
+                const pixelY = this.data.y * containerHeight;
+                this.img.x(pixelX);
+                this.img.y(pixelY);
+                this._initialized = true;
+            }
+        };
+        repositionObjects.add(this._repositionCallback);
+    }
+
+    dispose() {
+        this._disposed = true;
+        if (this._repositionCallback) {
+            repositionObjects.delete(this._repositionCallback);
+        }
     }
 
     show() {
         const game = getGame();
         if(game) {
             game.ui.game.container.add(this.img);
+            // Apply stored position if set before image was loaded
+            if(typeof this.data.x === 'number') {
+                this.img.x(this.getValue("x", this.data.x));
+            }
+            if(typeof this.data.y === 'number') {
+                this.img.y(this.getValue("y", this.data.y));
+            }
         } else {
             throw new Error("Game UI not ready!");
         }
@@ -646,6 +713,13 @@ class IMG {
             if(game) {
                 this.img.opacity(0);
                 game.ui.game.container.add(this.img);
+                // Apply stored position if set before image was loaded
+                if(typeof this.data.x === 'number') {
+                    this.img.x(this.getValue("x", this.data.x));
+                }
+                if(typeof this.data.y === 'number') {
+                    this.img.y(this.getValue("y", this.data.y));
+                }
                 this.img.to({
                     opacity: 1,
                     duration: duration,
@@ -693,6 +767,10 @@ class IMG {
             if(game) {
                 this.img.opacity(0);
                 game.ui.game.container.add(this.img);
+                // Apply stored y position if set before image was loaded
+                if(typeof this.data.y === 'number') {
+                    this.img.y(this.getValue("y", this.data.y));
+                }
                 this.img.to({
                     opacity: 1,
                     x: this.getValue("x", x),
@@ -740,150 +818,94 @@ class IMG {
                 return;
             }
 
-            let value;
-            if(x) {
-                value = this.getValue("x", x);
+            let pending = 0;
+            let settled = false;
+
+            const complete = () => {
+                if (settled) {
+                    return;
+                }
+
+                pending -= 1;
+                if (pending <= 0) {
+                    settled = true;
+                    resolve();
+                }
+            };
+
+            const queueTween = (attrs, onUpdate = null) => {
+                pending += 1;
                 this.img.to({
-                    x: value,
-                    duration: duration,
+                    ...attrs,
+                    duration,
+                    onUpdate: onUpdate
+                        ? () => {
+                            onUpdate();
+                        }
+                        : undefined,
                     onFinish: () => {
-                        resolve();
+                        complete();
                     }
+                });
+            };
+
+            if (x !== null) {
+                queueTween({ x: this.getValue("x", x) });
+            }
+            if (y !== null) {
+                queueTween({ y: this.getValue("y", y) });
+            }
+            if (scale !== null) {
+                const value = this.getValue("scale", scale);
+                queueTween({ scaleX: value, scaleY: value });
+            }
+            if (opacity !== null) {
+                queueTween({ opacity: opacity });
+            }
+            if (blurRadius !== null) {
+                queueTween({ blurRadius: blurRadius }, () => {
+                    this.img.cache({pixelRatio: 1, imageSmoothingEnabled: true});
                 });
             }
-            if(y) {
-                value = this.getValue("y", y);
-                this.img.to({
-                    y: value,
-                    duration: duration,
-                    onFinish: () => {
-                        resolve();
-                    }
+            if (noise !== null) {
+                queueTween({ noise: noise }, () => {
+                    this.img.cache({pixelRatio: 1, imageSmoothingEnabled: true});
                 });
             }
-            if(scale) {
-                value = this.getValue("scale", scale);
-                this.img.to({
-                    scaleX: value,
-                    scaleY: value,
-                    duration: duration,
-                    onFinish: () => {
-                        resolve();
-                    }
+            if (pixelSize !== null) {
+                queueTween({ pixelSize: pixelSize }, () => {
+                    this.img.cache({pixelRatio: 1, imageSmoothingEnabled: true});
                 });
             }
-            if(opacity) {
-                this.img.to({
-                    opacity: opacity,
-                    duration: duration,
-                    onFinish: () => {
-                        resolve();
-                    }
+            if (brightness !== null) {
+                queueTween({ brightness: brightness }, () => {
+                    this.img.cache({pixelRatio: 1, imageSmoothingEnabled: true});
                 });
             }
-            if(blurRadius) {
-                this.img.to({
-                    blurRadius: blurRadius,
-                    duration: duration,
-                    onUpdate: () => {
-                        this.img.cache({pixelRatio: 1, imageSmoothingEnabled: true});
-                    },
-                    onFinish: () => {
-                        this.img.cache({pixelRatio: 1, imageSmoothingEnabled: true});
-                        resolve();
-                    }
+            if (contrast !== null) {
+                queueTween({ contrast: contrast }, () => {
+                    this.img.cache({pixelRatio: 1, imageSmoothingEnabled: true});
                 });
             }
-            if(noise) {
-                this.img.to({
-                    noise: noise,
-                    duration: duration,
-                    onUpdate: () => {
-                        this.img.cache({pixelRatio: 1, imageSmoothingEnabled: true});
-                    },
-                    onFinish: () => {
-                        this.img.cache({pixelRatio: 1, imageSmoothingEnabled: true});
-                        resolve();
-                    }
+            if (hue !== null) {
+                queueTween({ hue: hue }, () => {
+                    this.img.cache({pixelRatio: 1, imageSmoothingEnabled: true});
                 });
             }
-            if(pixelSize) {
-                this.img.to({
-                    pixelSize: pixelSize,
-                    duration: duration,
-                    onUpdate: () => {
-                        this.img.cache({pixelRatio: 1, imageSmoothingEnabled: true});
-                    },
-                    onFinish: () => {
-                        this.img.cache({pixelRatio: 1, imageSmoothingEnabled: true});
-                        resolve();
-                    }
+            if (saturation !== null) {
+                queueTween({ saturation: saturation }, () => {
+                    this.img.cache({pixelRatio: 1, imageSmoothingEnabled: true});
                 });
             }
-            if(brightness) {
-                this.img.to({
-                    brightness: brightness,
-                    duration: duration,
-                    onUpdate: () => {
-                        this.img.cache({pixelRatio: 1, imageSmoothingEnabled: true});
-                    },
-                    onFinish: () => {
-                        this.img.cache({pixelRatio: 1, imageSmoothingEnabled: true});
-                        resolve();
-                    }
+            if (luminance !== null) {
+                queueTween({ luminance: luminance }, () => {
+                    this.img.cache({pixelRatio: 1, imageSmoothingEnabled: true});
                 });
             }
-            if(contrast) {
-                this.img.to({
-                    contrast: contrast,
-                    duration: duration,
-                    onUpdate: () => {
-                        this.img.cache({pixelRatio: 1, imageSmoothingEnabled: true});
-                    },
-                    onFinish: () => {
-                        this.img.cache({pixelRatio: 1, imageSmoothingEnabled: true});
-                        resolve();
-                    }
-                });
-            }
-            if(hue) {
-                this.img.to({
-                    hue: hue,
-                    duration: duration,
-                    onUpdate: () => {
-                        this.img.cache({pixelRatio: 1, imageSmoothingEnabled: true});
-                    },
-                    onFinish: () => {
-                        this.img.cache({pixelRatio: 1, imageSmoothingEnabled: true});
-                        resolve();
-                    }
-                });
-            }
-            if(saturation) {
-                this.img.to({
-                    saturation: saturation,
-                    duration: duration,
-                    onUpdate: () => {
-                        this.img.cache({pixelRatio: 1, imageSmoothingEnabled: true});
-                    },
-                    onFinish: () => {
-                        this.img.cache({pixelRatio: 1, imageSmoothingEnabled: true});
-                        resolve();
-                    }
-                });
-            }
-            if(luminance) {
-                this.img.to({
-                    luminance: luminance,
-                    duration: duration,
-                    onUpdate: () => {
-                        this.img.cache({pixelRatio: 1, imageSmoothingEnabled: true});
-                    },
-                    onFinish: () => {
-                        this.img.cache({pixelRatio: 1, imageSmoothingEnabled: true});
-                        resolve();
-                    }
-                });
+
+            if (pending === 0 && !settled) {
+                settled = true;
+                resolve();
             }
         });
     }
@@ -900,7 +922,9 @@ class IMG {
         switch (key) {
         case "x": {
             const img = this.img.image();
-            const movableWidth = game.ui.game.container.width() - (img.width * this.img.scale().x);
+            const scaleX = this.img.scale().x || 1;
+            const imgWidth = img?.width || 0;
+            const movableWidth = game.ui.game.container.width() - (imgWidth * scaleX);
             value = val * movableWidth;
             break;
         }
@@ -908,12 +932,15 @@ class IMG {
             const img = this.img.image();
             const scaleY = this.img.scale().y || this.img.scale().x || 1;
             const imgHeight = img?.height || 0;
-            const movableHeight = game.ui.game.container.height() - (imgHeight * scaleY);
-            value = val * movableHeight;
+            const containerHeight = game.ui.game.container.height();
+            // For y: use container height directly, NOT movableHeight
+            // This allows positioning relative to screen, even with full-height images
+            // y: 0 = top (0px), y: 1 = bottom (containerHeight), y: -0.9 = off-screen
+            value = val * containerHeight;
             break;
         }
         case "scale": {
-            const originalScale = this.img.getAttr("origScale");
+            const originalScale = this.img.getAttr("origScale") || 1;
             value = val * originalScale;
             break;
         }
@@ -937,10 +964,10 @@ class IMG {
      * @param {number} value 
      */
     set x(value) {
+        this.data.x = value;
         const img = this.img.image();
         if(img) {
             const x = this.getValue("x", value);
-            this.data.x = value;
             this.img.x(x);
         }
     }
@@ -949,10 +976,10 @@ class IMG {
      * @param {number} value 
      */
     set y(value) {
+        this.data.y = value;
         const img = this.img.image();
         if(img) {
             const y = this.getValue("y", value);
-            this.data.y = value;
             this.img.y(y);
         }
     }
@@ -961,10 +988,10 @@ class IMG {
      * @param {number} value 
      */
     set scale(value) {
+        this.data.scale = value;
         const img = this.img.image();
         if(img) {
             const scale = this.getValue("scale", value);
-            this.data.scale = value;
             this.img.scale({ x: scale, y: scale });
         }
     }

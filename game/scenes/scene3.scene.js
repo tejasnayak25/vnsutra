@@ -38,7 +38,7 @@ export default [
             "y": {
                 "portrait": 0.1,
                 "android": 0.2,
-                "default": 0.4
+                "default": 0.1
             }
         }
     },

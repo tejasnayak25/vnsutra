@@ -9,17 +9,14 @@ function resolveResponsive(value, { isPortrait = false, isAndroid = false } = {}
     }
 
     if (Object.prototype.hasOwnProperty.call(value, "portrait") && isPortrait) {
-        console.log("resolveResponsive: choosing portrait", { value, isPortrait, isAndroid });
         return value.portrait;
     }
 
     if (Object.prototype.hasOwnProperty.call(value, "android") && isAndroid) {
-        console.log("resolveResponsive: choosing android", { value, isPortrait, isAndroid });
         return value.android;
     }
 
     if (Object.prototype.hasOwnProperty.call(value, "default")) {
-        console.log("resolveResponsive: choosing default", { value, isPortrait, isAndroid });
         return value.default;
     }
 
@@ -711,17 +708,6 @@ function createStoryFromScript({
             onLog,
             context
         };
-
-        // Debug: log runtime device flags so consoles show why responsive branches choose values
-        try {
-            console.warn("[story-script-runner] runtime flags", {
-                scene: sceneName,
-                isPortrait: runtime.isPortrait,
-                isAndroid: runtime.isAndroid
-            });
-        } catch (e) {
-            // ignore
-        }
 
         const shouldContinue = typeof beforeScene === "function"
             ? await beforeScene(sceneName, runtime)

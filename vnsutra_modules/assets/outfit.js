@@ -64,10 +64,9 @@ class Outfit {
                 const newWidth = mood.width * nextScale;
                 const newX = prevCenterX - newWidth / 2;
                 const movableWidth = getGame().ui.game.container.width() - newWidth;
-                const clampedX = Math.max(0, Math.min(newX, movableWidth));
-                this.img.x(clampedX);
-                // update stored relative x so future recalcs keep the same visual position
-                this.character.data.x = movableWidth ? (clampedX / movableWidth) : 0;
+                this.img.x(newX);
+                // Keep relative position as-is so intentional offscreen offsets (e.g. -0.25) remain stable.
+                this.character.data.x = movableWidth ? (newX / movableWidth) : 0;
             } else {
                 if (typeof this.character.data.x === "number") {
                     const movableWidth = getGame().ui.game.container.width() - (mood.width * nextScale);
@@ -80,10 +79,9 @@ class Outfit {
                 const newHeight = mood.height * nextScale;
                 const prevBottom = this.img.y() + (prevImg.height * prevScaleY);
                 const newY = prevBottom - newHeight;
-                const movableHeight = getGame().ui.game.container.height() - newHeight;
-                const clampedY = Math.max(0, Math.min(newY, movableHeight));
-                this.img.y(clampedY);
-                this.character.data.y = movableHeight ? (clampedY / movableHeight) : 0;
+                const containerHeight = getGame().ui.game.container.height();
+                this.img.y(newY);
+                this.character.data.y = containerHeight ? (newY / containerHeight) : 0;
             } else if (typeof this.character.data.y === "number") {
                 this.img.y(this.character.getValue("y", this.character.data.y));
             }
@@ -144,9 +142,8 @@ class Outfit {
                     const newWidth = mood.width * nextScale;
                     const newX = prevCenterX - newWidth / 2;
                     const movableWidth = getGame().ui.game.container.width() - newWidth;
-                    const clampedX = Math.max(0, Math.min(newX, movableWidth));
-                    this.img.x(clampedX);
-                    this.character.data.x = movableWidth ? (clampedX / movableWidth) : 0;
+                    this.img.x(newX);
+                    this.character.data.x = movableWidth ? (newX / movableWidth) : 0;
                 } else {
                     if (typeof this.character.data.x === "number") {
                         const movableWidth = getGame().ui.game.container.width() - (mood.width * nextScale);
@@ -157,10 +154,9 @@ class Outfit {
                     const newHeight = mood.height * nextScale;
                     const prevBottom = this.img.y() + (prevImg.height * prevScaleY);
                     const newY = prevBottom - newHeight;
-                    const movableHeight = getGame().ui.game.container.height() - newHeight;
-                    const clampedY = Math.max(0, Math.min(newY, movableHeight));
-                    this.img.y(clampedY);
-                    this.character.data.y = movableHeight ? (clampedY / movableHeight) : 0;
+                    const containerHeight = getGame().ui.game.container.height();
+                    this.img.y(newY);
+                    this.character.data.y = containerHeight ? (newY / containerHeight) : 0;
                 } else if (typeof this.character.data.y === "number") {
                     this.img.y(this.character.getValue("y", this.character.data.y));
                 }
