@@ -34,6 +34,8 @@ function bindActionbarScroll({
     let lastWheelTs = 0;
     let touchMoved = false;
     let touchSuppressTapUntil = 0;
+    let touchMoveRaf = null;
+    let pendingTouchClientY = 0;
 
     const stopInertia = () => {
         if (inertiaRaf !== null) {
@@ -45,6 +47,13 @@ function bindActionbarScroll({
         if (wheelInertiaTimeout) {
             clearTimeout(wheelInertiaTimeout);
             wheelInertiaTimeout = null;
+        }
+    };
+
+    const clearTouchMoveFrame = () => {
+        if (touchMoveRaf !== null) {
+            cancelAnimationFrame(touchMoveRaf);
+            touchMoveRaf = null;
         }
     };
 
@@ -106,6 +115,7 @@ function bindActionbarScroll({
         if (!dragListenersAttached) {
             return;
         }
+        clearTouchMoveFrame();
         window.removeEventListener("mousemove", onMouseMove);
         window.removeEventListener("mouseup", onPointerUp);
         window.removeEventListener("touchmove", onTouchMove);
@@ -133,21 +143,30 @@ function bindActionbarScroll({
             return;
         }
         e.preventDefault?.();
+        pendingTouchClientY = touch.clientY;
 
-        if (!touchMoved && Math.abs(touch.clientY - startClientY) >= 6) {
-            markTouchScroll();
+        if (touchMoveRaf !== null) {
+            return;
         }
 
-        const deltaY = startClientY - touch.clientY;
-        const prevScroll = actionbar.scrollHeight;
-        actionbar.scrollHeight = startScroll + (deltaY * actionbar.scrollScale * dragFactor);
-        scrollbar.fire("dragmove");
+        touchMoveRaf = requestAnimationFrame(() => {
+            touchMoveRaf = null;
 
-        const now = performance.now();
-        const dt = Math.max(1, now - lastMoveTs);
-        const moved = actionbar.scrollHeight - prevScroll;
-        inertiaVelocity = moved / dt;
-        lastMoveTs = now;
+            if (!touchMoved && Math.abs(pendingTouchClientY - startClientY) >= 6) {
+                markTouchScroll();
+            }
+
+            const deltaY = startClientY - pendingTouchClientY;
+            const prevScroll = actionbar.scrollHeight;
+            actionbar.scrollHeight = startScroll + (deltaY * actionbar.scrollScale * dragFactor);
+            scrollbar.fire("dragmove");
+
+            const now = performance.now();
+            const dt = Math.max(1, now - lastMoveTs);
+            const moved = actionbar.scrollHeight - prevScroll;
+            inertiaVelocity = moved / dt;
+            lastMoveTs = now;
+        });
     };
 
     const onPointerUp = () => {
@@ -257,6 +276,7 @@ function bindActionbarScroll({
         }
         removeDragListeners();
         stopInertia();
+        clearTouchMoveFrame();
         actionbar.__scrollSuppressTapUntil = 0;
         window.removeEventListener("wheel", onWheel);
         scrollbar.off("dragmove", applyScrollFromBar);
