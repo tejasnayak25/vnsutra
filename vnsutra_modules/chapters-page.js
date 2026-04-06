@@ -77,6 +77,7 @@ function chaptersPage(config, actionbar, fonts, navigate) {
 
     let pendingRenderFrame = null;
     let chapterStartInFlight = false;
+    let contentSignature = null;
 
     const emptyTextSize = scaleFontSize(isPortrait ? 26 : 22);
     const summaryTitleSize = scaleFontSize(isPortrait ? 16 : 14);
@@ -89,7 +90,21 @@ function chaptersPage(config, actionbar, fonts, navigate) {
     const sceneCountTextSize = scaleFontSize(isPortrait ? 17 : 15);
     const actionButtonTextSize = scaleFontSize(isPortrait ? 17 : 16);
 
+    const getContentSignature = () => chapters.getMap().map((chapter) => [
+        chapter.id,
+        chapter.type,
+        chapter.title,
+        chapter.description,
+        chapter.status,
+        Number(chapter.playable),
+        Number(chapter.unlocked),
+        Number(chapter.completed),
+        Number(chapter.current),
+        chapter.sceneCount ?? 0
+    ].join(":")).join("|");
+
     const buildContent = () => {
+        contentSignature = getContentSignature();
         mainContainer.removeChildren();
 
         const chapterMap = chapters.getMap();
@@ -600,6 +615,8 @@ function chaptersPage(config, actionbar, fonts, navigate) {
         mainContainer.height(Math.max(1, currentY - cardGap));
     };
 
+    buildContent();
+
     function render() {
         setOpenWindow("chapters");
 
@@ -617,7 +634,9 @@ function chaptersPage(config, actionbar, fonts, navigate) {
         actionbar.title = title;
         mainContainer.y(0);
 
-        buildContent();
+        if (contentSignature !== getContentSignature() || mainContainer.getChildren().length === 0) {
+            buildContent();
+        }
 
         actionContent.add(scrollTouchArea, mainContainer);
 

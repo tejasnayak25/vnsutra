@@ -1,5 +1,5 @@
 import { Background, Character, IMG, Music } from "../vnsutra_modules/assets/index.js";
-import { getIsPortrait } from "../vnsutra_modules/runtime-state.js";
+import { getIsAndroid, getIsPortrait } from "../vnsutra_modules/runtime-state.js";
 import DynamicSprites from "../vnsutra_modules/dynamic-sprites.js";
 
 const futon_room = new Background("backgrounds/Noraneko_Background_Pack_1/Futon_Room.png");
@@ -8,7 +8,7 @@ const apartment_ext = new Background("backgrounds/Noraneko_Background_Pack_1/Apa
 const mary = new Character({
     name: "Mary",
     folder: "characters/Rin",
-    scale: getIsPortrait() ? 1 : 1.1,
+    scale: getIsPortrait() ? 1 : (getIsAndroid() ? 1.2 : 1.1),
 });
 
 const music = new Music("../assets/music/bgm.mp3");
