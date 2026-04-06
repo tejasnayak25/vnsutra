@@ -31,7 +31,7 @@
 
     <!-- Install App Prompt (hidden by default, shown by JS) -->
     <!-- Mobile (default): full-width bottom sheet. Desktop (sm+): compact floating pill at bottom-right. -->
-    <div id="install-app-utility" class="hidden fixed bottom-4 left-4 right-4 sm:bottom-6 sm:right-6 sm:left-auto sm:w-auto z-[9999] bg-slate-800 text-white rounded-lg sm:rounded-xl shadow-lg px-4 py-3 sm:px-6 sm:py-4 text-base flex flex-col sm:flex-row items-center sm:items-center gap-3 sm:gap-4">
+    <div id="install-app-utility" class="hidden fixed bottom-4 left-4 right-4 sm:bottom-6 sm:right-6 sm:left-auto sm:w-auto z-50 bg-slate-800 text-white rounded-lg sm:rounded-xl shadow-lg px-4 py-3 sm:px-6 sm:py-4 text-base flex-col sm:flex-row items-center sm:items-center gap-3 sm:gap-4">
         <img src="./assets/images/logo.png" alt="App Logo" class="w-12 h-12 sm:w-10 sm:h-10 rounded-md shadow-md" />
         <div class="flex-1 text-center sm:text-left">
             <div class="font-medium">Install this app for a better experience!</div>
@@ -39,7 +39,10 @@
         </div>
         <div class="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
             <button id="install-app-btn" class="w-full sm:w-auto bg-indigo-600 text-white rounded-md px-4 py-2 text-base font-medium hover:bg-indigo-700 focus:outline-none">Install</button>
-            <button id="install-app-close" aria-label="Close install prompt" class="w-full sm:w-9 sm:h-9 flex items-center justify-center bg-transparent text-white border-none text-lg sm:text-xl cursor-pointer">&#10005;</button>
+            <button id="install-app-close" aria-label="Close install prompt" class="w-full sm:w-9 sm:h-9 flex items-center justify-center bg-transparent border border-slate-600 hover:bg-slate-700 rounded-md text-white text-sm sm:text-xl cursor-pointer px-3 py-2">
+                <span class="sm:hidden">Continue in Browser</span>
+                <span class="hidden sm:inline">&times;</span>
+            </button>
         </div>
     </div>
 

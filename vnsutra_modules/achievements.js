@@ -1,4 +1,4 @@
-import { getConfiguration } from "./runtime-state.js";
+import { getConfiguration, getIsAndroid, getIsPortrait } from "./runtime-state.js";
 import { storage } from "./storage.js";
 import { STORAGE_KEYS, EVENTS } from "./constants.js";
 import errorTracking from "./error-tracking.js";
@@ -246,7 +246,8 @@ class Achievements {
 
         const container = document.createElement("div");
         container.id = "achievement-toast-container";
-        container.className = "fixed top-20 sm:top-24 left-1/2 -translate-x-1/2 w-11/12 max-w-md z-50 flex flex-col items-stretch gap-3 pointer-events-none";
+        const androidLandscapeOffset = getIsAndroid() && !getIsPortrait() ? " top-16 sm:top-20" : " top-20 sm:top-24";
+        container.className = `fixed${androidLandscapeOffset} left-1/2 -translate-x-1/2 w-11/12 max-w-md z-50 flex flex-col items-stretch gap-3 pointer-events-none`;
         document.body.appendChild(container);
         this.toastContainer = container;
     }

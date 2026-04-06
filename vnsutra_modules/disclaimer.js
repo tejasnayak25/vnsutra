@@ -1,3 +1,5 @@
+import { getIsAndroid, getIsPortrait } from "./runtime-state.js";
+
 /**
  * DisclaimerWindow - Modal component using AlertWindow design
  * Updates colors and content from config and markdown
@@ -12,6 +14,17 @@ class DisclaimerWindow {
         this.button = document.getElementById("disclaimer-btn");
     }
 
+    applyLayout() {
+        if (!this.modal || !this.card) {
+            return;
+        }
+
+        const isAndroidLandscape = getIsAndroid() && !getIsPortrait();
+        this.card.style.width = isAndroidLandscape ? "min(86vw, 22rem)" : "min(92vw, 30rem)";
+        this.card.style.padding = isAndroidLandscape ? "1rem" : "1.25rem";
+        this.body.style.maxHeight = isAndroidLandscape ? "10rem" : "16rem";
+    }
+
     /**
      * Show the disclaimer modal with content
      * @param {string} html - HTML content to display
@@ -24,6 +37,7 @@ class DisclaimerWindow {
             // Apply theme colors to card
             this.card.style.backgroundColor = `${this.config.colors.menu}cc`; // Semi-transparent
             this.card.style.borderTopColor = this.config.colors.primary;
+            this.applyLayout();
 
             // Update title color
             this.title.style.color = this.config.colors.primary;
@@ -75,6 +89,7 @@ class DisclaimerWindow {
             // Apply theme colors to card
             this.card.style.backgroundColor = `${this.config.colors.menu}cc`; // Semi-transparent
             this.card.style.borderTopColor = this.config.colors.primary;
+            this.applyLayout();
 
             // Update title color
             this.title.textContent = "Error";

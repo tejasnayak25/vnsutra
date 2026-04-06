@@ -31,12 +31,13 @@ class Outfit {
 
         if (key) {
             const previousImage = this.img.image();
-            const previousScaleY = this.img.scaleY() || this.img.scaleX() || 1;
+            const characterScale = this.character.data.scale || 1;
+            const previousBaseScale = this.img.getAttr("origScale") || ((this.img.scaleY() || this.img.scaleX() || 1) / characterScale);
             const mood = this.moods[key];
 
             let nextScale = null;
             if (previousImage && previousImage.height && mood.height) {
-                const renderedHeight = previousImage.height * previousScaleY;
+                const renderedHeight = previousImage.height * previousBaseScale;
                 nextScale = renderedHeight / mood.height;
             }
 
@@ -47,8 +48,8 @@ class Outfit {
 
             // preserve visual center when swapping images so actor doesn't "jump"
             const prevImg = previousImage;
-            const prevScaleX = this.img.scale().x || previousScaleY || 1;
-            const prevScaleY = previousScaleY || this.img.scale().y || this.img.scale().x || 1;
+            const prevScaleX = this.img.scale().x || (previousBaseScale * characterScale) || 1;
+            const prevScaleY = this.img.scale().y || this.img.scale().x || (previousBaseScale * characterScale) || 1;
             let prevCenterX = null;
             let prevCenterY = null;
             if (prevImg) {
@@ -56,12 +57,14 @@ class Outfit {
                 prevCenterY = this.img.y() + (prevImg.height * prevScaleY) / 2;
             }
 
+            const effectiveScale = nextScale * characterScale;
+
             this.img.image(mood);
-            this.img.setAttr("origScale", nextScale / (this.character.data.scale || 1));
-            this.img.scale({ x: nextScale, y: nextScale });
+            this.img.setAttr("origScale", nextScale);
+            this.img.scale({ x: effectiveScale, y: effectiveScale });
 
             if (prevCenterX !== null) {
-                const newWidth = mood.width * nextScale;
+                const newWidth = mood.width * effectiveScale;
                 const newX = prevCenterX - newWidth / 2;
                 const movableWidth = getGame().ui.game.container.width() - newWidth;
                 this.img.x(newX);
@@ -69,14 +72,14 @@ class Outfit {
                 this.character.data.x = movableWidth ? (newX / movableWidth) : 0;
             } else {
                 if (typeof this.character.data.x === "number") {
-                    const movableWidth = getGame().ui.game.container.width() - (mood.width * nextScale);
+                    const movableWidth = getGame().ui.game.container.width() - (mood.width * effectiveScale);
                     this.img.x(this.character.data.x * movableWidth);
                 }
             }
 
             // Align by bottom edge (baseline) to avoid visual vertical jumps
             if (prevCenterY !== null) {
-                const newHeight = mood.height * nextScale;
+                const newHeight = mood.height * effectiveScale;
                 const prevBottom = this.img.y() + (prevImg.height * prevScaleY);
                 const newY = prevBottom - newHeight;
                 const containerHeight = getGame().ui.game.container.height();
@@ -101,12 +104,13 @@ class Outfit {
 
             if (key) {
                 const previousImage = this.img.image();
-                const previousScaleY = this.img.scaleY() || this.img.scaleX() || 1;
+                const characterScale = this.character.data.scale || 1;
+                const previousBaseScale = this.img.getAttr("origScale") || ((this.img.scaleY() || this.img.scaleX() || 1) / characterScale);
                 const mood = this.moods[key];
 
                 let nextScale = null;
                 if (previousImage && previousImage.height && mood.height) {
-                    const renderedHeight = previousImage.height * previousScaleY;
+                    const renderedHeight = previousImage.height * previousBaseScale;
                     nextScale = renderedHeight / mood.height;
                 }
 
@@ -117,8 +121,8 @@ class Outfit {
 
                 // preserve visual center similar to the setter above
                 const prevImg = previousImage;
-                const prevScaleX = this.img.scale().x || previousScaleY || 1;
-                const prevScaleY = previousScaleY || this.img.scale().y || this.img.scale().x || 1;
+                const prevScaleX = this.img.scale().x || (previousBaseScale * characterScale) || 1;
+                const prevScaleY = this.img.scale().y || this.img.scale().x || (previousBaseScale * characterScale) || 1;
                 let prevCenterX = null;
                 let prevCenterY = null;
                 if (prevImg) {
@@ -126,8 +130,10 @@ class Outfit {
                     prevCenterY = this.img.y() + (prevImg.height * prevScaleY) / 2;
                 }
 
-                this.img.setAttr("origScale", nextScale / (this.character.data.scale || 1));
-                this.img.scale({ x: nextScale, y: nextScale });
+                const effectiveScale = nextScale * characterScale;
+
+                this.img.setAttr("origScale", nextScale);
+                this.img.scale({ x: effectiveScale, y: effectiveScale });
                 if (this.img.image()) {
                     try {
                         this.img.cache({ pixelRatio: 1, imageSmoothingEnabled: true });
@@ -139,19 +145,19 @@ class Outfit {
                     }
                 }
                 if (prevCenterX !== null) {
-                    const newWidth = mood.width * nextScale;
+                    const newWidth = mood.width * effectiveScale;
                     const newX = prevCenterX - newWidth / 2;
                     const movableWidth = getGame().ui.game.container.width() - newWidth;
                     this.img.x(newX);
                     this.character.data.x = movableWidth ? (newX / movableWidth) : 0;
                 } else {
                     if (typeof this.character.data.x === "number") {
-                        const movableWidth = getGame().ui.game.container.width() - (mood.width * nextScale);
+                        const movableWidth = getGame().ui.game.container.width() - (mood.width * effectiveScale);
                         this.img.x(this.character.data.x * movableWidth);
                     }
                 }
                 if (prevCenterY !== null) {
-                    const newHeight = mood.height * nextScale;
+                    const newHeight = mood.height * effectiveScale;
                     const prevBottom = this.img.y() + (prevImg.height * prevScaleY);
                     const newY = prevBottom - newHeight;
                     const containerHeight = getGame().ui.game.container.height();

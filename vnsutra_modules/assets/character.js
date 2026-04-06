@@ -150,7 +150,7 @@ class Character {
                 this.img.opacity(0);
                 game.ui.game.container.add(this.img);
                 // Apply stored y position if set before image was loaded
-                if(typeof this.data.y === 'number') {
+                if(typeof this.data.y === "number") {
                     this.img.y(this.getValue("y", this.data.y));
                 }
                 this.img.to({
@@ -370,13 +370,7 @@ class Character {
             break;
         }
         case "y": {
-            const img = this.img.image();
-            const scaleY = this.img.scale().y || this.img.scale().x || 1;
-            const imgHeight = img?.height || 0;
             const containerHeight = game.ui.game.container.height();
-            // For y: use container height directly, NOT movableHeight
-            // This allows positioning relative to screen, even with full-height images
-            // y: 0 = top (0px), y: 1 = bottom (containerHeight), y: -0.9 = off-screen
             const pixelY = val * containerHeight;
             value = pixelY;
             break;
@@ -682,10 +676,10 @@ class IMG {
         if(game) {
             game.ui.game.container.add(this.img);
             // Apply stored position if set before image was loaded
-            if(typeof this.data.x === 'number') {
+            if(typeof this.data.x === "number") {
                 this.img.x(this.getValue("x", this.data.x));
             }
-            if(typeof this.data.y === 'number') {
+            if(typeof this.data.y === "number") {
                 this.img.y(this.getValue("y", this.data.y));
             }
         } else {
@@ -714,10 +708,10 @@ class IMG {
                 this.img.opacity(0);
                 game.ui.game.container.add(this.img);
                 // Apply stored position if set before image was loaded
-                if(typeof this.data.x === 'number') {
+                if(typeof this.data.x === "number") {
                     this.img.x(this.getValue("x", this.data.x));
                 }
-                if(typeof this.data.y === 'number') {
+                if(typeof this.data.y === "number") {
                     this.img.y(this.getValue("y", this.data.y));
                 }
                 this.img.to({
@@ -768,7 +762,7 @@ class IMG {
                 this.img.opacity(0);
                 game.ui.game.container.add(this.img);
                 // Apply stored y position if set before image was loaded
-                if(typeof this.data.y === 'number') {
+                if(typeof this.data.y === "number") {
                     this.img.y(this.getValue("y", this.data.y));
                 }
                 this.img.to({
