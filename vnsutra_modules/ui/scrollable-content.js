@@ -32,6 +32,8 @@ function bindActionbarScroll({
     let inertiaLastTs = 0;
     let wheelInertiaTimeout = null;
     let lastWheelTs = 0;
+    let touchMoved = false;
+    let touchSuppressTapUntil = 0;
 
     const stopInertia = () => {
         if (inertiaRaf !== null) {
@@ -44,6 +46,12 @@ function bindActionbarScroll({
             clearTimeout(wheelInertiaTimeout);
             wheelInertiaTimeout = null;
         }
+    };
+
+    const markTouchScroll = () => {
+        touchMoved = true;
+        touchSuppressTapUntil = performance.now() + 350;
+        actionbar.__scrollSuppressTapUntil = touchSuppressTapUntil;
     };
 
     const runInertia = () => {
@@ -126,6 +134,10 @@ function bindActionbarScroll({
         }
         e.preventDefault?.();
 
+        if (!touchMoved && Math.abs(touch.clientY - startClientY) >= 6) {
+            markTouchScroll();
+        }
+
         const deltaY = startClientY - touch.clientY;
         const prevScroll = actionbar.scrollHeight;
         actionbar.scrollHeight = startScroll + (deltaY * actionbar.scrollScale * dragFactor);
@@ -140,11 +152,18 @@ function bindActionbarScroll({
 
     const onPointerUp = () => {
         removeDragListeners();
+        if (!touchMoved) {
+            touchSuppressTapUntil = 0;
+            actionbar.__scrollSuppressTapUntil = 0;
+        }
         runInertia();
     };
 
     const startDrag = (clientY) => {
         stopInertia();
+        touchMoved = false;
+        touchSuppressTapUntil = 0;
+        actionbar.__scrollSuppressTapUntil = 0;
         startClientY = clientY;
         startScroll = actionbar.scrollHeight;
         lastMoveTs = performance.now();
@@ -238,6 +257,7 @@ function bindActionbarScroll({
         }
         removeDragListeners();
         stopInertia();
+        actionbar.__scrollSuppressTapUntil = 0;
         window.removeEventListener("wheel", onWheel);
         scrollbar.off("dragmove", applyScrollFromBar);
         targets.forEach((target) => {

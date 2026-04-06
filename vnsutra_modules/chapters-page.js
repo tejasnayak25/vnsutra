@@ -51,6 +51,8 @@ function chaptersPage(config, actionbar, fonts, navigate) {
     const isAndroid = getIsAndroid();
     const actionContent = actionbar.actionContent;
     const title = config?.ui?.chapters?.title || "Chapter Map";
+    const shouldIgnoreActivation = () => performance.now() < (actionbar.__scrollSuppressTapUntil ?? 0);
+    const supportsHover = !isPortrait && !isAndroid;
 
     actionbar.addBtn.visible(false);
 
@@ -564,23 +566,31 @@ function chaptersPage(config, actionbar, fonts, navigate) {
             };
 
             if (!isNotice && isUnlocked && actionButtonRect) {
-                card.on("mouseover", () => {
-                    document.body.style.cursor = "pointer";
-                    cardOuter.opacity(1);
-                    cardInner.opacity(0.62);
-                    actionButtonRect.opacity(1);
-                    card.getLayer()?.batchDraw();
-                });
+                if (supportsHover) {
+                    card.on("mouseover", () => {
+                        document.body.style.cursor = "pointer";
+                        cardOuter.opacity(1);
+                        cardInner.opacity(0.62);
+                        actionButtonRect.opacity(1);
+                        card.getLayer()?.batchDraw();
+                    });
 
-                card.on("mouseout", () => {
-                    document.body.style.cursor = "auto";
-                    cardOuter.opacity(0.92);
-                    cardInner.opacity(0.5);
-                    actionButtonRect.opacity(0.95);
-                    card.getLayer()?.batchDraw();
-                });
+                    card.on("mouseout", () => {
+                        document.body.style.cursor = "auto";
+                        cardOuter.opacity(0.92);
+                        cardInner.opacity(0.5);
+                        actionButtonRect.opacity(0.95);
+                        card.getLayer()?.batchDraw();
+                    });
+                }
 
-                card.on("click tap", startChapter);
+                card.on("click tap", () => {
+                    if (shouldIgnoreActivation()) {
+                        return;
+                    }
+
+                    startChapter();
+                });
             }
 
             mainContainer.add(card);

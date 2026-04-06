@@ -57,6 +57,7 @@ async function loadgame(config, actionbar, title, fonts, remove_img, click = () 
     }
 
     const actionContent = actionbar.actionContent;
+    const shouldIgnoreActivation = () => performance.now() < (actionbar.__scrollSuppressTapUntil ?? 0);
 
     const { width: containerWidth, height: containerHeight } = actionContent.getAttrs();
 
@@ -205,6 +206,10 @@ async function loadgame(config, actionbar, title, fonts, remove_img, click = () 
                     document.body.style.cursor = "auto";
                 });
                 clickTarget.on("click tap", () => {
+                    if (shouldIgnoreActivation()) {
+                        return;
+                    }
+
                     actionbar.close();
                     click(element, clickTarget);
                 });
@@ -259,6 +264,10 @@ async function loadgame(config, actionbar, title, fonts, remove_img, click = () 
                 });
 
                 deleteBtn.on("click tap", () => {
+                    if (shouldIgnoreActivation()) {
+                        return;
+                    }
+
                     animateBtn(deleteBtn, () => {
                         proceedBtn.onclick = () => {
                             data.splice(i, 1);
@@ -353,6 +362,10 @@ async function loadgame(config, actionbar, title, fonts, remove_img, click = () 
                             document.body.style.cursor = "auto";
                         });
                         clickTarget.on("click tap", () => {
+                            if (shouldIgnoreActivation()) {
+                                return;
+                            }
+
                             actionbar.close();
                             click(element, clickTarget);
                         });
@@ -411,6 +424,10 @@ async function loadgame(config, actionbar, title, fonts, remove_img, click = () 
                         const index = currentIndex - 1;
 
                         deleteBtn.on("click tap", () => {
+                            if (shouldIgnoreActivation()) {
+                                return;
+                            }
+
                             animateBtn(deleteBtn, () => {
                                 proceedBtn.onclick = () => {
                                     data.splice(index, 1);
