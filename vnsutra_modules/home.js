@@ -598,8 +598,9 @@ async function home(config, fonts, navigate) {
             if(getOpenWindow() === "chapters") {
                 return;
             }
-            chapters_details?.render?.();
-            openBar(actionbar.actionrect);
+            openBar(actionbar.actionrect, () => {
+                chapters_details?.render?.();
+            });
         } }] : []),
         { name: "Load Game", onclick: async (btnHolder) => {
             if(getOpenWindow() === "loadgame") {
