@@ -615,7 +615,7 @@ function chaptersPage(config, actionbar, fonts, navigate) {
             actionbar,
             actionContent,
             contentNode: mainContainer,
-            touchTargets: [scrollTouchArea],
+            touchTargets: [scrollTouchArea, mainContainer],
             inertia: true,
             wheelFactor: 1,
             dragFactor: 1,
