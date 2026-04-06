@@ -204,7 +204,7 @@ async function loadgame(config, actionbar, title, fonts, remove_img, click = () 
                 clickTarget.on("mouseout", () => {
                     document.body.style.cursor = "auto";
                 });
-                clickTarget.on("click touchstart", () => {
+                clickTarget.on("click tap", () => {
                     actionbar.close();
                     click(element, clickTarget);
                 });
@@ -258,7 +258,7 @@ async function loadgame(config, actionbar, title, fonts, remove_img, click = () 
                     document.body.style.cursor = "auto";
                 });
 
-                deleteBtn.on("click touchstart", () => {
+                deleteBtn.on("click tap", () => {
                     animateBtn(deleteBtn, () => {
                         proceedBtn.onclick = () => {
                             data.splice(i, 1);
@@ -352,7 +352,7 @@ async function loadgame(config, actionbar, title, fonts, remove_img, click = () 
                         clickTarget.on("mouseout", () => {
                             document.body.style.cursor = "auto";
                         });
-                        clickTarget.on("click touchstart", () => {
+                        clickTarget.on("click tap", () => {
                             actionbar.close();
                             click(element, clickTarget);
                         });
@@ -410,7 +410,7 @@ async function loadgame(config, actionbar, title, fonts, remove_img, click = () 
 
                         const index = currentIndex - 1;
 
-                        deleteBtn.on("click touchstart", () => {
+                        deleteBtn.on("click tap", () => {
                             animateBtn(deleteBtn, () => {
                                 proceedBtn.onclick = () => {
                                     data.splice(index, 1);

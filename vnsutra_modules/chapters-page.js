@@ -580,7 +580,7 @@ function chaptersPage(config, actionbar, fonts, navigate) {
                     card.getLayer()?.batchDraw();
                 });
 
-                card.on("click touchstart", startChapter);
+                card.on("click tap", startChapter);
             }
 
             mainContainer.add(card);
