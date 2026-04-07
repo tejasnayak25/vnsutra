@@ -853,6 +853,18 @@ async function gameUI(config, fonts, navigate) {
         listening: false
     });
 
+    // Invisible hit area so empty viewport zones still receive pointer events.
+    // This allows click/tap-to-advance to work across the full game viewport,
+    // not only where sprites/text nodes happen to exist.
+    const gameClickCatcher = new Konva.Rect({
+        id: "game-click-catcher",
+        width: width,
+        height: gameHeight,
+        fill: "#000000",
+        opacity: 0.001,
+        listening: true
+    });
+
     dialog_text.on("update", () => {
         if(name_text.text() === "" && dialog_text.text() === "") {
             dialogContainer.visible(false);
@@ -894,7 +906,7 @@ async function gameUI(config, fonts, navigate) {
 
     // Keep background in the full viewport so translucent dialog always has scene content behind it,
     // while gameplay nodes can still shrink via game_rect height when dialog is open.
-    game_container.add(game_bg, game_rect, transitionOverlay, flashOverlay, dialogContainer);
+    game_container.add(gameClickCatcher, game_bg, game_rect, transitionOverlay, flashOverlay, dialogContainer);
 
     // The End
 
