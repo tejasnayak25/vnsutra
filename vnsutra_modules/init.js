@@ -987,6 +987,22 @@ async function loadChapterDefinitions(config) {
                 konvaStage.width(docRect.width);
                 konvaStage.height(docRect.height);
 
+                // Ensure the Konva container DOM element matches the stage size.
+                // On some Android landscape/viewport cases the canvas DOM size
+                // can differ from Konva's internal stage size which breaks
+                // hit-testing (clicks only register near center). Forcing the
+                // container style to the same pixel dimensions fixes mapping.
+                try {
+                    const containerEl = typeof konvaStage.container === "function" ? konvaStage.container() : null;
+                    if (containerEl && containerEl.style) {
+                        containerEl.style.width = `${docRect.width}px`;
+                        containerEl.style.height = `${docRect.height}px`;
+                    }
+                } catch (err) {
+                    // non-fatal: continue without blocking resize
+                    console.warn("Failed to set Konva container DOM size:", err);
+                }
+
                 setIsPortrait(checkPortrait());
 
                 if (pages.home?.ui?.layer) {

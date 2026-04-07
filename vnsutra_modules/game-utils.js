@@ -67,6 +67,14 @@ function shouldIgnoreAdvanceInteraction() {
     return (Date.now() - fullscreenTransitionTs) < 320;
 }
 
+function getAdvanceInteractionTarget(gameInstance) {
+    // `viewport` spans the full playable area (`#game-box`), while
+    // `container` (`#game-container`) only contains scene nodes and can leave
+    // non-interactive zones. Use viewport so tap/click-to-advance works
+    // across the full visible game area on desktop and landscape devices.
+    return gameInstance?.ui?.game?.viewport ?? gameInstance?.ui?.game?.container ?? null;
+}
+
 /**
  * Displays dialog text for a speaker and optionally waits for player input.
  * Supports translation keys (starting with @) for multi-language support.
@@ -177,7 +185,7 @@ function dialog(speaker, text = "", wait = true, params = {}) {
 
             function cleanup() {
                 document.body.removeEventListener("keydown", keyHandler);
-                gameInstance.ui.game.container?.off("click touchstart", clickHandler);
+                getAdvanceInteractionTarget(gameInstance)?.off("click touchstart", clickHandler);
             }
 
             if (typeof registerAbortCleanup === "function") {
@@ -193,7 +201,7 @@ function dialog(speaker, text = "", wait = true, params = {}) {
             }
 
             document.body.addEventListener("keydown", keyHandler);
-            gameInstance.ui.game.container?.on("click touchstart", clickHandler);
+            getAdvanceInteractionTarget(gameInstance)?.on("click touchstart", clickHandler);
         });
     }
 
@@ -235,7 +243,7 @@ function dialog(speaker, text = "", wait = true, params = {}) {
 
             function cleanup() {
                 document.body.removeEventListener("keydown", keyHandler);
-                gameInstance.ui.game.container?.off("click touchstart", clickHandler);
+                getAdvanceInteractionTarget(gameInstance)?.off("click touchstart", clickHandler);
                 if (autoPlayTimer) clearTimeout(autoPlayTimer);
                 if (playback) {
                     playback.isWaitingForInput = false;
@@ -254,7 +262,7 @@ function dialog(speaker, text = "", wait = true, params = {}) {
             }
 
             document.body.addEventListener("keydown", keyHandler);
-            gameInstance.ui.game.container?.on("click touchstart", clickHandler);
+            getAdvanceInteractionTarget(gameInstance)?.on("click touchstart", clickHandler);
 
             // Auto-play if enabled (and user didn't manually skip)
             if (skipIfNoInteraction && playback && playback.isAutoPlayActive()) {
@@ -355,7 +363,7 @@ function dialog(speaker, text = "", wait = true, params = {}) {
 
                     function cleanup() {
                         document.body.removeEventListener("keydown", keyHandler);
-                        container.off("click touchstart", clickHandler);
+                        target.off("click touchstart", clickHandler);
                         if (autoPlayTimer) {
                             clearTimeout(autoPlayTimer);
                             autoPlayTimer = null;
@@ -374,8 +382,8 @@ function dialog(speaker, text = "", wait = true, params = {}) {
                     });
 
                     document.body.addEventListener("keydown", keyHandler);
-                    const container = gameInstance.ui.game.container;
-                    container.on("click touchstart", clickHandler);
+                    const target = getAdvanceInteractionTarget(gameInstance);
+                    target?.on("click touchstart", clickHandler);
 
                     // Auto-play handling
                     if (playback && playback.isAutoPlayActive()) {
