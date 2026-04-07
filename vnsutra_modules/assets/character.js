@@ -923,13 +923,7 @@ class IMG {
             break;
         }
         case "y": {
-            const img = this.img.image();
-            const scaleY = this.img.scale().y || this.img.scale().x || 1;
-            const imgHeight = img?.height || 0;
             const containerHeight = game.ui.game.container.height();
-            // For y: use container height directly, NOT movableHeight
-            // This allows positioning relative to screen, even with full-height images
-            // y: 0 = top (0px), y: 1 = bottom (containerHeight), y: -0.9 = off-screen
             value = val * containerHeight;
             break;
         }

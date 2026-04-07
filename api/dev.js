@@ -54,8 +54,8 @@ app.get("/docs", async (req, res) => {
             try {
                 const content = await fs.promises.readFile(filePath, "utf8");
                 const lines = content.split(/\r?\n/);
-                let title = lines.find(l => l.startsWith("# ")) || f;
-                let desc = lines.find(l => l && !l.startsWith("#")) || "No description.";
+                const title = lines.find(l => l.startsWith("# ")) || f;
+                const desc = lines.find(l => l && !l.startsWith("#")) || "No description.";
                 return { f, title: title.replace(/^# /, ""), desc };
             } catch {
                 return { f, title: f, desc: "Could not read file." };
@@ -79,7 +79,7 @@ app.get("/md/:file", async (req, res) => {
     try {
         const md = await fs.promises.readFile(filePath, "utf8");
         const html = marked.parse(md);
-                res.send(`<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><title>${fileName.replace(/\.md$/, "")} | Docs</title><link rel='stylesheet' href='/css/output.css'><link rel='stylesheet' href='/static/docs-overrides.css'></head><body class='bg-slate-50 text-slate-800 antialiased min-h-screen'><div class='max-w-3xl mx-auto px-4 py-8'><nav class='mb-6'><a href='/docs' class='text-sky-600 hover:text-sky-700 underline'>&larr; Back to Docs Index</a></nav><article class='prose prose-slate lg:prose-xl bg-white rounded-2xl shadow p-8'>${html}</article></div>
+        res.send(`<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><title>${fileName.replace(/\.md$/, "")} | Docs</title><link rel='stylesheet' href='/css/output.css'><link rel='stylesheet' href='/static/docs-overrides.css'></head><body class='bg-slate-50 text-slate-800 antialiased min-h-screen'><div class='max-w-3xl mx-auto px-4 py-8'><nav class='mb-6'><a href='/docs' class='text-sky-600 hover:text-sky-700 underline'>&larr; Back to Docs Index</a></nav><article class='prose prose-slate lg:prose-xl bg-white rounded-2xl shadow p-8'>${html}</article></div>
 <script>
 document.addEventListener('DOMContentLoaded', function(){
     const tocLinks = document.querySelectorAll('.toc a');
@@ -87,7 +87,7 @@ document.addEventListener('DOMContentLoaded', function(){
     const article = document.querySelector('article.prose');
     if(!article) return;
     const headings = article.querySelectorAll('h1,h2,h3,h4,h5');
-    function normalize(s){ return (s||'').replace(/^[^a-z0-9]+/i,'').replace(/\s+/g,' ').trim().toLowerCase(); }
+    function normalize(s){ return (s || '').replace(/[^a-z0-9]+/gi,' ').replace(/ +/g,' ').trim().toLowerCase(); }
     tocLinks.forEach(a => {
         // strip emoji or leading glyphs from link text
         const clean = a.textContent.replace(/[\u2600-\u26FF\u2700-\u27BF\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}]/gu, '').trim();
