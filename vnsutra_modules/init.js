@@ -934,9 +934,21 @@ async function loadChapterDefinitions(config) {
 
     let resizeDispatchTimer = null;
     const isResizeTemporarilySuppressed = () => getResizeSuppressedUntil() > Date.now();
+    const hasStageDimensionChanged = () => {
+        const docRect = document.body.getBoundingClientRect();
+        const nextWidth = Math.round(docRect.width);
+        const nextHeight = Math.round(docRect.height);
+        const currentWidth = Math.round(konvaStage.width());
+        const currentHeight = Math.round(konvaStage.height());
+        return nextWidth !== currentWidth || nextHeight !== currentHeight;
+    };
 
     const scheduleGameResize = () => {
         if (isResizeTemporarilySuppressed()) {
+            return;
+        }
+
+        if (!hasStageDimensionChanged()) {
             return;
         }
 
