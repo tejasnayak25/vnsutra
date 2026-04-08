@@ -1298,6 +1298,9 @@ async function loadChapterDefinitions(config) {
                 pages[name].ui.layer.listening(true);
             }
             
+            // Immediately render the layer to avoid black screen
+            konvaStage.batchDraw();
+            
             const funcResult = pages[name].func(data);
             setActiveLayer(name);
 
