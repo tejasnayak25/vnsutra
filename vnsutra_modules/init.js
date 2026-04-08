@@ -1354,9 +1354,15 @@ async function loadChapterDefinitions(config) {
                 // Wait for async function to set isNewGame before dispatching event
                 if (funcResult instanceof Promise) {
                     funcResult.then(() => {
+                        const gameInstance = getGame();
+                        gameInstance?.ui?.dialog?.message?.text?.("");
+                        gameInstance?.ui?.dialog?.message?.fire?.("update");
                         globalThis.dispatchEvent(new CustomEvent("game-started"));
                     });
                 } else {
+                    const gameInstance = getGame();
+                    gameInstance?.ui?.dialog?.message?.text?.("");
+                    gameInstance?.ui?.dialog?.message?.fire?.("update");
                     globalThis.dispatchEvent(new CustomEvent("game-started"));
                 }
             }
