@@ -1281,6 +1281,13 @@ async function loadChapterDefinitions(config) {
             
             konvaStage.removeChildren();
             konvaStage.add(pages[name].ui.layer);
+            
+            // Ensure layer is listening after being re-added to stage
+            // This prevents button clicks from being unresponsive after game exit
+            if (pages[name].ui.layer.listening !== undefined) {
+                pages[name].ui.layer.listening(true);
+            }
+            
             const funcResult = pages[name].func(data);
             setActiveLayer(name);
 

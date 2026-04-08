@@ -599,6 +599,9 @@ function input(message, placeholder = undefined, params = {}) {
 
         async function submitInput() {
             if(inp.value !== "") {
+                // Signal input submission to prevent resize during keyboard close/cleanup
+                setIsInputFocused(false);
+                
                 alertwin.close();
                 alertwin.btns.classList.replace("justify-end", "justify-between");
                 if (state) {
@@ -621,7 +624,6 @@ function input(message, placeholder = undefined, params = {}) {
                     });
                 } finally {
                     cleanupInputHandlers();
-                    setIsInputFocused(false);
                     clearAbort();
                 }
 
