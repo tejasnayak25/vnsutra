@@ -578,7 +578,11 @@ async function loadChapterDefinitions(config) {
         loadspin.classList.add("hidden");
         loadstatus.classList.remove("hidden");
 
-        document.onclick = () => {
+        document.onclick = (e) => {
+            if (e.target && e.target.id === "install-app-btn") {
+                return;
+            }
+
             if (!isPortraitCompatible && isPortraitMode()) {
                 showPortraitBlockNotice();
                 return;
