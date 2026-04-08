@@ -404,6 +404,8 @@ function getChoiceOptions(options, name, multiSelect = false) {
     let text = "";
     const config = getConfiguration();
     const textColor = config?.colors?.text ?? "#ffffff";
+    const mutedBorderColor = `${textColor}80`;
+    const idleFillColor = "rgba(255,255,255,0.03)";
     const inputType = multiSelect ? "checkbox" : "radio";
     const inputName = `${name}-${inputType}`;
     const indicatorShape = multiSelect ? "rounded-lg" : "rounded-full";
@@ -412,10 +414,11 @@ function getChoiceOptions(options, name, multiSelect = false) {
         const option = options[i];
         const optionText = escapeHtml(option);
         const optionValue = escapeAttribute(option);
+        const optionRadius = multiSelect ? "rounded-xl" : "rounded-2xl";
         text += `
         <li>
             <input type="${inputType}" id="${name}-option-${i}" name="${inputName}" value="${optionValue}" class="hidden peer" ${multiSelect ? "" : "required=\"\""}>
-            <label for="${name}-option-${i}" class="choice-card group inline-flex min-h-14 w-full items-center gap-3 rounded-full border-2 px-4 py-3 cursor-pointer transition-all duration-200 ease-out" style="color: ${textColor}; border-color: ${textColor}; background-color: transparent;">
+            <label for="${name}-option-${i}" class="choice-card group inline-flex min-h-14 w-full items-center gap-3 ${optionRadius} border px-4 py-3 cursor-pointer transition-all duration-200 ease-out" style="color: rgba(255,255,255,0.78); border-color: rgba(255,255,255,0.18); background-color: ${idleFillColor};">
                 <span class="choice-indicator flex h-8 w-8 shrink-0 items-center justify-center ${indicatorShape} border text-xs font-bold transition-all duration-200" aria-hidden="true"></span>
                 <div class="block min-w-0 flex-1">
                     <div class="w-full text-sm leading-5 tracking-[0.01em]">${optionText}</div>
@@ -432,6 +435,7 @@ class ChoiceMenu {
     constructor({ id, options = [], multiSelect = false }) {
         const config = getConfiguration();
         const textColor = config?.colors?.text ?? "#ffffff";
+        const mutedBorderColor = "rgba(255,255,255,0.18)";
 
         const div = new HTMLNode({
             tagName: "div",
@@ -449,7 +453,7 @@ class ChoiceMenu {
                     <div class="text-xs uppercase tracking-[0.28em] opacity-55">Choice</div>
                     <div class="text-sm opacity-85">${multiSelect ? "Pick any combination" : "Pick one option"}</div>
                 </div>
-                <div class="shrink-0 rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] opacity-80" style="border-color: ${textColor}; color: ${textColor};">
+                <div class="shrink-0 rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] opacity-80" style="border-color: ${mutedBorderColor}; color: ${textColor};">
                     ${multiSelect ? "Multi-select" : "Single-select"}
                 </div>
             </div>
@@ -469,6 +473,9 @@ class ChoiceMenu {
                 const textColor = config?.colors?.text ?? "#ffffff";
                 const primaryColor = config?.colors?.primary ?? "#fbbf24";
                 const primaryTextColor = config?.colors?.["primary-text"] ?? "#000000";
+                const mutedBorderColor = "rgba(255,255,255,0.18)";
+                const idleFillColor = "rgba(255,255,255,0.03)";
+                const mutedTextColor = "rgba(255,255,255,0.78)";
 
                 inputs.forEach((input) => {
                     const elem = input.nextElementSibling;
@@ -479,10 +486,10 @@ class ChoiceMenu {
 
                     if (input.checked) {
                         elem.style.borderColor = primaryColor;
-                        elem.style.color = primaryTextColor;
-                        elem.style.backgroundColor = `${primaryColor}1c`;
+                        elem.style.color = textColor;
+                        elem.style.backgroundColor = `${primaryColor}22`;
                         elem.style.transform = "none";
-                        elem.style.boxShadow = "none";
+                        elem.style.boxShadow = `0 0 0 1px ${primaryColor}22`;
                         elem.setAttribute("data-selected", "true");
                         elem.classList.add("active-choice");
                         if (indicator) {
@@ -492,17 +499,17 @@ class ChoiceMenu {
                             indicator.textContent = multiSelect ? "✓" : "●";
                         }
                     } else {
-                        elem.style.borderColor = textColor;
-                        elem.style.color = textColor;
-                        elem.style.backgroundColor = "transparent";
+                        elem.style.borderColor = mutedBorderColor;
+                        elem.style.color = mutedTextColor;
+                        elem.style.backgroundColor = idleFillColor;
                         elem.style.transform = "none";
                         elem.style.boxShadow = "none";
                         elem.setAttribute("data-selected", "false");
                         elem.classList.remove("active-choice");
                         if (indicator) {
-                            indicator.style.borderColor = textColor;
+                            indicator.style.borderColor = mutedBorderColor;
                             indicator.style.backgroundColor = "transparent";
-                            indicator.style.color = textColor;
+                            indicator.style.color = mutedTextColor;
                             indicator.textContent = "";
                         }
                     }
