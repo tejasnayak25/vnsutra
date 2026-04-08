@@ -18,7 +18,6 @@ function achievementsPage(config, actionbar, fonts) {
     const isAndroid = getIsAndroid();
     const actionContent = actionbar.actionContent;
     let pendingRenderFrame = null;
-    const cardsNeedingCache = [];
 
     actionbar.addBtn.visible(false);
     
@@ -166,10 +165,6 @@ function achievementsPage(config, actionbar, fonts) {
             card.height(cardHeight);
             card.add(cardRect, title, description, progressText, progressTrack, progressFill);
 
-            if (isAndroid) {
-                cardsNeedingCache.push(card);
-            }
-
             mainContainer.add(card);
 
             columnHeights[columnIndex] += cardHeight + cardGap;
@@ -197,24 +192,6 @@ function achievementsPage(config, actionbar, fonts) {
         mainContainer.y(0);
 
         actionContent.add(scrollTouchArea, mainContainer);
-
-        if (isAndroid && cardsNeedingCache.length > 0) {
-            // Cache only after nodes are mounted so Konva has a valid stage buffer canvas.
-            cardsNeedingCache.forEach((card) => {
-                if (!card?.getStage?.()) {
-                    return;
-                }
-                try {
-                    card.cache({ pixelRatio: 1 });
-                } catch (error) {
-                    errorTracking?.captureError(error, {
-                        type: "warning",
-                        message: "[Achievements] Failed to cache card",
-                        context: { scope: "achievements", subsystem: "cache" }
-                    });
-                }
-            });
-        }
 
         bindActionbarScroll({
             actionbar,

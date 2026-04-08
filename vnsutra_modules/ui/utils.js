@@ -404,7 +404,6 @@ function getChoiceOptions(options, name, multiSelect = false) {
     let text = "";
     const config = getConfiguration();
     const textColor = config?.colors?.text ?? "#ffffff";
-    const mutedBorderColor = `${textColor}80`;
     const idleFillColor = "rgba(255,255,255,0.03)";
     const inputType = multiSelect ? "checkbox" : "radio";
     const inputName = `${name}-${inputType}`;
