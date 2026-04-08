@@ -584,10 +584,24 @@ async function loadChapterDefinitions(config) {
             }
 
             hasStarted = true;
-            document.documentElement.requestFullscreen();
+            
+            // Hide splash and show home immediately for responsive UX
+            const splashLayer = document.getElementById("splash-layer");
+            if (splashLayer) {
+                splashLayer.classList.add("hidden");
+            }
+            navigate("home", {});
+            
+            // Handle fullscreen and resize operations without blocking UI transition
+            document.documentElement.requestFullscreen().catch(() => {
+                // Fullscreen request might fail, but don't block home transition
+            });
+            
+            // Dispatch resize after fullscreen settles (async)
             setTimeout(() => {
                 globalThis.dispatchEvent(new CustomEvent(EVENTS.GAME_RESIZE));
-            }, 250);
+            }, 100);
+            
             document.onclick = () => {};
         };
     }
