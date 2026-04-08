@@ -247,13 +247,13 @@ function settings(config, actionbar, fonts, credit_details) {
             return;
         }
 
-        if (typeof Event === "function") {
-            globalThis.dispatchEvent(new Event("resize"));
+        if (typeof CustomEvent === "function") {
+            globalThis.dispatchEvent(new CustomEvent("resize", { detail: { force: true } }));
             return;
         }
 
-        if (typeof CustomEvent === "function") {
-            globalThis.dispatchEvent(new CustomEvent("resize"));
+        if (typeof Event === "function") {
+            globalThis.dispatchEvent(new Event("resize"));
         }
     }
 

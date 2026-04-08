@@ -170,7 +170,7 @@ async function executeActions(actions = [], runtime) {
             if (action.firstOptionVar) {
                 runtime.vars[action.firstOptionVar] = options[0];
             }
-            runtime.vars[action.var] = await choice(action.message ?? "", options);
+            runtime.vars[action.var] = await choice(action.message ?? "", options, {}, { multiSelect: action.multiSelect === true });
             break;
         }
         case "var.set": {

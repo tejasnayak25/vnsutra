@@ -400,10 +400,13 @@ class HTMLNode {
 }
 
 
-function getRadioOptions(options, name) {
+function getChoiceOptions(options, name, multiSelect = false) {
     let text = "";
     const config = getConfiguration();
     const textColor = config?.colors?.text ?? "#ffffff";
+    const inputType = multiSelect ? "checkbox" : "radio";
+    const inputName = `${name}-${inputType}`;
+    const indicatorShape = multiSelect ? "rounded-lg" : "rounded-full";
 
     for (let i=0;i<options.length;i++) {
         const option = options[i];
@@ -411,10 +414,11 @@ function getRadioOptions(options, name) {
         const optionValue = escapeAttribute(option);
         text += `
         <li>
-            <input type="radio" id="${name}-option-${i}" name="${name}-radio" value="${optionValue}" class="hidden peer" required="">
-            <label for="${name}-option-${i}" class="inline-flex items-center justify-between w-full p-3 px-4 border-2 rounded-full cursor-pointer" style="color: ${textColor}; border-color: ${textColor};"> 
-                <div class="block">
-                    <div class="w-full text-sm">${optionText}</div>
+            <input type="${inputType}" id="${name}-option-${i}" name="${inputName}" value="${optionValue}" class="hidden peer" ${multiSelect ? "" : "required=\"\""}>
+            <label for="${name}-option-${i}" class="choice-card group inline-flex min-h-14 w-full items-center gap-3 rounded-full border-2 px-4 py-3 cursor-pointer transition-all duration-200 ease-out" style="color: ${textColor}; border-color: ${textColor}; background-color: transparent;">
+                <span class="choice-indicator flex h-8 w-8 shrink-0 items-center justify-center ${indicatorShape} border text-xs font-bold transition-all duration-200" aria-hidden="true"></span>
+                <div class="block min-w-0 flex-1">
+                    <div class="w-full text-sm leading-5 tracking-[0.01em]">${optionText}</div>
                 </div>
             </label>
         </li>
@@ -425,44 +429,91 @@ function getRadioOptions(options, name) {
 }
 
 class ChoiceMenu {
-    constructor({ id, options = [] }) {
+    constructor({ id, options = [], multiSelect = false }) {
+        const config = getConfiguration();
+        const textColor = config?.colors?.text ?? "#ffffff";
+
         const div = new HTMLNode({
             tagName: "div",
             attributes: {
                 id: id,
-                class: "p-3 w-full"
+                class: "w-full"
             },
             trustedHTML: true
         });
 
         div.innerHTML = `
-        <div class="relative flex w-full max-w-full flex-col">
-            <ul class="flex flex-col w-full gap-3">
-                ${getRadioOptions(options, id)}
+        <div class="flex w-full max-w-full flex-col gap-2">
+            <div class="flex items-center justify-between gap-3 px-1 pb-1">
+                <div class="min-w-0">
+                    <div class="text-xs uppercase tracking-[0.28em] opacity-55">Choice</div>
+                    <div class="text-sm opacity-85">${multiSelect ? "Pick any combination" : "Pick one option"}</div>
+                </div>
+                <div class="shrink-0 rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] opacity-80" style="border-color: ${textColor}; color: ${textColor};">
+                    ${multiSelect ? "Multi-select" : "Single-select"}
+                </div>
+            </div>
+            <ul class="flex max-h-72 flex-col gap-3 overflow-y-auto pr-1">
+                ${getChoiceOptions(options, id, multiSelect)}
             </ul>
         </div>
         `;
 
         div.onappend = () => {
-            document.getElementById(id).querySelectorAll(`input[name='${id}-radio']`).forEach(radio => {
-                const elem = radio.nextElementSibling;
-                elem.onclick = () => {
-                    if(document.getElementById(id).querySelector(".active-choice")) {
-                        const activeChoice = document.getElementById(id).querySelector(".active-choice");
-                        const config = getConfiguration();
-                        const textColor = config?.colors?.text ?? "#ffffff";
-                        activeChoice.style.borderColor = textColor;
-                        activeChoice.style.color = textColor;
-                        activeChoice.classList.remove("active-choice");
-                    }
+            const root = document.getElementById(id);
+            const inputName = `${id}-${multiSelect ? "checkbox" : "radio"}`;
+            const inputs = root.querySelectorAll(`input[name='${inputName}']`);
 
-                    const config = getConfiguration();
-                    const primaryColor = config?.colors?.primary ?? "#fbbf24";
-                    elem.style.borderColor = primaryColor;
-                    elem.style.color = primaryColor;
-                    elem.classList.add("active-choice");
-                };
+            const syncChoiceStyles = () => {
+                const config = getConfiguration();
+                const textColor = config?.colors?.text ?? "#ffffff";
+                const primaryColor = config?.colors?.primary ?? "#fbbf24";
+                const primaryTextColor = config?.colors?.["primary-text"] ?? "#000000";
+
+                inputs.forEach((input) => {
+                    const elem = input.nextElementSibling;
+                    if (!elem) {
+                        return;
+                    }
+                    const indicator = elem.querySelector(".choice-indicator");
+
+                    if (input.checked) {
+                        elem.style.borderColor = primaryColor;
+                        elem.style.color = primaryTextColor;
+                        elem.style.backgroundColor = `${primaryColor}1c`;
+                        elem.style.transform = "none";
+                        elem.style.boxShadow = "none";
+                        elem.setAttribute("data-selected", "true");
+                        elem.classList.add("active-choice");
+                        if (indicator) {
+                            indicator.style.borderColor = primaryColor;
+                            indicator.style.backgroundColor = primaryColor;
+                            indicator.style.color = primaryTextColor;
+                            indicator.textContent = multiSelect ? "✓" : "●";
+                        }
+                    } else {
+                        elem.style.borderColor = textColor;
+                        elem.style.color = textColor;
+                        elem.style.backgroundColor = "transparent";
+                        elem.style.transform = "none";
+                        elem.style.boxShadow = "none";
+                        elem.setAttribute("data-selected", "false");
+                        elem.classList.remove("active-choice");
+                        if (indicator) {
+                            indicator.style.borderColor = textColor;
+                            indicator.style.backgroundColor = "transparent";
+                            indicator.style.color = textColor;
+                            indicator.textContent = "";
+                        }
+                    }
+                });
+            };
+
+            inputs.forEach((input) => {
+                input.addEventListener("change", syncChoiceStyles);
             });
+
+            syncChoiceStyles();
         };
 
         return div;
@@ -595,7 +646,7 @@ export {
     Switch,
     getMonth,
     HTMLNode,
-    getRadioOptions,
+    getChoiceOptions,
     ChoiceMenu,
     markdownToHtml
 };

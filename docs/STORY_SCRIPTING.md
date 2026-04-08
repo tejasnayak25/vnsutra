@@ -245,6 +245,8 @@ Runtime contains:
 
 - Uses `optionsI18nKey` array when available
 - Stores selected value in `runtime.vars[var]`
+- Add `multiSelect: true` to let players choose more than one option; the stored value becomes an array of selected values
+- Set `multiSelect: true` to allow picking multiple options; the result is stored as an array of selected values
 
 ---
 

@@ -525,6 +525,9 @@ function input(message, placeholder = undefined, params = {}) {
         proceedBtn.className = "btn hover:bg-inherit border-0";
         proceedBtn.style.backgroundColor = config?.colors?.primary || "#000";
         proceedBtn.style.color = config?.colors?.["primary-text"] || "#fff";
+        proceedBtn.disabled = true;
+        proceedBtn.style.opacity = "0.5";
+        proceedBtn.style.cursor = "not-allowed";
         
         const inp = document.createElement("input");
         inp.type = "text";
@@ -634,8 +637,18 @@ function input(message, placeholder = undefined, params = {}) {
             }
         }
 
+        // Enable/disable button based on input value
+        const updateButtonState = () => {
+            const isEmpty = inp.value.trim() === "";
+            proceedBtn.disabled = isEmpty;
+            proceedBtn.style.opacity = isEmpty ? "0.5" : "1";
+            proceedBtn.style.cursor = isEmpty ? "not-allowed" : "pointer";
+        };
+
+        inp.addEventListener("input", updateButtonState);
+
         inp.onkeydown = (e) => {
-            if(e.key === "Enter") {
+            if(e.key === "Enter" && !proceedBtn.disabled) {
                 if(isPortrait) {
                     inp.blur();
                 } else {
@@ -645,7 +658,9 @@ function input(message, placeholder = undefined, params = {}) {
         };
         
         proceedBtn.onclick = () => {
-            void submitInput();
+            if (!proceedBtn.disabled) {
+                void submitInput();
+            }
         };
 
         alertwin.show();
@@ -659,9 +674,10 @@ function input(message, placeholder = undefined, params = {}) {
  * @param {string} message - Plain text or translation key
  * @param {string[]} opts - Array of options (plain text or translation keys)
  * @param {Object} [params={}] - Parameters for {{param}} interpolation
- * @returns {Promise<string>}
+ * @param {{ multiSelect?: boolean }} [choiceOptions={}] - Choice behavior options
+ * @returns {Promise<string | string[]>}
  */
-function choice(message, opts, params = {}) {
+function choice(message, opts, params = {}, choiceOptions = {}) {
     // Abort if game has been ended (e.g., navigated away)
     if (getShouldAbortGame()) {
         console.warn("Attempted to show choice prompt after game was ended. Ignoring.");
@@ -689,6 +705,8 @@ function choice(message, opts, params = {}) {
         return opt;
     });
 
+    const multiSelect = choiceOptions?.multiSelect === true;
+
     return new Promise((resolve, reject) => {
         const config = getConfiguration();
         const proceedBtn = document.createElement("button");
@@ -696,11 +714,15 @@ function choice(message, opts, params = {}) {
         proceedBtn.className = "btn hover:bg-inherit border-0";
         proceedBtn.style.backgroundColor = config?.colors?.primary || "#000";
         proceedBtn.style.color = config?.colors?.["primary-text"] || "#fff";
+        proceedBtn.disabled = true;
+        proceedBtn.style.opacity = "0.5";
+        proceedBtn.style.cursor = "not-allowed";
     
         const choices = new ChoiceMenu({
             label: "Choices",
             id: "choices",
             options: displayOpts,
+            multiSelect,
             onchange: () => {
             }
         });
@@ -741,11 +763,13 @@ function choice(message, opts, params = {}) {
         });
 
         async function submitChoice() {
-            const selected = choicesElem.querySelector("input[name=\"choices-radio\"]:checked");
-            if (!selected) {
+            const selected = multiSelect
+                ? Array.from(choicesElem.querySelectorAll("input[name=\"choices-checkbox\"]:checked"))
+                : [choicesElem.querySelector("input[name=\"choices-radio\"]:checked")].filter(Boolean);
+            if (selected.length === 0) {
                 return;
             }
-            const value = selected.value;
+            const value = multiSelect ? selected.map((item) => item.value) : selected[0].value;
             setResizeSuppressedUntil(Date.now() + 900);
             alertwin.close();
             alertwin.btns.classList.replace("justify-end", "justify-between");
@@ -778,13 +802,33 @@ function choice(message, opts, params = {}) {
             resolve(value);
         }
 
+        // Enable/disable button based on choice selection
+        const updateButtonState = () => {
+            const selected = multiSelect
+                ? choicesElem.querySelectorAll("input[name='choices-checkbox']:checked")
+                : choicesElem.querySelector("input[name='choices-radio']:checked");
+            const isSelected = multiSelect ? selected.length > 0 : !!selected;
+            proceedBtn.disabled = !isSelected;
+            proceedBtn.style.opacity = isSelected ? "1" : "0.5";
+            proceedBtn.style.cursor = isSelected ? "pointer" : "not-allowed";
+        };
+
         proceedBtn.onclick = () => {
-            void submitChoice();
+            if (!proceedBtn.disabled) {
+                void submitChoice();
+            }
         };
 
         alertwin.show();
 
         choices.onappend();
+
+        const inputSelector = multiSelect ? "input[name='choices-checkbox']" : "input[name='choices-radio']";
+        choicesElem.querySelectorAll(inputSelector).forEach((choiceInput) => {
+            choiceInput.addEventListener("change", updateButtonState);
+        });
+
+        updateButtonState();
     });
 }
 

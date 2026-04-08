@@ -22,6 +22,10 @@ else:
 
 mary: @scene3.recap
 
+@choice var="demoHighlights" message="@scene3.multiChoicePrompt" options='["Character design","UI clarity","Story flow"]' multiSelect=true
+storage set: demo-highlights = $demoHighlights
+@dialog actor="mary" text="@scene3.multiChoiceSummary" params='{"choices":{"fromVar":"demoHighlights"}}'
+
 @choice var="nextStep" message="@scene3.nextStepPrompt" options='["Open the docs","Browse chapters","Replay the demo"]' optionsI18nKey="scene3.nextStepOptions"
 
 if $nextStep === "Open the docs":

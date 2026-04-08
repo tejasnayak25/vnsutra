@@ -38,6 +38,8 @@
     "effects": "You picked effects. Short flashes can carry a lot of energy.",
     "flow": "You picked flow. That is the backbone of a playable demo.",
     "recap": "That is the point of VN-Sutra: keep the story readable and the engine invisible.",
+    "multiChoicePrompt": "Which demo details do you want to keep in mind?",
+    "multiChoiceSummary": "Nice. You picked {{choices}}.",
     "nextStepPrompt": "What do you want to do next?",
     "nextStepOptions": ["Open the docs", "Browse chapters", "Replay the demo"],
     "nextDocs": "Good call. The docs are the fastest way to go deeper.",

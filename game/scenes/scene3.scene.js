@@ -126,6 +126,34 @@ export default [
     },
     {
         "type": "choice",
+        "var": "demoHighlights",
+        "message": "@scene3.multiChoicePrompt",
+        "options": [
+            "Character design",
+            "UI clarity",
+            "Story flow"
+        ],
+        "multiSelect": true
+    },
+    {
+        "type": "storage.set",
+        "key": "demo-highlights",
+        "value": {
+            "fromVar": "demoHighlights"
+        }
+    },
+    {
+        "type": "dialog",
+        "actor": "mary",
+        "text": "@scene3.multiChoiceSummary",
+        "params": {
+            "choices": {
+                "fromVar": "demoHighlights"
+            }
+        }
+    },
+    {
+        "type": "choice",
         "var": "nextStep",
         "message": "@scene3.nextStepPrompt",
         "options": [

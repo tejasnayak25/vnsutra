@@ -946,12 +946,12 @@ async function loadChapterDefinitions(config) {
         return nextWidth !== currentWidth || nextHeight !== currentHeight;
     };
 
-    const scheduleGameResize = () => {
+    const scheduleGameResize = (forceRefresh = false) => {
         if (isResizeTemporarilySuppressed()) {
             return;
         }
 
-        if (!hasStageDimensionChanged()) {
+        if (!forceRefresh && !hasStageDimensionChanged()) {
             return;
         }
 
@@ -965,10 +965,11 @@ async function loadChapterDefinitions(config) {
         }, 120);
     };
 
-    globalThis.addEventListener("resize", () => {
+    globalThis.addEventListener("resize", (event) => {
         refreshPortraitCompatibilityUI();
         if (hasStarted && !isResizeTemporarilySuppressed()) {
-            scheduleGameResize();
+            const forceRefresh = event?.detail?.force === true;
+            scheduleGameResize(forceRefresh);
         }
     });
 
