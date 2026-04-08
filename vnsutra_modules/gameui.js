@@ -1166,7 +1166,8 @@ async function gameUI(config, fonts, navigate) {
         return new Promise((resolve) => {
             endingResolve = resolve;
 
-            endingCreditsTween = creditsContent.to({
+            endingCreditsTween = new Konva.Tween({
+                node: creditsContent,
                 y: scrollEndY,
                 duration: durationMs / 1000,
                 easing: Konva.Easings.Linear,
@@ -1187,6 +1188,7 @@ async function gameUI(config, fonts, navigate) {
                     finalizeEnding(token);
                 }
             });
+            endingCreditsTween.play();
         });
     };
 

@@ -1331,6 +1331,11 @@ async function loadChapterDefinitions(config) {
         if(pages[name]) {
             const previousLayer = getActiveLayer();
 
+            if (previousLayer === "game" && name !== "game") {
+                pages.game?.ui?.game?.stopEndingSequence?.({ showEnd: false });
+                pages.game?.ui?.animations?.loading?.stop?.();
+            }
+
             if (previousLayer !== name) {
                 setOpenWindow(null);
             }
