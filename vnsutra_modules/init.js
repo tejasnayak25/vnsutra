@@ -477,6 +477,7 @@ async function loadChapterDefinitions(config) {
     let disclaimerShown = false;
     let isSplashRunning = false;
     let isSplashCompleted = false;
+    let hasPrewarmedUi = false;
     let autoSave = null;
     let keyboardControls = null;
     let accessibility = null;
@@ -589,7 +590,12 @@ async function loadChapterDefinitions(config) {
             loadwin.classList.add("hidden");
             
             // Show home page immediately (don't wait for GAME_RESIZE)
-            navigate("home", {});
+            if (pages.home) {
+                navigate("home", {});
+            } else {
+                // Fallback: if prewarm is still in progress, force a resize build now.
+                globalThis.dispatchEvent(new CustomEvent(EVENTS.GAME_RESIZE));
+            }
         
             // Request fullscreen (async, doesn't block UI)
             document.documentElement.requestFullscreen().catch(() => {
@@ -626,6 +632,12 @@ async function loadChapterDefinitions(config) {
         if (!isSplashCompleted) {
             startSplashIfNeeded();
             return;
+        }
+
+        if (!hasPrewarmedUi) {
+            hasPrewarmedUi = true;
+            // Build Konva pages behind the splash so first click can render instantly.
+            globalThis.dispatchEvent(new CustomEvent(EVENTS.GAME_RESIZE));
         }
 
         bindStartPrompt();
@@ -1160,7 +1172,7 @@ async function loadChapterDefinitions(config) {
                         await restoreHomeWindow(wasWindowOpen);
                     }
 
-                    if(!loadwin.classList.contains("hidden")) {
+                    if (hasStarted && !loadwin.classList.contains("hidden")) {
                         loadwin.classList.add("hidden");
                     }
                     
