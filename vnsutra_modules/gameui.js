@@ -300,7 +300,10 @@ async function gameUI(config, fonts, navigate) {
     alertWin.color = config.colors.primary;
 
     backBtn.on("click touchstart", () => {
-        animateBtn(backBtn);
+        const isEndingState = endingSequenceGroup.visible() || endGroup.visible();
+        if (!isEndingState) {
+            animateBtn(backBtn);
+        }
 
         proceedBtn.onclick = () => {
             setShouldAbortGame(true);
