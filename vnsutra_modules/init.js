@@ -579,7 +579,8 @@ async function loadChapterDefinitions(config) {
         loadstatus.classList.remove("hidden");
 
         document.onclick = (e) => {
-            if (e.target && e.target.id === "install-app-btn") {
+            // if inside the install prompt, ignore the click to start the game
+            if (e.target && (e.target.closest("#install-app-utility") || e.target.id === "install-app-utility")) {
                 return;
             }
 
