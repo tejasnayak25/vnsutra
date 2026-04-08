@@ -26,6 +26,7 @@ import {
     getGameSettings,
     getGame,
     setIsInputFocused,
+    setResizeSuppressedUntil,
     getShouldAbortGame,
     setAbortInstruction
 } from "./runtime-state.js";
@@ -601,6 +602,7 @@ function input(message, placeholder = undefined, params = {}) {
             if(inp.value !== "") {
                 // Signal input submission to prevent resize during keyboard close/cleanup
                 setIsInputFocused(false);
+                setResizeSuppressedUntil(Date.now() + 900);
                 
                 alertwin.close();
                 alertwin.btns.classList.replace("justify-end", "justify-between");
@@ -744,6 +746,7 @@ function choice(message, opts, params = {}) {
                 return;
             }
             const value = selected.value;
+            setResizeSuppressedUntil(Date.now() + 900);
             alertwin.close();
             alertwin.btns.classList.replace("justify-end", "justify-between");
 

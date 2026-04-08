@@ -58,6 +58,8 @@ let isInputFocused = false;
 let shouldAbortGame = false;
 /** @type {() => void} */
 let abortInstruction = () => {};
+/** @type {number} */
+let resizeSuppressedUntil = 0;
 
 /** @returns {Record<string, any>|null} */
 export const getConfiguration = () => configuration;
@@ -176,3 +178,7 @@ export const setShouldAbortGame = (value) => { shouldAbortGame = value; };
 export const getAbortInstruction = () => abortInstruction;
 /** @param {() => void} value */
 export const setAbortInstruction = (value) => { abortInstruction = value; };
+/** @returns {number} */
+export const getResizeSuppressedUntil = () => resizeSuppressedUntil;
+/** @param {number} value */
+export const setResizeSuppressedUntil = (value) => { resizeSuppressedUntil = value; };

@@ -31,6 +31,7 @@ import {
     getOpenWindow,
     setOpenWindow,
     getIsInputFocused,
+    getResizeSuppressedUntil,
     setShouldAbortGame,
     getAbortInstruction
 } from "./runtime-state.js";
@@ -932,7 +933,13 @@ async function loadChapterDefinitions(config) {
     };
 
     let resizeDispatchTimer = null;
+    const isResizeTemporarilySuppressed = () => getResizeSuppressedUntil() > Date.now();
+
     const scheduleGameResize = () => {
+        if (isResizeTemporarilySuppressed()) {
+            return;
+        }
+
         if (resizeDispatchTimer) {
             clearTimeout(resizeDispatchTimer);
         }
@@ -945,14 +952,14 @@ async function loadChapterDefinitions(config) {
 
     globalThis.addEventListener("resize", () => {
         refreshPortraitCompatibilityUI();
-        if (hasStarted) {
+        if (hasStarted && !isResizeTemporarilySuppressed()) {
             scheduleGameResize();
         }
     });
 
     document.addEventListener("fullscreenchange", () => {
         refreshPortraitCompatibilityUI();
-        if (hasStarted) {
+        if (hasStarted && !isResizeTemporarilySuppressed()) {
             scheduleGameResize();
         }
     });
@@ -962,7 +969,7 @@ async function loadChapterDefinitions(config) {
 
         if (!isPortraitCompatible) {
             refreshPortraitCompatibilityUI();
-            if (hasStarted) {
+            if (hasStarted && !isResizeTemporarilySuppressed()) {
                 scheduleGameResize();
             }
             return;
@@ -982,6 +989,10 @@ async function loadChapterDefinitions(config) {
     });
 
     globalThis.addEventListener(EVENTS.GAME_RESIZE, async () => {
+        if (isResizeTemporarilySuppressed()) {
+            return;
+        }
+
         if(getIsInputFocused()) {
             return;
         }
