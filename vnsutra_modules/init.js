@@ -898,6 +898,9 @@ async function loadChapterDefinitions(config) {
         gameInstance?.ui?.game?.end?.visible(false);
         gameInstance?.ui?.game?.stopEndingSequence?.({ showEnd: false });
         gameInstance?.ui?.game?.loading?.visible(false);
+        gameInstance?.ui?.dialog?.name?.text?.("");
+        gameInstance?.ui?.dialog?.message?.text?.("");
+        gameInstance?.ui?.dialog?.message?.fire?.("update");
 
         setInstructionCount(0);
         setActiveScene(sceneName);
