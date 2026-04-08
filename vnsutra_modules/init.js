@@ -588,11 +588,14 @@ async function loadChapterDefinitions(config) {
             // Hide splash immediately before any async operations
             loadwin.classList.add("hidden");
             
+            // Show home page immediately (don't wait for GAME_RESIZE)
+            navigate("home", {});
+        
             // Request fullscreen (async, doesn't block UI)
             document.documentElement.requestFullscreen().catch(() => {
                 // Fullscreen request might fail on some browsers
             });
-            
+        
             // Dispatch resize after fullscreen processes
             setTimeout(() => {
                 globalThis.dispatchEvent(new CustomEvent(EVENTS.GAME_RESIZE));
