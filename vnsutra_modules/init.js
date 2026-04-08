@@ -1330,10 +1330,18 @@ async function loadChapterDefinitions(config) {
     function navigate(name, data) {
         if(pages[name]) {
             const previousLayer = getActiveLayer();
+            const isLeavingGame = previousLayer === "game" && name !== "game";
 
-            if (previousLayer === "game" && name !== "game") {
+            // End active game work before detaching the game layer from the stage.
+            // This prevents in-flight dialog/tween callbacks from drawing to nodes
+            // whose stage buffers are already gone.
+            if (isLeavingGame) {
+                globalThis.dispatchEvent(new CustomEvent("game-ended"));
+                disclaimerShown = false;
+            }
+
+            if (isLeavingGame) {
                 pages.game?.ui?.teardown?.();
-                pages.game?.ui?.game?.stopEndingSequence?.({ showEnd: false });
                 pages.game?.ui?.animations?.loading?.stop?.();
             }
 
@@ -1371,13 +1379,7 @@ async function loadChapterDefinitions(config) {
                     gameInstance?.ui?.dialog?.message?.fire?.("update");
                     globalThis.dispatchEvent(new CustomEvent("game-started"));
                 }
-            }
-
-            if(previousLayer === "game" && name !== "game") {
-                globalThis.dispatchEvent(new CustomEvent("game-ended"));
-                // Reset disclaimer flag when leaving game (going back to menu)
-                disclaimerShown = false;
-            }
+            }            
         }
     }
 })();

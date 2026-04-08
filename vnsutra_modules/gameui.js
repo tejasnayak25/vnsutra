@@ -230,20 +230,24 @@ async function gameUI(config, fonts, navigate) {
         if (isPortrait) {
             // On mobile: fade effect, always visible
             const targetOpacity = document.fullscreenElement ? 0.3 : 1;
-            expandBtnTween = expandBtn.to({
+            expandBtnTween = new Konva.Tween({
+                node: expandBtn,
                 opacity: targetOpacity,
                 duration: 0.2
             });
+            expandBtnTween.play();
         } else {
             // On desktop: visibility toggle
             expandBtn.visible(!document.fullscreenElement);
             topbarDivider.visible(!document.fullscreenElement);
             // Animate menu x position to avoid overlapping with expand button when it is visible
             const newX = calculateMenuHolderX();
-            menuHolderTween = menuHolder.to({
+            menuHolderTween = new Konva.Tween({
+                node: menuHolder,
                 x: newX,
                 duration: 0.2
             });
+            menuHolderTween.play();
         }
     };
 
@@ -300,15 +304,12 @@ async function gameUI(config, fonts, navigate) {
     alertWin.color = config.colors.primary;
 
     backBtn.on("click touchstart", () => {
-        const isEndingState = endingSequenceGroup.visible() || endGroup.visible();
-        if (!isEndingState) {
-            animateBtn(backBtn);
-        }
+        animateBtn(backBtn);
 
         proceedBtn.onclick = () => {
             setShouldAbortGame(true);
-            navigate("home", {});
             alertWin.close();
+            navigate("home", {});
         };
 
         alertWin.message = "Are you sure you want to exit?";
@@ -1120,6 +1121,23 @@ async function gameUI(config, fonts, navigate) {
         }
     };
 
+    const safeEndingBatchDraw = () => {
+        if (isGameUiDisposed) {
+            return;
+        }
+
+        const stage = game_layer?.getStage?.();
+        if (!stage) {
+            return;
+        }
+
+        try {
+            game_layer.batchDraw();
+        } catch {
+            // Ignore draw errors during teardown/race conditions.
+        }
+    };
+
     const finalizeEnding = (token) => {
         if (token !== endingRunToken) {
             return;
@@ -1129,7 +1147,7 @@ async function gameUI(config, fonts, navigate) {
         endingSequenceGroup.visible(false);
         endGroup.visible(true);
         stopEndingTween();
-        game_layer.batchDraw();
+        safeEndingBatchDraw();
 
         if (typeof endingResolve === "function") {
             const resolve = endingResolve;
@@ -1149,7 +1167,7 @@ async function gameUI(config, fonts, navigate) {
         } else {
             endGroup.visible(true);
         }
-        game_layer.batchDraw();
+        safeEndingBatchDraw();
 
         if (typeof endingResolve === "function") {
             const resolve = endingResolve;
@@ -1182,7 +1200,7 @@ async function gameUI(config, fonts, navigate) {
 
         if (!creditsEntries.length) {
             endGroup.visible(true);
-            game_layer.batchDraw();
+            safeEndingBatchDraw();
             return Promise.resolve();
         }
 
@@ -1197,7 +1215,7 @@ async function gameUI(config, fonts, navigate) {
         endingHint.visible(Boolean(allowSkip));
         creditsContent.y(scrollStartY);
         stopEndingTween();
-        game_layer.batchDraw();
+        safeEndingBatchDraw();
 
         if (allowSkip) {
             endingSequenceGroup.on("click.ending touchstart.ending", () => {
