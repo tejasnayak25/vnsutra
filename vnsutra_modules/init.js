@@ -898,6 +898,9 @@ async function loadChapterDefinitions(config) {
         gameInstance?.ui?.game?.end?.visible(false);
         gameInstance?.ui?.game?.stopEndingSequence?.({ showEnd: false });
         gameInstance?.ui?.game?.loading?.visible(false);
+        gameInstance?.ui?.dialog?.name?.text?.("");
+        gameInstance?.ui?.dialog?.message?.text?.("");
+        gameInstance?.ui?.dialog?.message?.fire?.("update");
 
         setInstructionCount(0);
         setActiveScene(sceneName);
@@ -1160,16 +1163,6 @@ async function loadChapterDefinitions(config) {
                             isNewGame = false;
                         }
 
-                        if (isNewGame) {
-                            // Ensure a fresh new-game session starts without stale dialog/end overlays.
-                            pages.game.ui.dialog?.name?.text?.("");
-                            pages.game.ui.dialog?.message?.text?.("");
-                            pages.game.ui.dialog?.message?.fire?.("update");
-                            pages.game.ui.game?.loading?.visible?.(false);
-                            pages.game.ui.game?.stopEndingSequence?.({ showEnd: false });
-                            pages.game.ui.game?.end?.visible?.(false);
-                        }
-
                         startScene({
                             scene: sceneName,
                             state: nextState,
@@ -1344,6 +1337,25 @@ async function loadChapterDefinitions(config) {
                 pages.game?.ui?.game?.stopEndingSequence?.({ showEnd: false });
                 pages.game?.ui?.game?.loading?.visible?.(false);
                 pages.game?.ui?.animations?.loading?.stop?.();
+
+                const gameLayer = pages.game?.ui?.layer;
+                if (gameLayer) {
+                    gameLayer.stop?.();
+
+                    // Prevent detached-layer tween draws (Konva bufferCanvas null) after navigation.
+                    const animatedNodes = gameLayer.find?.("*") ?? [];
+                    animatedNodes.forEach((node) => {
+                        try {
+                            node?.stop?.();
+                        } catch (error) {
+                            errorTracking?.captureError(error, {
+                                type: "warning",
+                                message: "[Init] Failed to stop node tween before navigation",
+                                context: { scope: "init", subsystem: "navigation" }
+                            });
+                        }
+                    });
+                }
             }
 
             if (previousLayer !== name) {
