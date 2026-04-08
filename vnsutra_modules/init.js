@@ -585,22 +585,18 @@ async function loadChapterDefinitions(config) {
 
             hasStarted = true;
             
-            // Hide splash and show home immediately for responsive UX
-            const splashLayer = document.getElementById("splash-layer");
-            if (splashLayer) {
-                splashLayer.classList.add("hidden");
-            }
-            navigate("home", {});
+            // Hide splash immediately before any async operations
+            loadwin.classList.add("hidden");
             
-            // Handle fullscreen and resize operations without blocking UI transition
+            // Request fullscreen (async, doesn't block UI)
             document.documentElement.requestFullscreen().catch(() => {
-                // Fullscreen request might fail, but don't block home transition
+                // Fullscreen request might fail on some browsers
             });
             
-            // Dispatch resize after fullscreen settles (async)
+            // Dispatch resize after fullscreen processes
             setTimeout(() => {
                 globalThis.dispatchEvent(new CustomEvent(EVENTS.GAME_RESIZE));
-            }, 100);
+            }, 250);
             
             document.onclick = () => {};
         };
