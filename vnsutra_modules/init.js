@@ -1159,17 +1159,6 @@ async function loadChapterDefinitions(config) {
                             // Loading a specific saved scene
                             isNewGame = false;
                         }
-
-                        if (isNewGame) {
-                            // Ensure a fresh new-game session starts without stale dialog/end overlays.
-                            pages.game.ui.dialog?.name?.text?.("");
-                            pages.game.ui.dialog?.message?.text?.("");
-                            pages.game.ui.dialog?.message?.fire?.("update");
-                            pages.game.ui.game?.loading?.visible?.(false);
-                            pages.game.ui.game?.stopEndingSequence?.({ showEnd: false });
-                            pages.game.ui.game?.end?.visible?.(false);
-                        }
-
                         startScene({
                             scene: sceneName,
                             state: nextState,
@@ -1338,13 +1327,6 @@ async function loadChapterDefinitions(config) {
     function navigate(name, data) {
         if(pages[name]) {
             const previousLayer = getActiveLayer();
-
-            if (previousLayer === "game" && name !== "game") {
-                // Stop credits/end tweens and overlays before detaching game layer.
-                pages.game?.ui?.game?.stopEndingSequence?.({ showEnd: false });
-                pages.game?.ui?.game?.loading?.visible?.(false);
-                pages.game?.ui?.animations?.loading?.stop?.();
-            }
 
             if (previousLayer !== name) {
                 setOpenWindow(null);
