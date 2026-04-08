@@ -217,14 +217,20 @@ async function gameUI(config, fonts, navigate) {
     });
 
     const syncExpandBtnVisibility = () => {
+        if (isGameUiDisposed) {
+            return;
+        }
+
         if (!expandBtn || !expandBtn.getLayer()) {
             return;
         }
+
+        stopTopbarTweens();
         
         if (isPortrait) {
             // On mobile: fade effect, always visible
             const targetOpacity = document.fullscreenElement ? 0.3 : 1;
-            expandBtn.to({
+            expandBtnTween = expandBtn.to({
                 opacity: targetOpacity,
                 duration: 0.2
             });
@@ -234,7 +240,7 @@ async function gameUI(config, fonts, navigate) {
             topbarDivider.visible(!document.fullscreenElement);
             // Animate menu x position to avoid overlapping with expand button when it is visible
             const newX = calculateMenuHolderX();
-            menuHolder.to({
+            menuHolderTween = menuHolder.to({
                 x: newX,
                 duration: 0.2
             });
@@ -242,6 +248,10 @@ async function gameUI(config, fonts, navigate) {
     };
 
     const handleFullscreenEscape = (e) => {
+        if (isGameUiDisposed) {
+            return;
+        }
+
         // On mobile, ESC might not trigger fullscreenchange event, so trigger sync manually
         if (e.key === "Escape") {
             syncExpandBtnVisibility();
@@ -1064,6 +1074,24 @@ async function gameUI(config, fonts, navigate) {
     let endingResolve = null;
     let endingRunToken = 0;
     let endingCreditsTween = null;
+    let expandBtnTween = null;
+    let menuHolderTween = null;
+    let topbarSyncFrameId = null;
+    let isGameUiDisposed = false;
+
+    const stopTopbarTweens = () => {
+        if (expandBtnTween) {
+            expandBtnTween.pause?.();
+            expandBtnTween.destroy?.();
+            expandBtnTween = null;
+        }
+
+        if (menuHolderTween) {
+            menuHolderTween.pause?.();
+            menuHolderTween.destroy?.();
+            menuHolderTween = null;
+        }
+    };
 
     const stopEndingTween = () => {
         if (!endingCreditsTween) {
@@ -1125,6 +1153,25 @@ async function gameUI(config, fonts, navigate) {
             endingResolve = null;
             resolve();
         }
+    };
+
+    const teardown = () => {
+        if (isGameUiDisposed) {
+            return;
+        }
+
+        isGameUiDisposed = true;
+        if (topbarSyncFrameId !== null) {
+            cancelAnimationFrame(topbarSyncFrameId);
+            topbarSyncFrameId = null;
+        }
+
+        stopEndingSequence({ showEnd: false });
+        stopTopbarTweens();
+        document.removeEventListener("fullscreenchange", syncExpandBtnVisibility);
+        document.removeEventListener("webkitfullscreenchange", syncExpandBtnVisibility);
+        document.removeEventListener("keydown", handleFullscreenEscape);
+        game_container.off("click touchstart");
     };
 
     const playEndingSequence = ({ creditsDurationMs = 9000, endHoldMs = 900, allowSkip = true } = {}) => {
@@ -1248,7 +1295,8 @@ async function gameUI(config, fonts, navigate) {
     document.addEventListener("keydown", handleFullscreenEscape);
     
     // Defer initial sync to next frame to ensure all layers are ready
-    requestAnimationFrame(() => {
+    topbarSyncFrameId = requestAnimationFrame(() => {
+        topbarSyncFrameId = null;
         syncExpandBtnVisibility();
     });
 
@@ -1264,6 +1312,7 @@ async function gameUI(config, fonts, navigate) {
             endingSequence: game_layer.findOne("#ending-sequence-group"),
             playEndingSequence,
             stopEndingSequence,
+            teardown,
             loading: game_layer.findOne("#loading-group")
         },
         dialog: {

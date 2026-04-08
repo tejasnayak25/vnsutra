@@ -1332,6 +1332,7 @@ async function loadChapterDefinitions(config) {
             const previousLayer = getActiveLayer();
 
             if (previousLayer === "game" && name !== "game") {
+                pages.game?.ui?.teardown?.();
                 pages.game?.ui?.game?.stopEndingSequence?.({ showEnd: false });
                 pages.game?.ui?.animations?.loading?.stop?.();
             }
