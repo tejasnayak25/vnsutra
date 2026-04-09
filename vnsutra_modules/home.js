@@ -415,6 +415,7 @@ async function home(config, fonts, navigate) {
         height: height,
         visible: isPortrait ? false : true
     });
+    siderect.__vnsutraHistoryOverlay = "home-menu";
 
     const xmlLayoutEnabled = isXmlLayoutEnabled(config);
 
@@ -1083,6 +1084,7 @@ async function home(config, fonts, navigate) {
 
     return ({
         layer: home_layer,
+        menuOverlay: siderect,
         settings: settings_details,
         credits: credit_details,
         loadgame: loadgame_details,

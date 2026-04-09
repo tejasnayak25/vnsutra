@@ -7,6 +7,7 @@ import errorTracking from "./error-tracking.js";
 import performanceMonitor from "./performance.js";
 import chapters from "./chapters.js";
 import { buildLoadEventSignature, buildSceneStartSignature, isRapidDuplicate } from "./scene-transition-utils.js";
+import { isFullscreenActive, restoreFullscreenIfNeeded } from "./fullscreen-utils.js";
 import { isDevelopment, initializeSecuritySettings } from "./global.js";
 import { checkPortrait, mobileCheck } from "./mobile/ui.js";
 import { EVENTS, STORAGE_KEYS } from "./constants.js";
@@ -23,6 +24,7 @@ import {
     setIsPortrait,
     setIsAndroid,
     getIsAndroid,
+    setResizeSuppressedUntil,
     getGameSettings,
     setExitApp,
     getGame,
@@ -36,6 +38,7 @@ import {
     setShouldAbortGame,
     getAbortInstruction
 } from "./runtime-state.js";
+import { openBar, closeBar } from "./ui/utils.js";
 
 const Konva = globalThis.Konva;
 
@@ -872,80 +875,122 @@ async function loadChapterDefinitions(config) {
 
     const getLayerActionbar = (layerName) => pages?.[layerName]?.ui?.actionbar ?? null;
 
+    const getLayerMenuOverlay = (layerName) => pages?.[layerName]?.ui?.menuOverlay ?? null;
+
+    const getOverlayNode = (layerName, overlayType) => {
+        if (overlayType === "home-menu") {
+            return getLayerMenuOverlay(layerName);
+        }
+
+        if (overlayType === "actionbar") {
+            return getLayerActionbar(layerName);
+        }
+
+        return null;
+    };
+
     const isLayerActionbarOpen = (layerName) => {
         return Boolean(getLayerActionbar(layerName)?.actionrect?.visible?.());
     };
 
-    const buildAndroidHistoryState = (layerName, navData = null, actionbarOpen = undefined) => {
+    const isLayerMenuOpen = (layerName) => {
+        return Boolean(getLayerMenuOverlay(layerName)?.visible?.());
+    };
+
+    const getOpenOverlayTypeForLayer = (layerName) => {
+        if (isLayerActionbarOpen(layerName)) {
+            return "actionbar";
+        }
+
+        if (isLayerMenuOpen(layerName)) {
+            return "home-menu";
+        }
+
+        return null;
+    };
+
+    const buildAndroidHistoryState = (layerName, navData = null, overlayType = undefined, windowName = null) => {
         const resolvedLayer = layerName || getActiveLayer() || "home";
-        const isActionbarOpen = typeof actionbarOpen === "boolean"
-            ? actionbarOpen
-            : isLayerActionbarOpen(resolvedLayer);
+        const resolvedOverlayType = typeof overlayType === "string"
+            ? overlayType
+            : getOpenOverlayTypeForLayer(resolvedLayer);
         return {
             [HISTORY_STATE_FLAG]: true,
             layer: resolvedLayer,
             navData: navData ?? null,
-            actionbarOpen: isActionbarOpen,
-            windowName: isActionbarOpen ? (getOpenWindow() ?? null) : null
+            overlayType: resolvedOverlayType,
+            windowName: resolvedOverlayType === "actionbar" ? (windowName ?? getOpenWindow() ?? null) : null
         };
     };
 
-    const replaceAndroidHistoryState = (layerName, navData = null, actionbarOpen = undefined) => {
+    const replaceAndroidHistoryState = (layerName, navData = null, overlayType = undefined, windowName = null) => {
         if (!canUseAndroidHistory()) {
             return;
         }
 
-        const nextState = buildAndroidHistoryState(layerName, navData, actionbarOpen);
+        const nextState = buildAndroidHistoryState(layerName, navData, overlayType, windowName);
         globalThis.history.replaceState(nextState, "", globalThis.location?.href);
     };
 
-    const pushAndroidHistoryState = (layerName, navData = null, actionbarOpen = undefined) => {
+    const pushAndroidHistoryState = (layerName, navData = null, overlayType = undefined, windowName = null) => {
         if (!canUseAndroidHistory()) {
             return;
         }
 
-        const nextState = buildAndroidHistoryState(layerName, navData, actionbarOpen);
+        const nextState = buildAndroidHistoryState(layerName, navData, overlayType, windowName);
         globalThis.history.pushState(nextState, "", globalThis.location?.href);
     };
 
-    const closeLayerActionbar = (layerName) => new Promise((resolve) => {
-        const actionbar = getLayerActionbar(layerName);
-        if (!actionbar?.actionrect?.visible?.()) {
+    const closeLayerOverlay = (layerName, overlayType) => new Promise((resolve) => {
+        const overlayNode = getOverlayNode(layerName, overlayType);
+        const isVisible = overlayType === "actionbar"
+            ? overlayNode?.actionrect?.visible?.()
+            : overlayNode?.visible?.();
+
+        if (!isVisible) {
             resolve();
             return;
         }
 
-        actionbar.close(resolve, { animateButton: false });
+        if (overlayType === "actionbar") {
+            overlayNode.close(resolve, { animateButton: false });
+            return;
+        }
+
+        closeBar(overlayNode, resolve);
     });
 
-    globalThis.addEventListener("vnsutra:actionbar-opened", (event) => {
+    globalThis.addEventListener("vnsutra:overlay-opened", (event) => {
         if (!canUseAndroidHistory() || isApplyingAndroidHistoryState) {
             return;
         }
 
         const layerName = event?.detail?.layer || getActiveLayer() || "home";
+        const overlayType = event?.detail?.overlayType || null;
+        const windowName = event?.detail?.windowName ?? null;
         const currentState = globalThis.history.state;
-        if (currentState?.[HISTORY_STATE_FLAG] && currentState.layer === layerName && currentState.actionbarOpen) {
-            replaceAndroidHistoryState(layerName, currentState.navData ?? null, true);
+        if (currentState?.[HISTORY_STATE_FLAG] && currentState.layer === layerName && currentState.overlayType === overlayType) {
+            replaceAndroidHistoryState(layerName, currentState.navData ?? null, overlayType, windowName ?? currentState.windowName ?? null);
             return;
         }
 
-        pushAndroidHistoryState(layerName, currentState?.navData ?? null, true);
+        pushAndroidHistoryState(layerName, currentState?.navData ?? null, overlayType, windowName);
     });
 
-    globalThis.addEventListener("vnsutra:actionbar-closed", (event) => {
+    globalThis.addEventListener("vnsutra:overlay-closed", (event) => {
         if (!canUseAndroidHistory() || isApplyingAndroidHistoryState) {
             return;
         }
 
         const layerName = event?.detail?.layer || getActiveLayer() || "home";
+        const overlayType = event?.detail?.overlayType || null;
         const currentState = globalThis.history.state;
-        if (currentState?.[HISTORY_STATE_FLAG] && currentState.layer === layerName && currentState.actionbarOpen) {
+        if (currentState?.[HISTORY_STATE_FLAG] && currentState.layer === layerName && currentState.overlayType === overlayType) {
             globalThis.history.back();
             return;
         }
 
-        replaceAndroidHistoryState(layerName, currentState?.navData ?? null, false);
+        replaceAndroidHistoryState(layerName, currentState?.navData ?? null, null, null);
     });
 
     globalThis.addEventListener("vnsutra:open-window-changed", () => {
@@ -954,11 +999,11 @@ async function loadChapterDefinitions(config) {
         }
 
         const currentState = globalThis.history.state;
-        if (!currentState?.[HISTORY_STATE_FLAG] || !currentState.actionbarOpen) {
+        if (!currentState?.[HISTORY_STATE_FLAG] || currentState.overlayType !== "actionbar") {
             return;
         }
 
-        replaceAndroidHistoryState(currentState.layer, currentState.navData ?? null, true);
+        replaceAndroidHistoryState(currentState.layer, currentState.navData ?? null, "actionbar", getOpenWindow());
     });
 
     globalThis.addEventListener("popstate", (event) => {
@@ -974,16 +1019,50 @@ async function loadChapterDefinitions(config) {
         isApplyingAndroidHistoryState = true;
         Promise.resolve()
             .then(async () => {
+                const shouldRestoreFullscreen = !isFullscreenActive(document);
                 const targetLayer = pages[nextState.layer] ? nextState.layer : "home";
                 if (targetLayer !== getActiveLayer()) {
                     navigate(targetLayer, nextState.navData ?? {}, { skipAndroidHistoryPush: true });
                 }
 
-                if (!nextState.actionbarOpen) {
-                    await closeLayerActionbar(targetLayer);
-                    if (targetLayer === "home") {
-                        setOpenWindow(null);
+                if (nextState.overlayType) {
+                    const overlayNode = getOverlayNode(targetLayer, nextState.overlayType);
+                    if (nextState.overlayType === "actionbar") {
+                        if (nextState.windowName && typeof pages?.home?.ui?.[nextState.windowName]?.render === "function") {
+                            pages.home.ui[nextState.windowName].render();
+                        }
+                        const actionbar = getLayerActionbar(targetLayer);
+                        if (actionbar?.actionrect && !actionbar.actionrect.visible()) {
+                            openBar(actionbar.actionrect);
+                        }
+                    } else if (overlayNode && !overlayNode.visible?.()) {
+                        openBar(overlayNode);
                     }
+                } else {
+                    const currentOverlayType = getOpenOverlayTypeForLayer(targetLayer);
+                    if (currentOverlayType) {
+                        setResizeSuppressedUntil(Date.now() + 700);
+                        await closeLayerOverlay(targetLayer, currentOverlayType);
+                        if (currentOverlayType === "actionbar" && targetLayer === "home") {
+                            setOpenWindow(null);
+                        }
+                    }
+                }
+
+                if (shouldRestoreFullscreen) {
+                    await restoreFullscreenIfNeeded({
+                        wasFullscreenBefore: true,
+                        userExitedFullscreen: false,
+                        doc: document,
+                        timeoutMs: 300,
+                        onError: (error) => {
+                            errorTracking?.captureError(error, {
+                                type: "warning",
+                                message: "[Init] Failed to restore fullscreen after Android back navigation",
+                                context: { scope: "init", subsystem: "history-fullscreen" }
+                            });
+                        }
+                    });
                 }
             })
             .finally(() => {
@@ -992,7 +1071,7 @@ async function loadChapterDefinitions(config) {
     });
 
     if (canUseAndroidHistory()) {
-        replaceAndroidHistoryState("home", null, false);
+        replaceAndroidHistoryState("home", null, null, null);
     }
 
     const startScene = ({ scene, state = {}, source = "unknown", dedupeKey, chapterId = null } = {}) => {

@@ -65,9 +65,11 @@ function openBar(bar, done = () => {}) {
     if (gameSettings && gameSettings[REDUCE_MOTION_KEY]) {
         bar.y(0);
         bar.visible(true);
-        if (bar?.__vnsutraActionbar) {
-            globalThis.dispatchEvent(new CustomEvent("vnsutra:actionbar-opened", {
+        const overlayType = bar?.__vnsutraHistoryOverlay;
+        if (overlayType) {
+            globalThis.dispatchEvent(new CustomEvent("vnsutra:overlay-opened", {
                 detail: {
+                    overlayType,
                     layer: getActiveLayer(),
                     windowName: getOpenWindow()
                 }
@@ -83,9 +85,11 @@ function openBar(bar, done = () => {}) {
         y: 0,
         duration: 0.1,
         onFinish: () => {
-            if (bar?.__vnsutraActionbar) {
-                globalThis.dispatchEvent(new CustomEvent("vnsutra:actionbar-opened", {
+            const overlayType = bar?.__vnsutraHistoryOverlay;
+            if (overlayType) {
+                globalThis.dispatchEvent(new CustomEvent("vnsutra:overlay-opened", {
                     detail: {
+                        overlayType,
                         layer: getActiveLayer(),
                         windowName: getOpenWindow()
                     }
@@ -111,9 +115,11 @@ function closeBar(bar, done = () => {}) {
     if (gameSettings && gameSettings[REDUCE_MOTION_KEY]) {
         bar.y(konvaStage.height());
         bar.visible(false);
-        if (bar?.__vnsutraActionbar) {
-            globalThis.dispatchEvent(new CustomEvent("vnsutra:actionbar-closed", {
+        const overlayType = bar?.__vnsutraHistoryOverlay;
+        if (overlayType) {
+            globalThis.dispatchEvent(new CustomEvent("vnsutra:overlay-closed", {
                 detail: {
+                    overlayType,
                     layer: getActiveLayer(),
                     windowName: getOpenWindow()
                 }
@@ -128,9 +134,11 @@ function closeBar(bar, done = () => {}) {
         duration: 0.1,
         onFinish: () => {
             bar.visible(false);
-            if (bar?.__vnsutraActionbar) {
-                globalThis.dispatchEvent(new CustomEvent("vnsutra:actionbar-closed", {
+            const overlayType = bar?.__vnsutraHistoryOverlay;
+            if (overlayType) {
+                globalThis.dispatchEvent(new CustomEvent("vnsutra:overlay-closed", {
                     detail: {
+                        overlayType,
                         layer: getActiveLayer(),
                         windowName: getOpenWindow()
                     }
