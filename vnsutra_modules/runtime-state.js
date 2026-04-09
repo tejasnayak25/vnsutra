@@ -165,7 +165,12 @@ export const setGame = (value) => { game = value; };
 /** @returns {string|null} */
 export const getOpenWindow = () => openWindow;
 /** @param {string|null} value */
-export const setOpenWindow = (value) => { openWindow = value; };
+export const setOpenWindow = (value) => {
+    openWindow = value;
+    globalThis.dispatchEvent(new CustomEvent("vnsutra:open-window-changed", {
+        detail: { windowName: value }
+    }));
+};
 /** @returns {boolean} */
 export const getIsInputFocused = () => isInputFocused;
 /** @param {boolean} value */

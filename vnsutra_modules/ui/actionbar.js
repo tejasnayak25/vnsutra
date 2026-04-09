@@ -142,6 +142,7 @@ async function actionBar(config, siderect, width, height, fonts, close_square_im
     actionrect.height(height);
     actionrect.x(isPortrait ? 0 : siderect.width());
     actionrect.visible(false);
+    actionrect.__vnsutraActionbar = true;
 
     const actionbar = compiledActionbarLayout?.actionBg ?? new Konva.Rect({
         width: actionWidth,
@@ -358,6 +359,7 @@ async function actionBar(config, siderect, width, height, fonts, close_square_im
         close(done = () => {}, options = {}) {
             const { animateButton = true } = options;
             cleanupActionbarScroll(this);
+            setOpenWindow(null);
             if (animateButton) {
                 animateBtn(closeActionMenuBtn);
             }

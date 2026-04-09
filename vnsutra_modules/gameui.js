@@ -1323,6 +1323,7 @@ async function gameUI(config, fonts, navigate) {
 
     return ({
         layer: game_layer,
+        actionbar: load_win,
         game: {
             container: game_layer.findOne("#game-container"),
             viewport: game_layer.findOne("#game-box"),

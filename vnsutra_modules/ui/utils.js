@@ -5,7 +5,7 @@
  */
 import { konvaStage } from "../stage.js";
 import { storage } from "../storage.js";
-import { getConfiguration, getGameSettings, getIsPortrait, getIsAndroid } from "../runtime-state.js";
+import { getConfiguration, getGameSettings, getIsPortrait, getIsAndroid, getActiveLayer, getOpenWindow } from "../runtime-state.js";
 import { STORAGE_KEYS } from "../constants.js";
 import errorTracking from "../error-tracking.js";
 
@@ -54,10 +54,25 @@ function deepEqual(a, b) {
 }
 
 function openBar(bar, done = () => {}) {
+    const wasVisible = bar?.visible?.() === true;
+
+    if (wasVisible) {
+        done();
+        return;
+    }
+
     const gameSettings = getGameSettings();
     if (gameSettings && gameSettings[REDUCE_MOTION_KEY]) {
         bar.y(0);
         bar.visible(true);
+        if (bar?.__vnsutraActionbar) {
+            globalThis.dispatchEvent(new CustomEvent("vnsutra:actionbar-opened", {
+                detail: {
+                    layer: getActiveLayer(),
+                    windowName: getOpenWindow()
+                }
+            }));
+        }
         done();
         return;
     }
@@ -68,6 +83,14 @@ function openBar(bar, done = () => {}) {
         y: 0,
         duration: 0.1,
         onFinish: () => {
+            if (bar?.__vnsutraActionbar) {
+                globalThis.dispatchEvent(new CustomEvent("vnsutra:actionbar-opened", {
+                    detail: {
+                        layer: getActiveLayer(),
+                        windowName: getOpenWindow()
+                    }
+                }));
+            }
             done();
         }
     });
@@ -78,10 +101,24 @@ function isBarOpen(bar) {
 }
 
 function closeBar(bar, done = () => {}) {
+    const wasVisible = bar?.visible?.() === true;
+    if (!wasVisible) {
+        done();
+        return;
+    }
+
     const gameSettings = getGameSettings();
     if (gameSettings && gameSettings[REDUCE_MOTION_KEY]) {
         bar.y(konvaStage.height());
         bar.visible(false);
+        if (bar?.__vnsutraActionbar) {
+            globalThis.dispatchEvent(new CustomEvent("vnsutra:actionbar-closed", {
+                detail: {
+                    layer: getActiveLayer(),
+                    windowName: getOpenWindow()
+                }
+            }));
+        }
         done();
         return;
     }
@@ -91,6 +128,14 @@ function closeBar(bar, done = () => {}) {
         duration: 0.1,
         onFinish: () => {
             bar.visible(false);
+            if (bar?.__vnsutraActionbar) {
+                globalThis.dispatchEvent(new CustomEvent("vnsutra:actionbar-closed", {
+                    detail: {
+                        layer: getActiveLayer(),
+                        windowName: getOpenWindow()
+                    }
+                }));
+            }
             done();
         }
     });

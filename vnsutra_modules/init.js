@@ -22,6 +22,7 @@ import {
     setConfiguration,
     setIsPortrait,
     setIsAndroid,
+    getIsAndroid,
     getGameSettings,
     setExitApp,
     getGame,
@@ -114,6 +115,8 @@ function logChapterDebug(message, context = undefined) {
 }
 
 const loadUiUtilsModule = () => loadModule("ui-utils", () => import("./ui/utils.js"));
+
+const HISTORY_STATE_FLAG = "__vnsutra";
 
 function preloadDisclaimer(config) {
     if (!config?.ui?.disclaimer?.enabled || disclaimerCache.loaded) {
@@ -859,6 +862,138 @@ async function loadChapterDefinitions(config) {
     let lastSceneStartAt = 0;
     let lastLoadEventSignature = null;
     let lastLoadEventAt = 0;
+    let isApplyingAndroidHistoryState = false;
+
+    const canUseAndroidHistory = () => {
+        return getIsAndroid()
+            && typeof globalThis.history?.pushState === "function"
+            && typeof globalThis.history?.replaceState === "function";
+    };
+
+    const getLayerActionbar = (layerName) => pages?.[layerName]?.ui?.actionbar ?? null;
+
+    const isLayerActionbarOpen = (layerName) => {
+        return Boolean(getLayerActionbar(layerName)?.actionrect?.visible?.());
+    };
+
+    const buildAndroidHistoryState = (layerName, navData = null, actionbarOpen = undefined) => {
+        const resolvedLayer = layerName || getActiveLayer() || "home";
+        const isActionbarOpen = typeof actionbarOpen === "boolean"
+            ? actionbarOpen
+            : isLayerActionbarOpen(resolvedLayer);
+        return {
+            [HISTORY_STATE_FLAG]: true,
+            layer: resolvedLayer,
+            navData: navData ?? null,
+            actionbarOpen: isActionbarOpen,
+            windowName: isActionbarOpen ? (getOpenWindow() ?? null) : null
+        };
+    };
+
+    const replaceAndroidHistoryState = (layerName, navData = null, actionbarOpen = undefined) => {
+        if (!canUseAndroidHistory()) {
+            return;
+        }
+
+        const nextState = buildAndroidHistoryState(layerName, navData, actionbarOpen);
+        globalThis.history.replaceState(nextState, "", globalThis.location?.href);
+    };
+
+    const pushAndroidHistoryState = (layerName, navData = null, actionbarOpen = undefined) => {
+        if (!canUseAndroidHistory()) {
+            return;
+        }
+
+        const nextState = buildAndroidHistoryState(layerName, navData, actionbarOpen);
+        globalThis.history.pushState(nextState, "", globalThis.location?.href);
+    };
+
+    const closeLayerActionbar = (layerName) => new Promise((resolve) => {
+        const actionbar = getLayerActionbar(layerName);
+        if (!actionbar?.actionrect?.visible?.()) {
+            resolve();
+            return;
+        }
+
+        actionbar.close(resolve, { animateButton: false });
+    });
+
+    globalThis.addEventListener("vnsutra:actionbar-opened", (event) => {
+        if (!canUseAndroidHistory() || isApplyingAndroidHistoryState) {
+            return;
+        }
+
+        const layerName = event?.detail?.layer || getActiveLayer() || "home";
+        const currentState = globalThis.history.state;
+        if (currentState?.[HISTORY_STATE_FLAG] && currentState.layer === layerName && currentState.actionbarOpen) {
+            replaceAndroidHistoryState(layerName, currentState.navData ?? null, true);
+            return;
+        }
+
+        pushAndroidHistoryState(layerName, currentState?.navData ?? null, true);
+    });
+
+    globalThis.addEventListener("vnsutra:actionbar-closed", (event) => {
+        if (!canUseAndroidHistory() || isApplyingAndroidHistoryState) {
+            return;
+        }
+
+        const layerName = event?.detail?.layer || getActiveLayer() || "home";
+        const currentState = globalThis.history.state;
+        if (currentState?.[HISTORY_STATE_FLAG] && currentState.layer === layerName && currentState.actionbarOpen) {
+            globalThis.history.back();
+            return;
+        }
+
+        replaceAndroidHistoryState(layerName, currentState?.navData ?? null, false);
+    });
+
+    globalThis.addEventListener("vnsutra:open-window-changed", () => {
+        if (!canUseAndroidHistory() || isApplyingAndroidHistoryState) {
+            return;
+        }
+
+        const currentState = globalThis.history.state;
+        if (!currentState?.[HISTORY_STATE_FLAG] || !currentState.actionbarOpen) {
+            return;
+        }
+
+        replaceAndroidHistoryState(currentState.layer, currentState.navData ?? null, true);
+    });
+
+    globalThis.addEventListener("popstate", (event) => {
+        if (!canUseAndroidHistory()) {
+            return;
+        }
+
+        const nextState = event.state;
+        if (!nextState?.[HISTORY_STATE_FLAG]) {
+            return;
+        }
+
+        isApplyingAndroidHistoryState = true;
+        Promise.resolve()
+            .then(async () => {
+                const targetLayer = pages[nextState.layer] ? nextState.layer : "home";
+                if (targetLayer !== getActiveLayer()) {
+                    navigate(targetLayer, nextState.navData ?? {}, { skipAndroidHistoryPush: true });
+                }
+
+                if (!nextState.actionbarOpen) {
+                    await closeLayerActionbar(targetLayer);
+                    if (targetLayer === "home") {
+                        setOpenWindow(null);
+                    }
+                }
+            })
+            .finally(() => {
+                isApplyingAndroidHistoryState = false;
+            });
+    });
+
+    if (canUseAndroidHistory()) {
+        replaceAndroidHistoryState("home", null, false);
+    }
 
     const startScene = ({ scene, state = {}, source = "unknown", dedupeKey, chapterId = null } = {}) => {
         const sceneName = typeof scene === "string" ? scene.trim() : "";
@@ -1328,7 +1463,8 @@ async function loadChapterDefinitions(config) {
         autoSave?.stop?.();
     });
 
-    function navigate(name, data) {
+    function navigate(name, data, options = {}) {
+        const { skipAndroidHistoryPush = false } = options;
         if(pages[name]) {
             const previousLayer = getActiveLayer();
             const isLeavingGame = previousLayer === "game" && name !== "game";
@@ -1364,6 +1500,12 @@ async function loadChapterDefinitions(config) {
             
             const funcResult = pages[name].func(data);
             setActiveLayer(name);
+
+            if (canUseAndroidHistory() && previousLayer !== name && !skipAndroidHistoryPush) {
+                pushAndroidHistoryState(name, data ?? null, false);
+            } else if (canUseAndroidHistory() && previousLayer === name) {
+                replaceAndroidHistoryState(name, data ?? null);
+            }
 
             if(name === "game") {
                 // Wait for async function to set isNewGame before dispatching event
