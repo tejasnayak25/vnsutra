@@ -866,6 +866,7 @@ async function loadChapterDefinitions(config) {
     let lastLoadEventSignature = null;
     let lastLoadEventAt = 0;
     let isApplyingAndroidHistoryState = false;
+    let isHandlingAndroidFullscreenBack = false;
 
     const canUseAndroidHistory = () => {
         return getIsAndroid()
@@ -1067,6 +1068,55 @@ async function loadChapterDefinitions(config) {
             })
             .finally(() => {
                 isApplyingAndroidHistoryState = false;
+            });
+    });
+
+    document.addEventListener("fullscreenchange", () => {
+        if (!canUseAndroidHistory() || !hasStarted) {
+            return;
+        }
+
+        if (isFullscreenActive(document) || isApplyingAndroidHistoryState || isHandlingAndroidFullscreenBack) {
+            return;
+        }
+
+        const targetLayer = getActiveLayer();
+        const openOverlayType = getOpenOverlayTypeForLayer(targetLayer);
+        if (!openOverlayType) {
+            return;
+        }
+
+        isHandlingAndroidFullscreenBack = true;
+        Promise.resolve()
+            .then(async () => {
+                setResizeSuppressedUntil(Date.now() + 700);
+                await closeLayerOverlay(targetLayer, openOverlayType);
+
+                const currentState = globalThis.history.state;
+                if (currentState?.[HISTORY_STATE_FLAG]) {
+                    replaceAndroidHistoryState(targetLayer, currentState.navData ?? null, null, null);
+                }
+
+                if (openOverlayType === "actionbar" && targetLayer === "home") {
+                    setOpenWindow(null);
+                }
+
+                await restoreFullscreenIfNeeded({
+                    wasFullscreenBefore: true,
+                    userExitedFullscreen: false,
+                    doc: document,
+                    timeoutMs: 300,
+                    onError: (error) => {
+                        errorTracking?.captureError(error, {
+                            type: "warning",
+                            message: "[Init] Failed to restore fullscreen after Android fullscreen-exit close",
+                            context: { scope: "init", subsystem: "history-fullscreen" }
+                        });
+                    }
+                });
+            })
+            .finally(() => {
+                isHandlingAndroidFullscreenBack = false;
             });
     });
 
