@@ -1032,6 +1032,14 @@ async function loadChapterDefinitions(config) {
                     }
 
                     if (nextState.overlayType) {
+                        const currentOverlayType = getOpenOverlayTypeForLayer(targetLayer);
+                        if (currentOverlayType && currentOverlayType !== nextState.overlayType) {
+                            await closeLayerOverlay(targetLayer, currentOverlayType, { instant: true });
+                            if (currentOverlayType === "actionbar" && targetLayer === "home") {
+                                setOpenWindow(null);
+                            }
+                        }
+
                         const overlayNode = getOverlayNode(targetLayer, nextState.overlayType);
                         if (nextState.overlayType === "actionbar") {
                             if (nextState.windowName && typeof pages?.home?.ui?.[nextState.windowName]?.render === "function") {
@@ -1098,12 +1106,20 @@ async function loadChapterDefinitions(config) {
                     await closeLayerOverlay(targetLayer, openOverlayType, { instant: true });
 
                     const currentState = globalThis.history.state;
-                    if (currentState?.[HISTORY_STATE_FLAG]) {
-                        replaceAndroidHistoryState(targetLayer, currentState.navData ?? null, null, null);
-                    }
-
                     if (openOverlayType === "actionbar" && targetLayer === "home") {
                         setOpenWindow(null);
+                    }
+
+                    const remainingOverlayType = getOpenOverlayTypeForLayer(targetLayer);
+                    const remainingWindowName = remainingOverlayType === "actionbar" ? (getOpenWindow() ?? null) : null;
+
+                    if (currentState?.[HISTORY_STATE_FLAG]) {
+                        replaceAndroidHistoryState(
+                            targetLayer,
+                            currentState.navData ?? null,
+                            remainingOverlayType,
+                            remainingWindowName
+                        );
                     }
 
                     await restoreFullscreenIfNeeded({
