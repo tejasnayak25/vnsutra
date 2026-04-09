@@ -1033,7 +1033,7 @@ async function loadChapterDefinitions(config) {
             isApplyingAndroidHistoryState = true;
             Promise.resolve()
                 .then(async () => {
-                    const shouldRestoreFullscreen = !isFullscreenActive(document);
+                    const wasFullscreenBeforePop = isFullscreenActive(document);
                     const targetLayer = pages[nextState.layer] ? nextState.layer : "home";
                     if (targetLayer !== getActiveLayer()) {
                         navigate(targetLayer, nextState.navData ?? {}, { skipAndroidHistoryPush: true });
@@ -1071,9 +1071,9 @@ async function loadChapterDefinitions(config) {
                         }
                     }
 
-                    if (shouldRestoreFullscreen) {
+                    if (wasFullscreenBeforePop && !isFullscreenActive(document)) {
                         await restoreFullscreenIfNeeded({
-                            wasFullscreenBefore: true,
+                            wasFullscreenBefore: wasFullscreenBeforePop,
                             userExitedFullscreen: false,
                             doc: document,
                             timeoutMs: 300,
