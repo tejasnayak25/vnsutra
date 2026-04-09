@@ -999,13 +999,7 @@ async function loadChapterDefinitions(config) {
             }
 
             const layerName = event?.detail?.layer || getActiveLayer() || "home";
-            const overlayType = event?.detail?.overlayType || null;
             const currentState = globalThis.history.state;
-            if (currentState?.[HISTORY_STATE_FLAG] && currentState.layer === layerName && currentState.overlayType === overlayType) {
-                globalThis.history.back();
-                return;
-            }
-
             replaceAndroidHistoryState(layerName, currentState?.navData ?? null, null, null);
         });
 
