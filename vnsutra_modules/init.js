@@ -867,6 +867,7 @@ async function loadChapterDefinitions(config) {
     let lastLoadEventAt = 0;
     let isApplyingAndroidHistoryState = false;
     let isHandlingAndroidFullscreenBack = false;
+    let androidBackFullscreenGuardUntil = 0;
 
     const canUseAndroidHistory = () => {
         return getIsAndroid()
@@ -1030,6 +1031,7 @@ async function loadChapterDefinitions(config) {
                 return;
             }
 
+            androidBackFullscreenGuardUntil = Date.now() + 1200;
             isApplyingAndroidHistoryState = true;
             Promise.resolve()
                 .then(async () => {
@@ -1097,7 +1099,35 @@ async function loadChapterDefinitions(config) {
                 return;
             }
 
-            if (isFullscreenActive(document) || isApplyingAndroidHistoryState || isHandlingAndroidFullscreenBack) {
+            if (isFullscreenActive(document) || isHandlingAndroidFullscreenBack) {
+                return;
+            }
+
+            if (Date.now() <= androidBackFullscreenGuardUntil) {
+                isHandlingAndroidFullscreenBack = true;
+                Promise.resolve()
+                    .then(async () => {
+                        await restoreFullscreenIfNeeded({
+                            wasFullscreenBefore: true,
+                            userExitedFullscreen: false,
+                            doc: document,
+                            timeoutMs: 300,
+                            onError: (error) => {
+                                errorTracking?.captureError(error, {
+                                    type: "warning",
+                                    message: "[Init] Failed to restore fullscreen during Android back guard",
+                                    context: { scope: "init", subsystem: "history-fullscreen" }
+                                });
+                            }
+                        });
+                    })
+                    .finally(() => {
+                        isHandlingAndroidFullscreenBack = false;
+                    });
+                return;
+            }
+
+            if (isApplyingAndroidHistoryState) {
                 return;
             }
 
