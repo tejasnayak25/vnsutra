@@ -1000,7 +1000,15 @@ async function loadChapterDefinitions(config) {
 
             const layerName = event?.detail?.layer || getActiveLayer() || "home";
             const currentState = globalThis.history.state;
-            replaceAndroidHistoryState(layerName, currentState?.navData ?? null, null, null);
+            const remainingOverlayType = getOpenOverlayTypeForLayer(layerName);
+            const remainingWindowName = remainingOverlayType === "actionbar" ? (getOpenWindow() ?? null) : null;
+
+            replaceAndroidHistoryState(
+                layerName,
+                currentState?.navData ?? null,
+                remainingOverlayType,
+                remainingWindowName
+            );
         });
 
         globalThis.addEventListener("vnsutra:open-window-changed", () => {
