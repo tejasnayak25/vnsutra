@@ -942,7 +942,8 @@ async function loadChapterDefinitions(config) {
         globalThis.history.pushState(nextState, "", globalThis.location?.href);
     };
 
-    const closeLayerOverlay = (layerName, overlayType) => new Promise((resolve) => {
+    const closeLayerOverlay = (layerName, overlayType, options = {}) => new Promise((resolve) => {
+        const { instant = false } = options;
         const overlayNode = getOverlayNode(layerName, overlayType);
         const isVisible = overlayType === "actionbar"
             ? overlayNode?.actionrect?.visible?.()
@@ -954,103 +955,163 @@ async function loadChapterDefinitions(config) {
         }
 
         if (overlayType === "actionbar") {
+            if (instant) {
+                overlayNode.actionrect.y(konvaStage.height());
+                overlayNode.actionrect.visible(false);
+                resolve();
+                return;
+            }
             overlayNode.close(resolve, { animateButton: false });
+            return;
+        }
+
+        if (instant) {
+            overlayNode.y(konvaStage.height());
+            overlayNode.visible(false);
+            resolve();
             return;
         }
 
         closeBar(overlayNode, resolve);
     });
 
-    globalThis.addEventListener("vnsutra:overlay-opened", (event) => {
-        if (!canUseAndroidHistory() || isApplyingAndroidHistoryState) {
-            return;
-        }
+    if (canUseAndroidHistory()) {
+        globalThis.addEventListener("vnsutra:overlay-opened", (event) => {
+            if (isApplyingAndroidHistoryState) {
+                return;
+            }
 
-        const layerName = event?.detail?.layer || getActiveLayer() || "home";
-        const overlayType = event?.detail?.overlayType || null;
-        const windowName = event?.detail?.windowName ?? null;
-        const currentState = globalThis.history.state;
-        if (currentState?.[HISTORY_STATE_FLAG] && currentState.layer === layerName && currentState.overlayType === overlayType) {
-            replaceAndroidHistoryState(layerName, currentState.navData ?? null, overlayType, windowName ?? currentState.windowName ?? null);
-            return;
-        }
+            const layerName = event?.detail?.layer || getActiveLayer() || "home";
+            const overlayType = event?.detail?.overlayType || null;
+            const windowName = event?.detail?.windowName ?? null;
+            const currentState = globalThis.history.state;
+            if (currentState?.[HISTORY_STATE_FLAG] && currentState.layer === layerName && currentState.overlayType === overlayType) {
+                replaceAndroidHistoryState(layerName, currentState.navData ?? null, overlayType, windowName ?? currentState.windowName ?? null);
+                return;
+            }
 
-        pushAndroidHistoryState(layerName, currentState?.navData ?? null, overlayType, windowName);
-    });
+            pushAndroidHistoryState(layerName, currentState?.navData ?? null, overlayType, windowName);
+        });
 
-    globalThis.addEventListener("vnsutra:overlay-closed", (event) => {
-        if (!canUseAndroidHistory() || isApplyingAndroidHistoryState) {
-            return;
-        }
+        globalThis.addEventListener("vnsutra:overlay-closed", (event) => {
+            if (isApplyingAndroidHistoryState) {
+                return;
+            }
 
-        const layerName = event?.detail?.layer || getActiveLayer() || "home";
-        const overlayType = event?.detail?.overlayType || null;
-        const currentState = globalThis.history.state;
-        if (currentState?.[HISTORY_STATE_FLAG] && currentState.layer === layerName && currentState.overlayType === overlayType) {
-            globalThis.history.back();
-            return;
-        }
+            const layerName = event?.detail?.layer || getActiveLayer() || "home";
+            const overlayType = event?.detail?.overlayType || null;
+            const currentState = globalThis.history.state;
+            if (currentState?.[HISTORY_STATE_FLAG] && currentState.layer === layerName && currentState.overlayType === overlayType) {
+                globalThis.history.back();
+                return;
+            }
 
-        replaceAndroidHistoryState(layerName, currentState?.navData ?? null, null, null);
-    });
+            replaceAndroidHistoryState(layerName, currentState?.navData ?? null, null, null);
+        });
 
-    globalThis.addEventListener("vnsutra:open-window-changed", () => {
-        if (!canUseAndroidHistory() || isApplyingAndroidHistoryState) {
-            return;
-        }
+        globalThis.addEventListener("vnsutra:open-window-changed", () => {
+            if (isApplyingAndroidHistoryState) {
+                return;
+            }
 
-        const currentState = globalThis.history.state;
-        if (!currentState?.[HISTORY_STATE_FLAG] || currentState.overlayType !== "actionbar") {
-            return;
-        }
+            const currentState = globalThis.history.state;
+            if (!currentState?.[HISTORY_STATE_FLAG] || currentState.overlayType !== "actionbar") {
+                return;
+            }
 
-        replaceAndroidHistoryState(currentState.layer, currentState.navData ?? null, "actionbar", getOpenWindow());
-    });
+            replaceAndroidHistoryState(currentState.layer, currentState.navData ?? null, "actionbar", getOpenWindow());
+        });
 
-    globalThis.addEventListener("popstate", (event) => {
-        if (!canUseAndroidHistory()) {
-            return;
-        }
+        globalThis.addEventListener("popstate", (event) => {
+            const nextState = event.state;
+            if (!nextState?.[HISTORY_STATE_FLAG]) {
+                return;
+            }
 
-        const nextState = event.state;
-        if (!nextState?.[HISTORY_STATE_FLAG]) {
-            return;
-        }
-
-        isApplyingAndroidHistoryState = true;
-        Promise.resolve()
-            .then(async () => {
-                const shouldRestoreFullscreen = !isFullscreenActive(document);
-                const targetLayer = pages[nextState.layer] ? nextState.layer : "home";
-                if (targetLayer !== getActiveLayer()) {
-                    navigate(targetLayer, nextState.navData ?? {}, { skipAndroidHistoryPush: true });
-                }
-
-                if (nextState.overlayType) {
-                    const overlayNode = getOverlayNode(targetLayer, nextState.overlayType);
-                    if (nextState.overlayType === "actionbar") {
-                        if (nextState.windowName && typeof pages?.home?.ui?.[nextState.windowName]?.render === "function") {
-                            pages.home.ui[nextState.windowName].render();
-                        }
-                        const actionbar = getLayerActionbar(targetLayer);
-                        if (actionbar?.actionrect && !actionbar.actionrect.visible()) {
-                            openBar(actionbar.actionrect);
-                        }
-                    } else if (overlayNode && !overlayNode.visible?.()) {
-                        openBar(overlayNode);
+            isApplyingAndroidHistoryState = true;
+            Promise.resolve()
+                .then(async () => {
+                    const shouldRestoreFullscreen = !isFullscreenActive(document);
+                    const targetLayer = pages[nextState.layer] ? nextState.layer : "home";
+                    if (targetLayer !== getActiveLayer()) {
+                        navigate(targetLayer, nextState.navData ?? {}, { skipAndroidHistoryPush: true });
                     }
-                } else {
-                    const currentOverlayType = getOpenOverlayTypeForLayer(targetLayer);
-                    if (currentOverlayType) {
-                        setResizeSuppressedUntil(Date.now() + 700);
-                        await closeLayerOverlay(targetLayer, currentOverlayType);
-                        if (currentOverlayType === "actionbar" && targetLayer === "home") {
-                            setOpenWindow(null);
+
+                    if (nextState.overlayType) {
+                        const overlayNode = getOverlayNode(targetLayer, nextState.overlayType);
+                        if (nextState.overlayType === "actionbar") {
+                            if (nextState.windowName && typeof pages?.home?.ui?.[nextState.windowName]?.render === "function") {
+                                pages.home.ui[nextState.windowName].render();
+                            }
+                            const actionbar = getLayerActionbar(targetLayer);
+                            if (actionbar?.actionrect && !actionbar.actionrect.visible()) {
+                                openBar(actionbar.actionrect);
+                            }
+                        } else if (overlayNode && !overlayNode.visible?.()) {
+                            openBar(overlayNode);
+                        }
+                    } else {
+                        const currentOverlayType = getOpenOverlayTypeForLayer(targetLayer);
+                        if (currentOverlayType) {
+                            setResizeSuppressedUntil(Date.now() + 700);
+                            await closeLayerOverlay(targetLayer, currentOverlayType);
+                            if (currentOverlayType === "actionbar" && targetLayer === "home") {
+                                setOpenWindow(null);
+                            }
                         }
                     }
-                }
 
-                if (shouldRestoreFullscreen) {
+                    if (shouldRestoreFullscreen) {
+                        await restoreFullscreenIfNeeded({
+                            wasFullscreenBefore: true,
+                            userExitedFullscreen: false,
+                            doc: document,
+                            timeoutMs: 300,
+                            onError: (error) => {
+                                errorTracking?.captureError(error, {
+                                    type: "warning",
+                                    message: "[Init] Failed to restore fullscreen after Android back navigation",
+                                    context: { scope: "init", subsystem: "history-fullscreen" }
+                                });
+                            }
+                        });
+                    }
+                })
+                .finally(() => {
+                    isApplyingAndroidHistoryState = false;
+                });
+        });
+
+        document.addEventListener("fullscreenchange", () => {
+            if (!hasStarted) {
+                return;
+            }
+
+            if (isFullscreenActive(document) || isApplyingAndroidHistoryState || isHandlingAndroidFullscreenBack) {
+                return;
+            }
+
+            const targetLayer = getActiveLayer();
+            const openOverlayType = getOpenOverlayTypeForLayer(targetLayer);
+            if (!openOverlayType) {
+                return;
+            }
+
+            isHandlingAndroidFullscreenBack = true;
+            Promise.resolve()
+                .then(async () => {
+                    setResizeSuppressedUntil(Date.now() + 700);
+                    await closeLayerOverlay(targetLayer, openOverlayType, { instant: true });
+
+                    const currentState = globalThis.history.state;
+                    if (currentState?.[HISTORY_STATE_FLAG]) {
+                        replaceAndroidHistoryState(targetLayer, currentState.navData ?? null, null, null);
+                    }
+
+                    if (openOverlayType === "actionbar" && targetLayer === "home") {
+                        setOpenWindow(null);
+                    }
+
                     await restoreFullscreenIfNeeded({
                         wasFullscreenBefore: true,
                         userExitedFullscreen: false,
@@ -1059,68 +1120,17 @@ async function loadChapterDefinitions(config) {
                         onError: (error) => {
                             errorTracking?.captureError(error, {
                                 type: "warning",
-                                message: "[Init] Failed to restore fullscreen after Android back navigation",
+                                message: "[Init] Failed to restore fullscreen after Android fullscreen-exit close",
                                 context: { scope: "init", subsystem: "history-fullscreen" }
                             });
                         }
                     });
-                }
-            })
-            .finally(() => {
-                isApplyingAndroidHistoryState = false;
-            });
-    });
-
-    document.addEventListener("fullscreenchange", () => {
-        if (!canUseAndroidHistory() || !hasStarted) {
-            return;
-        }
-
-        if (isFullscreenActive(document) || isApplyingAndroidHistoryState || isHandlingAndroidFullscreenBack) {
-            return;
-        }
-
-        const targetLayer = getActiveLayer();
-        const openOverlayType = getOpenOverlayTypeForLayer(targetLayer);
-        if (!openOverlayType) {
-            return;
-        }
-
-        isHandlingAndroidFullscreenBack = true;
-        Promise.resolve()
-            .then(async () => {
-                setResizeSuppressedUntil(Date.now() + 700);
-                await closeLayerOverlay(targetLayer, openOverlayType);
-
-                const currentState = globalThis.history.state;
-                if (currentState?.[HISTORY_STATE_FLAG]) {
-                    replaceAndroidHistoryState(targetLayer, currentState.navData ?? null, null, null);
-                }
-
-                if (openOverlayType === "actionbar" && targetLayer === "home") {
-                    setOpenWindow(null);
-                }
-
-                await restoreFullscreenIfNeeded({
-                    wasFullscreenBefore: true,
-                    userExitedFullscreen: false,
-                    doc: document,
-                    timeoutMs: 300,
-                    onError: (error) => {
-                        errorTracking?.captureError(error, {
-                            type: "warning",
-                            message: "[Init] Failed to restore fullscreen after Android fullscreen-exit close",
-                            context: { scope: "init", subsystem: "history-fullscreen" }
-                        });
-                    }
+                })
+                .finally(() => {
+                    isHandlingAndroidFullscreenBack = false;
                 });
-            })
-            .finally(() => {
-                isHandlingAndroidFullscreenBack = false;
-            });
-    });
+        });
 
-    if (canUseAndroidHistory()) {
         replaceAndroidHistoryState("home", null, null, null);
     }
 
