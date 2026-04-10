@@ -1053,6 +1053,8 @@ async function loadChapterDefinitions(config) {
             && typeof globalThis.history?.replaceState === "function";
     };
 
+    const shouldCollapseAllHomeOverlaysOnBackSwipe = () => mobileCheck();
+
     const getLayerActionbar = (layerName) => pages?.[layerName]?.ui?.actionbar ?? null;
 
     const getLayerMenuOverlay = (layerName) => pages?.[layerName]?.ui?.menuOverlay ?? null;
@@ -1241,6 +1243,38 @@ async function loadChapterDefinitions(config) {
                         const gameWindowName = gameOverlayType === "actionbar" ? (getOpenWindow() ?? null) : null;
                         replaceAndroidHistoryState("game", null, gameOverlayType, gameWindowName);
                         pages?.game?.ui?.promptExitToHome?.({ animateButton: false });
+                        return;
+                    }
+
+                    if (
+                        targetLayer === "home"
+                        && currentLayer === "home"
+                        && shouldCollapseAllHomeOverlaysOnBackSwipe()
+                        && isLayerActionbarOpen("home")
+                        && isLayerMenuOpen("home")
+                    ) {
+                        setResizeSuppressedUntil(Date.now() + 700);
+                        await closeLayerOverlay("home", "actionbar", { instant: true });
+                        setOpenWindow(null);
+                        await closeLayerOverlay("home", "home-menu", { instant: true });
+                        requestStageBatchDraw({ immediate: true });
+                        replaceAndroidHistoryState("home", null, null, null);
+
+                        if (wasFullscreenBeforePop && !isFullscreenActive(document)) {
+                            await restoreFullscreenIfNeeded({
+                                wasFullscreenBefore: true,
+                                userExitedFullscreen: false,
+                                doc: document,
+                                timeoutMs: 300,
+                                onError: (error) => {
+                                    errorTracking?.captureError(error, {
+                                        type: "warning",
+                                        message: "[Init] Failed to restore fullscreen after collapsing menu and actionbar on back swipe",
+                                        context: { scope: "init", subsystem: "history-fullscreen" }
+                                    });
+                                }
+                            });
+                        }
                         return;
                     }
 
