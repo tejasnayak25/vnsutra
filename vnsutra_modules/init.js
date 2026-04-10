@@ -1268,7 +1268,17 @@ async function loadChapterDefinitions(config) {
                                 openBar(actionbar.actionrect);
                             }
                         } else if (overlayNode && !overlayNode.visible?.()) {
-                            openBar(overlayNode);
+                            const shouldInstantOpenHomeMenu = nextState.overlayType === "home-menu" && targetLayer === "home";
+                            if (shouldInstantOpenHomeMenu) {
+                                overlayNode.y(0);
+                                if (typeof overlayNode.listening === "function") {
+                                    overlayNode.listening(true);
+                                }
+                                overlayNode.visible(true);
+                                scheduleLayerBatchDraw(overlayNode.getLayer?.());
+                            } else {
+                                openBar(overlayNode);
+                            }
                         }
 
                         if (shouldForceHomeMenuFullscreenRecovery && !isFullscreenActive(document)) {

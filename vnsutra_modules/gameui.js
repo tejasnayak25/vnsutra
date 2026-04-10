@@ -1199,6 +1199,16 @@ async function gameUI(config, fonts, navigate) {
 
         stopEndingSequence({ showEnd: false });
         stopTopbarTweens();
+        if (typeof load_win?.__scrollCleanup === "function") {
+            load_win.__scrollCleanup();
+        }
+        load_win.__scrollSuppressTapUntil = 0;
+        if (load_win?.actionrect) {
+            if (typeof load_win.actionrect.listening === "function") {
+                load_win.actionrect.listening(false);
+            }
+            load_win.actionrect.visible(false);
+        }
         document.removeEventListener("fullscreenchange", syncExpandBtnVisibility);
         document.removeEventListener("webkitfullscreenchange", syncExpandBtnVisibility);
         document.removeEventListener("keydown", handleFullscreenEscape);
