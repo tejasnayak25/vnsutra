@@ -64,6 +64,9 @@ function openBar(bar, done = () => {}) {
     const gameSettings = getGameSettings();
     if (gameSettings && gameSettings[REDUCE_MOTION_KEY]) {
         bar.y(0);
+        if (typeof bar?.listening === "function") {
+            bar.listening(true);
+        }
         bar.visible(true);
         const overlayType = bar?.__vnsutraHistoryOverlay;
         if (overlayType) {
@@ -80,6 +83,9 @@ function openBar(bar, done = () => {}) {
     }
 
     bar.y(konvaStage.height());
+    if (typeof bar?.listening === "function") {
+        bar.listening(true);
+    }
     bar.visible(true);
     bar.to({
         y: 0,
@@ -114,6 +120,9 @@ function closeBar(bar, done = () => {}) {
     const gameSettings = getGameSettings();
     if (gameSettings && gameSettings[REDUCE_MOTION_KEY]) {
         bar.y(konvaStage.height());
+        if (typeof bar?.listening === "function") {
+            bar.listening(false);
+        }
         bar.visible(false);
         const overlayType = bar?.__vnsutraHistoryOverlay;
         if (overlayType) {
@@ -133,6 +142,9 @@ function closeBar(bar, done = () => {}) {
         y: konvaStage.height(),
         duration: 0.1,
         onFinish: () => {
+            if (typeof bar?.listening === "function") {
+                bar.listening(false);
+            }
             bar.visible(false);
             const overlayType = bar?.__vnsutraHistoryOverlay;
             if (overlayType) {

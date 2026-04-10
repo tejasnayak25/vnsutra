@@ -1139,6 +1139,9 @@ async function loadChapterDefinitions(config) {
                     overlayNode.__scrollCleanup();
                 }
                 overlayNode.__scrollSuppressTapUntil = 0;
+                if (typeof overlayNode.actionrect?.listening === "function") {
+                    overlayNode.actionrect.listening(false);
+                }
                 overlayNode.actionrect.y(konvaStage.height());
                 overlayNode.actionrect.visible(false);
                 scheduleLayerBatchDraw(overlayNode.actionrect.getLayer?.());
@@ -1150,6 +1153,9 @@ async function loadChapterDefinitions(config) {
         }
 
         if (instant) {
+            if (typeof overlayNode?.listening === "function") {
+                overlayNode.listening(false);
+            }
             overlayNode.y(konvaStage.height());
             overlayNode.visible(false);
             scheduleLayerBatchDraw(overlayNode.getLayer?.());
@@ -1288,6 +1294,7 @@ async function loadChapterDefinitions(config) {
                             await closeLayerOverlay(targetLayer, currentOverlayType, {
                                 instant: shouldForceHomeMenuFullscreenRecovery
                             });
+                            requestStageBatchDraw({ immediate: true });
                             if (currentOverlayType === "actionbar" && targetLayer === "home") {
                                 setOpenWindow(null);
                             }
