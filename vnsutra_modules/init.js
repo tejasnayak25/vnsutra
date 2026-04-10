@@ -2040,7 +2040,7 @@ async function loadChapterDefinitions(config) {
             }
 
             if (isLeavingGame) {
-                pages.game?.ui?.game?.stopEndingSequence?.({ showEnd: false });
+                pages.game?.ui?.game?.stopEndingSequence?.({ showEnd: false, skipDraw: true });
                 pages.game?.ui?.teardown?.();
                 pages.game?.ui?.animations?.loading?.stop?.();
             }

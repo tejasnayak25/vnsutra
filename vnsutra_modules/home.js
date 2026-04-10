@@ -17,6 +17,7 @@ const Konva = globalThis.Konva;
 
 let homeLayoutPlanCache = null;
 let homeLayoutPlanPromise = null;
+let homeOverlayClosedHandler = null;
 
 function isXmlLayoutEnabled(config) {
     return config?.ui?.["xml-mode"] !== false;
@@ -539,6 +540,24 @@ async function home(config, fonts, navigate) {
         await Promise.all(closeTasks);
         navigate("game", payload);
     };
+
+    if (homeOverlayClosedHandler) {
+        globalThis.removeEventListener("vnsutra:overlay-closed", homeOverlayClosedHandler);
+    }
+
+    homeOverlayClosedHandler = (event) => {
+        if (!isPortrait) {
+            return;
+        }
+
+        if (event?.detail?.overlayType !== "actionbar" || !siderect.visible()) {
+            return;
+        }
+
+        closeBar(siderect);
+    };
+
+    globalThis.addEventListener("vnsutra:overlay-closed", homeOverlayClosedHandler);
     
     const optionRowHeight = isPortrait ? 80 : (isAndroid ? 55 : 70);
     

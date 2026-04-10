@@ -1169,7 +1169,7 @@ async function gameUI(config, fonts, navigate) {
         }
     };
 
-    const stopEndingSequence = ({ showEnd = false } = {}) => {
+    const stopEndingSequence = ({ showEnd = false, skipDraw = false } = {}) => {
         endingRunToken += 1;
         clearEndingHandlers();
         stopEndingTween();
@@ -1180,7 +1180,9 @@ async function gameUI(config, fonts, navigate) {
         } else {
             endGroup.visible(true);
         }
-        safeEndingBatchDraw();
+        if (!skipDraw) {
+            safeEndingBatchDraw();
+        }
 
         if (typeof endingResolve === "function") {
             const resolve = endingResolve;
@@ -1200,7 +1202,7 @@ async function gameUI(config, fonts, navigate) {
             topbarSyncFrameId = null;
         }
 
-        stopEndingSequence({ showEnd: false });
+        stopEndingSequence({ showEnd: false, skipDraw: true });
         stopTopbarTweens();
         if (typeof load_win?.__scrollCleanup === "function") {
             load_win.__scrollCleanup();
@@ -1216,6 +1218,19 @@ async function gameUI(config, fonts, navigate) {
         document.removeEventListener("webkitfullscreenchange", syncExpandBtnVisibility);
         document.removeEventListener("keydown", handleFullscreenEscape);
         game_container.off("click touchstart");
+
+        const runningAnimations = Konva?.Animation?.animations;
+        if (Array.isArray(runningAnimations) && game_layer) {
+            for (let index = runningAnimations.length - 1; index >= 0; index -= 1) {
+                const animation = runningAnimations[index];
+                const layers = animation?.getLayers?.() ?? [];
+                if (layers.some((layer) => layer === game_layer)) {
+                    animation.stop?.();
+                }
+            }
+        }
+
+        game_layer.destroyChildren();
     };
 
     const playEndingSequence = ({ creditsDurationMs = 9000, endHoldMs = 900, allowSkip = true } = {}) => {

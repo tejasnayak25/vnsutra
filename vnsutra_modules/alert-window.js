@@ -95,6 +95,22 @@ class AlertWindow {
         this.btns.innerHTML = "";
         this.btns.append(...(this.data.btns ?? []));
 
+        if (this.card) {
+            this.card.style.maxHeight = "";
+            this.card.style.overflow = "";
+        }
+
+        if (this.choice_holder) {
+            this.choice_holder.style.maxHeight = "";
+            this.choice_holder.style.overflowY = "";
+            this.choice_holder.style.overflowX = "";
+            this.choice_holder.style.minHeight = "";
+            this.choice_holder.style.flex = "";
+            this.choice_holder.style.paddingRight = "";
+            this.choice_holder.style.webkitOverflowScrolling = "";
+            this.choice_holder.style.overscrollBehavior = "";
+        }
+
         if(this.data.type === "input") {
             this.input_holder.classList.replace("hidden", "flex");
             this.input_holder.innerHTML = "";
@@ -108,12 +124,26 @@ class AlertWindow {
 
         if(this.data.type === "choice") {
             this.choice_holder.classList.remove("hidden");
+            if (this.card) {
+                this.card.style.maxHeight = "calc(100vh - 1.5rem)";
+                this.card.style.overflow = "hidden";
+            }
+            this.choice_holder.style.display = "block";
+            this.choice_holder.style.flex = "1 1 auto";
+            this.choice_holder.style.minHeight = "0";
+            this.choice_holder.style.maxHeight = "48vh";
+            this.choice_holder.style.overflowY = "auto";
+            this.choice_holder.style.overflowX = "hidden";
+            this.choice_holder.style.paddingRight = "0.25rem";
+            this.choice_holder.style.webkitOverflowScrolling = "touch";
+            this.choice_holder.style.overscrollBehavior = "contain";
             this.choice_holder.innerHTML = "";
             if (this.data.opts) {
                 this.choice_holder.append(this.data.opts);
             }
         } else {
             this.choice_holder.classList.add("hidden");
+            this.choice_holder.style.display = "";
         }
 
         this.win.classList.replace("hidden", "flex");
