@@ -1220,7 +1220,24 @@ async function loadChapterDefinitions(config) {
             Promise.resolve()
                 .then(async () => {
                     const wasFullscreenBeforePop = isFullscreenActive(document);
+                    const currentLayer = getActiveLayer();
                     const targetLayer = pages[nextState.layer] ? nextState.layer : "home";
+
+                    if (currentLayer === "home" && targetLayer === "game") {
+                        const remainingOverlayType = getOpenOverlayTypeForLayer("home");
+                        const remainingWindowName = remainingOverlayType === "actionbar" ? (getOpenWindow() ?? null) : null;
+                        replaceAndroidHistoryState("home", null, remainingOverlayType, remainingWindowName);
+                        return;
+                    }
+
+                    if (currentLayer === "game" && targetLayer === "home") {
+                        const gameOverlayType = getOpenOverlayTypeForLayer("game");
+                        const gameWindowName = gameOverlayType === "actionbar" ? (getOpenWindow() ?? null) : null;
+                        replaceAndroidHistoryState("game", null, gameOverlayType, gameWindowName);
+                        pages?.game?.ui?.promptExitToHome?.({ animateButton: false });
+                        return;
+                    }
+
                     if (targetLayer !== getActiveLayer()) {
                         navigate(targetLayer, nextState.navData ?? {}, { skipAndroidHistoryPush: true });
                     }
@@ -1250,9 +1267,28 @@ async function loadChapterDefinitions(config) {
                         const currentOverlayType = getOpenOverlayTypeForLayer(targetLayer);
                         if (currentOverlayType) {
                             setResizeSuppressedUntil(Date.now() + 700);
-                            await closeLayerOverlay(targetLayer, currentOverlayType);
+                            const shouldForceHomeMenuFullscreenRecovery = currentOverlayType === "home-menu" && targetLayer === "home";
+                            await closeLayerOverlay(targetLayer, currentOverlayType, {
+                                instant: shouldForceHomeMenuFullscreenRecovery
+                            });
                             if (currentOverlayType === "actionbar" && targetLayer === "home") {
                                 setOpenWindow(null);
+                            }
+
+                            if (shouldForceHomeMenuFullscreenRecovery && !isFullscreenActive(document)) {
+                                await restoreFullscreenIfNeeded({
+                                    wasFullscreenBefore: true,
+                                    userExitedFullscreen: false,
+                                    doc: document,
+                                    timeoutMs: 300,
+                                    onError: (error) => {
+                                        errorTracking?.captureError(error, {
+                                            type: "warning",
+                                            message: "[Init] Failed to restore fullscreen after home menu swipe close",
+                                            context: { scope: "init", subsystem: "history-fullscreen" }
+                                        });
+                                    }
+                                });
                             }
                         }
                     }

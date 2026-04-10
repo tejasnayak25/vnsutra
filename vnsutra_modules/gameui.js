@@ -303,8 +303,10 @@ async function gameUI(config, fonts, navigate) {
     const alertWin = new AlertWindow("Are you sure you want to exit?", [ closeBtn, proceedBtn ], config);
     alertWin.color = config.colors.primary;
 
-    backBtn.on("click touchstart", () => {
-        animateBtn(backBtn);
+    const promptExitToHome = ({ animateButton = true } = {}) => {
+        if (animateButton) {
+            animateBtn(backBtn);
+        }
 
         proceedBtn.onclick = () => {
             setShouldAbortGame(true);
@@ -314,6 +316,10 @@ async function gameUI(config, fonts, navigate) {
 
         alertWin.message = "Are you sure you want to exit?";
         alertWin.show();
+    };
+
+    backBtn.on("click touchstart", () => {
+        promptExitToHome({ animateButton: true });
     });
 
     window.onbeforeunload = (e) => {
@@ -1328,6 +1334,7 @@ async function gameUI(config, fonts, navigate) {
     return ({
         layer: game_layer,
         actionbar: load_win,
+        promptExitToHome,
         game: {
             container: game_layer.findOne("#game-container"),
             viewport: game_layer.findOne("#game-box"),
