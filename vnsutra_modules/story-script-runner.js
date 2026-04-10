@@ -2,6 +2,7 @@ import { dialog, next, loading, input, choice, storage, end } from "./game-utils
 import { i18n } from "./i18n.js";
 import { initActorAnimation, addGameAnimationMethods } from "./animation-utils.js";
 import { initAudioSystem } from "./audio-effects-utils.js";
+import { initVisualEffectsSystem } from "./visual-effects-utils.js";
 
 function resolveResponsive(value, { isPortrait = false, isAndroid = false } = {}) {
     if (!value || typeof value !== "object" || Array.isArray(value)) {
@@ -52,8 +53,28 @@ function resolveDialogParams(params = {}, vars = {}) {
     return resolved;
 }
 
+function findUpcomingJumpTarget(actions = [], startIndex = 0) {
+    for (let index = startIndex; index < actions.length; index++) {
+        const action = actions[index];
+        if (!action || typeof action !== "object") {
+            continue;
+        }
+
+        if (action.type === "jump" && typeof action.scene === "string" && action.scene) {
+            return action.scene;
+        }
+
+        if (action.type !== "log" && action.type !== "wait") {
+            return null;
+        }
+    }
+
+    return null;
+}
+
 async function executeActions(actions = [], runtime) {
-    for (const action of actions) {
+    for (let actionIndex = 0; actionIndex < actions.length; actionIndex++) {
+        const action = actions[actionIndex];
         if (!action || typeof action !== "object") {
             continue;
         }
@@ -531,15 +552,27 @@ async function executeActions(actions = [], runtime) {
                 const overlapRatio = action.overlapRatio ?? action.overlap;
                 const fadeInRatio = action.fadeInRatio;
                 const holdMs = action.holdMs;
+                const hintedTarget = typeof action.targetScene === "string" ? action.targetScene : action.scene;
+                const upcomingJumpTarget = findUpcomingJumpTarget(actions, actionIndex + 1);
+                const prefetchTarget = hintedTarget || upcomingJumpTarget;
+                const prefetchPromise = prefetchTarget
+                    ? runtime.prefetchScene?.(prefetchTarget)
+                    : Promise.resolve();
+
                 if (typeof gameInstance.transitionEffect === "function") {
-                    await gameInstance.transitionEffect({
-                        type: transitionType,
-                        color,
-                        duration,
-                        overlapRatio,
-                        fadeInRatio,
-                        holdMs
-                    });
+                    await Promise.all([
+                        gameInstance.transitionEffect({
+                            type: transitionType,
+                            color,
+                            duration,
+                            overlapRatio,
+                            fadeInRatio,
+                            holdMs
+                        }),
+                        prefetchPromise
+                    ]);
+                } else {
+                    await prefetchPromise;
                 }
             }
             break;
@@ -551,6 +584,7 @@ async function executeActions(actions = [], runtime) {
                     return result;
                 }
                 if (typeof result === "string" && runtime.story[result]) {
+                    await runtime.prefetchScene?.(result);
                     next(runtime.story[result], result);
                     return { jumped: true };
                 }
@@ -565,6 +599,7 @@ async function executeActions(actions = [], runtime) {
             if (!runtime.story[action.scene]) {
                 break;
             }
+            await runtime.prefetchScene?.(action.scene);
             next(runtime.story[action.scene], action.scene);
             return { jumped: true };
         }
@@ -691,12 +726,14 @@ function createStoryFromScript({
         if (gameInstance) {
             addGameAnimationMethods(gameInstance);
             initAudioSystem(gameInstance);
+            initVisualEffectsSystem(gameInstance);
         }
 
         const runtime = {
             vars: sharedVars ? persistentVars : {},
             scenes,
             story,
+            prefetchScene: resolveScene,
             getActor: resolveActor,
             getAsset: resolveAsset,
             achievements,

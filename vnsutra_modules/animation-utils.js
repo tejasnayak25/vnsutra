@@ -29,6 +29,26 @@ const easingFunctions = {
     easeInOutQuint: (t) => t < 0.5 ? 16 * t * t * t * t * t : 1 + 16 * (--t) * t * t * t * t
 };
 
+function createLayerDrawScheduler(layer) {
+    let drawScheduled = false;
+
+    return () => {
+        if (!layer || typeof layer.batchDraw !== "function") {
+            return;
+        }
+
+        if (drawScheduled) {
+            return;
+        }
+
+        drawScheduled = true;
+        requestAnimationFrame(() => {
+            drawScheduled = false;
+            layer.batchDraw();
+        });
+    };
+}
+
 /**
  * Create a promise-based tween using requestAnimationFrame
  * @param {number} duration - Duration in milliseconds
@@ -39,10 +59,11 @@ const easingFunctions = {
 function createTween(duration, onUpdate, easing = "linear") {
     return new Promise((resolve) => {
         const easeFn = easingFunctions[easing] || easingFunctions.linear;
-        const startTime = Date.now();
+        const startTime = typeof performance !== "undefined" ? performance.now() : Date.now();
 
         function animate() {
-            const elapsed = Date.now() - startTime;
+            const now = typeof performance !== "undefined" ? performance.now() : Date.now();
+            const elapsed = now - startTime;
             const progress = Math.min(elapsed / duration, 1);
             const easedProgress = easeFn(progress);
 
@@ -85,8 +106,10 @@ function addKonvaAnimationMethods(shape) {
             }
             if (nativeTo) {
                 // Use Konva's native to() if available
+                config.onFinish = () => {
+                    resolve();
+                };
                 nativeTo(config);
-                setTimeout(resolve, duration);
             } else {
                 // Fallback to custom tween
                 const startValues = {};
@@ -113,15 +136,19 @@ function addKonvaAnimationMethods(shape) {
     shape.fade = function(direction = "in", duration = 500) {
         const startOpacity = direction === "in" ? 0 : 1;
         const endOpacity = direction === "in" ? 1 : 0;
+        const scheduleDraw = createLayerDrawScheduler(shape.getLayer?.());
 
         shape.opacity(startOpacity);
+        scheduleDraw();
 
         return new Promise((resolve) => {
             createTween(duration, (progress) => {
                 const opacity = startOpacity + (endOpacity - startOpacity) * progress;
                 shape.opacity(opacity);
+                scheduleDraw();
             }).then(() => {
                 shape.opacity(endOpacity);
+                scheduleDraw();
                 resolve();
             });
         });
@@ -133,6 +160,7 @@ function addKonvaAnimationMethods(shape) {
     shape.moveTo = function(x, y, duration = 1000) {
         const startX = shape.x?.() ?? shape.x;
         const startY = shape.y?.() ?? shape.y;
+        const scheduleDraw = createLayerDrawScheduler(shape.getLayer?.());
 
         return new Promise((resolve) => {
             createTween(duration, (progress) => {
@@ -145,6 +173,7 @@ function addKonvaAnimationMethods(shape) {
                     shape.x = currentX;
                     shape.y = currentY;
                 }
+                scheduleDraw();
             }).then(() => {
                 if (typeof shape.x === "function") {
                     shape.x(x);
@@ -153,6 +182,7 @@ function addKonvaAnimationMethods(shape) {
                     shape.x = x;
                     shape.y = y;
                 }
+                scheduleDraw();
                 resolve();
             });
         });
@@ -164,14 +194,13 @@ function addKonvaAnimationMethods(shape) {
     shape.shake = function(intensity = 5, duration = 300) {
         const originalX = shape.x?.() ?? shape.x;
         const originalY = shape.y?.() ?? shape.y;
+        const scheduleDraw = createLayerDrawScheduler(shape.getLayer?.());
 
         return new Promise((resolve) => {
-            const shakeCount = Math.floor(duration / 50);
-            let count = 0;
-
-            const interval = setInterval(() => {
-                const offsetX = (Math.random() - 0.5) * intensity * 2;
-                const offsetY = (Math.random() - 0.5) * intensity * 2;
+            createTween(duration, (progress) => {
+                const damping = 1 - progress;
+                const offsetX = Math.sin(progress * 24 * Math.PI) * intensity * damping;
+                const offsetY = Math.cos(progress * 20 * Math.PI) * intensity * 0.8 * damping;
 
                 if (typeof shape.x === "function") {
                     shape.x(originalX + offsetX);
@@ -180,20 +209,18 @@ function addKonvaAnimationMethods(shape) {
                     shape.x = originalX + offsetX;
                     shape.y = originalY + offsetY;
                 }
-
-                count++;
-                if (count >= shakeCount) {
-                    clearInterval(interval);
-                    if (typeof shape.x === "function") {
-                        shape.x(originalX);
-                        shape.y(originalY);
-                    } else {
-                        shape.x = originalX;
-                        shape.y = originalY;
-                    }
-                    resolve();
+                scheduleDraw();
+            }, "linear").then(() => {
+                if (typeof shape.x === "function") {
+                    shape.x(originalX);
+                    shape.y(originalY);
+                } else {
+                    shape.x = originalX;
+                    shape.y = originalY;
                 }
-            }, 50);
+                scheduleDraw();
+                resolve();
+            });
         });
     };
 
@@ -222,27 +249,22 @@ function addGameAnimationMethods(gameInstance) {
         const originalX = container.x();
         const originalY = container.y();
         const layer = container.getLayer?.();
+        const scheduleDraw = createLayerDrawScheduler(layer);
 
         return new Promise((resolve) => {
-            const shakeCount = Math.floor(duration / 50);
-            let count = 0;
-
-            const interval = setInterval(() => {
-                const offsetX = (Math.random() - 0.5) * intensity * 2;
-                const offsetY = (Math.random() - 0.5) * intensity * 2;
+            createTween(duration, (progress) => {
+                const damping = 1 - progress;
+                const offsetX = Math.sin(progress * 24 * Math.PI) * intensity * damping;
+                const offsetY = Math.cos(progress * 20 * Math.PI) * intensity * 0.8 * damping;
                 container.x(originalX + offsetX);
                 container.y(originalY + offsetY);
-                layer?.batchDraw?.();
-
-                count++;
-                if (count >= shakeCount) {
-                    clearInterval(interval);
-                    container.x(originalX);
-                    container.y(originalY);
-                    layer?.batchDraw?.();
-                    resolve();
-                }
-            }, 50);
+                scheduleDraw();
+            }, "linear").then(() => {
+                container.x(originalX);
+                container.y(originalY);
+                scheduleDraw();
+                resolve();
+            });
         });
     };
 
@@ -267,15 +289,16 @@ function addGameAnimationMethods(gameInstance) {
 
         overlay.fill(color);
         overlay.opacity(1);
-        layer?.batchDraw?.();
+        const scheduleDraw = createLayerDrawScheduler(layer);
+        scheduleDraw();
 
         return new Promise((resolve) => {
             createTween(duration, (progress) => {
                 overlay.opacity(Math.max(0, 1 - progress));
-                layer?.batchDraw?.();
+                scheduleDraw();
             }).then(() => {
                 overlay.opacity(0);
-                layer?.batchDraw?.();
+                scheduleDraw();
                 resolve();
             });
         });

@@ -3,6 +3,32 @@ import { konvaStage } from "./stage.js";
 import errorTracking from "./error-tracking.js";
 
 const Konva = globalThis.Konva;
+const pendingBackgroundCacheRafs = new WeakMap();
+
+function scheduleBackgroundCache(image, action = "background") {
+    if (!image || typeof image.cache !== "function") {
+        return;
+    }
+
+    if (pendingBackgroundCacheRafs.has(image)) {
+        return;
+    }
+
+    const rafId = requestAnimationFrame(() => {
+        pendingBackgroundCacheRafs.delete(image);
+        try {
+            image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
+        } catch (e) {
+            errorTracking?.captureError(e, {
+                type: "warning",
+                message: "[Game] Cache scheduling failed",
+                context: { scope: "game", action }
+            });
+        }
+    });
+
+    pendingBackgroundCacheRafs.set(image, rafId);
+}
 
 class Game {
     constructor(ui) {
@@ -255,127 +281,34 @@ class Game {
                 image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
             },
             to: ({blurRadius = null, noise = null, pixelSize = null, brightness = null, contrast = null, hue = null, saturation = null, luminance = null, duration = 0.5}) => {
-                return new Promise((resolve, reject) => {
-                    if(blurRadius) {
-                        image.to({
-                            blurRadius: blurRadius,
-                            duration: duration,
-                            onUpdate: () => {
-                                try {
-                                    image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
-                                } catch (e) {
-                                    errorTracking?.captureError(e, {
-                                        type: "warning",
-                                        message: "[Game] Cache failed in blurRadius onUpdate",
-                                        context: { scope: "game", action: "background.blurRadius" }
-                                    });
-                                }
-                            },
-                            onFinish: () => {
-                                try {
-                                    image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
-                                } catch (e) {
-                                    errorTracking?.captureError(e, {
-                                        type: "warning",
-                                        message: "[Game] Cache failed in blurRadius onFinish",
-                                        context: { scope: "game", action: "background.blurRadius" }
-                                    });
-                                }
-                                resolve();
-                            }
-                        });
+                return new Promise((resolve) => {
+                    const nextAttrs = {};
+
+                    if (blurRadius !== null && blurRadius !== undefined) nextAttrs.blurRadius = blurRadius;
+                    if (noise !== null && noise !== undefined) nextAttrs.noise = noise;
+                    if (pixelSize !== null && pixelSize !== undefined) nextAttrs.pixelSize = pixelSize;
+                    if (brightness !== null && brightness !== undefined) nextAttrs.brightness = brightness;
+                    if (contrast !== null && contrast !== undefined) nextAttrs.contrast = contrast;
+                    if (hue !== null && hue !== undefined) nextAttrs.hue = hue;
+                    if (saturation !== null && saturation !== undefined) nextAttrs.saturation = saturation;
+                    if (luminance !== null && luminance !== undefined) nextAttrs.luminance = luminance;
+
+                    if (Object.keys(nextAttrs).length === 0) {
+                        resolve();
+                        return;
                     }
-                    if(noise) {
-                        image.to({
-                            noise: noise,
-                            duration: duration,
-                            onUpdate: () => {
-                                image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
-                            },
-                            onFinish: () => {
-                                image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
-                                resolve();
-                            }
-                        });
-                    }
-                    if(pixelSize) {
-                        image.to({
-                            pixelSize: pixelSize,
-                            duration: duration,
-                            onUpdate: () => {
-                                image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
-                            },
-                            onFinish: () => {
-                                image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
-                                resolve();
-                            }
-                        });
-                    }
-                    if(brightness) {
-                        image.to({
-                            brightness: brightness,
-                            duration: duration,
-                            onUpdate: () => {
-                                image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
-                            },
-                            onFinish: () => {
-                                image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
-                                resolve();
-                            }
-                        });
-                    }
-                    if(contrast) {
-                        image.to({
-                            contrast: contrast,
-                            duration: duration,
-                            onUpdate: () => {
-                                image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
-                            },
-                            onFinish: () => {
-                                image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
-                                resolve();
-                            }
-                        });
-                    }
-                    if(hue) {
-                        image.to({
-                            hue: hue,
-                            duration: duration,
-                            onUpdate: () => {
-                                image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
-                            },
-                            onFinish: () => {
-                                image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
-                                resolve();
-                            }
-                        });
-                    }
-                    if(saturation) {
-                        image.to({
-                            saturation: saturation,
-                            duration: duration,
-                            onUpdate: () => {
-                                image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
-                            },
-                            onFinish: () => {
-                                image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
-                                resolve();
-                            }
-                        });
-                    }
-                    if(luminance) {
-                        image.to({
-                            luminance: luminance,
-                            duration: duration,
-                            onUpdate: () => {
-                                image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
-                            },
-                            onFinish: () => {
-                                image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
-                                resolve();
-                            }
-                        });
-                    }
+
+                    image.to({
+                        ...nextAttrs,
+                        duration,
+                        onUpdate: () => {
+                            scheduleBackgroundCache(image, "background.to.onUpdate");
+                        },
+                        onFinish: () => {
+                            scheduleBackgroundCache(image, "background.to.onFinish");
+                            resolve();
+                        }
+                    });
                 });
             },
             reset: (except = []) => {

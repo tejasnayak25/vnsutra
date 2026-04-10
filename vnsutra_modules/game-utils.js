@@ -49,6 +49,7 @@ function dispatchGameEvent(name, detail) {
 
 let fullscreenTransitionTs = 0;
 let fullscreenTransitionTrackingBound = false;
+let pendingSceneSwitchToken = 0;
 
 function ensureFullscreenTransitionTracking() {
     if (fullscreenTransitionTrackingBound || typeof document === "undefined") {
@@ -527,7 +528,23 @@ function next(scene, targetSceneName = "") {
     if (state) {
         state.instruction_count = 0;
     }
-    scene();
+
+    const switchToken = ++pendingSceneSwitchToken;
+    const queueTask = typeof queueMicrotask === "function"
+        ? queueMicrotask
+        : (cb) => Promise.resolve().then(cb);
+
+    // Queue scene switch without a full-frame delay to avoid visible
+    // pauses between scenes while still collapsing stale rapid switches.
+    queueTask(() => {
+        if (switchToken !== pendingSceneSwitchToken) {
+            return;
+        }
+        if (getShouldAbortGame()) {
+            return;
+        }
+        scene();
+    });
 }
 
 /**
