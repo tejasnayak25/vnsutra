@@ -312,7 +312,9 @@ async function gameUI(config, fonts, navigate) {
             setShouldAbortGame(true);
             stopEndingSequence({ showEnd: false });
             alertWin.close();
-            navigate("home", {});
+            requestAnimationFrame(() => {
+                navigate("home", {});
+            });
         };
 
         alertWin.message = "Are you sure you want to exit?";
@@ -320,7 +322,7 @@ async function gameUI(config, fonts, navigate) {
     };
 
     backBtn.on("click touchstart", () => {
-        promptExitToHome({ animateButton: true });
+        promptExitToHome({ animateButton: !endingSequenceGroup.visible() });
     });
 
     window.onbeforeunload = (e) => {
