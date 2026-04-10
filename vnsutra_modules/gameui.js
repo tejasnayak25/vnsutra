@@ -310,6 +310,7 @@ async function gameUI(config, fonts, navigate) {
 
         proceedBtn.onclick = () => {
             setShouldAbortGame(true);
+            stopEndingSequence({ showEnd: false });
             alertWin.close();
             navigate("home", {});
         };

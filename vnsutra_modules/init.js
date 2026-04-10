@@ -36,6 +36,7 @@ import {
     setOpenWindow,
     getIsInputFocused,
     getResizeSuppressedUntil,
+    getShouldAbortGame,
     setShouldAbortGame,
     getAbortInstruction
 } from "./runtime-state.js";
@@ -2003,6 +2004,7 @@ async function loadChapterDefinitions(config) {
     });
 
     globalThis.addEventListener("game-ended", async () => {
+        const wasAbortRequested = getShouldAbortGame();
         chapters.clearCurrentChapter();
         setShouldAbortGame(true);
         const abortFn = getAbortInstruction();
@@ -2012,7 +2014,10 @@ async function loadChapterDefinitions(config) {
         setInstructionCount(0);
         const autoSaveModule = await ensureAutoSave();
         autoSaveModule.stop();
-        autoSaveModule.save();
+
+        if (!wasAbortRequested) {
+            autoSaveModule.save();
+        }
     });
 
     globalThis.addEventListener("beforeunload", () => {
