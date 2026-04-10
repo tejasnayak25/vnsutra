@@ -2035,6 +2035,7 @@ async function loadChapterDefinitions(config) {
             }
 
             if (isLeavingGame) {
+                pages.game?.ui?.game?.stopEndingSequence?.({ showEnd: false });
                 pages.game?.ui?.teardown?.();
                 pages.game?.ui?.animations?.loading?.stop?.();
             }
@@ -2045,6 +2046,13 @@ async function loadChapterDefinitions(config) {
             
             konvaStage.removeChildren();
             konvaStage.add(pages[name].ui.layer);
+            if (typeof konvaStage.listening === "function") {
+                konvaStage.listening(true);
+            }
+            const stageContainer = typeof konvaStage.container === "function" ? konvaStage.container() : null;
+            if (stageContainer?.style) {
+                stageContainer.style.pointerEvents = "auto";
+            }
             
             // Ensure layer is listening after being re-added to stage
             // This prevents button clicks from being unresponsive after game exit

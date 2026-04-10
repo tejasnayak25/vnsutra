@@ -143,18 +143,57 @@ function initAudioSystem(gameInstance) {
      * Play sound effect
      * @param {string} track - SFX track name or path
      * @param {number} volume - Volume level (0-1)
+     * @param {{ wait?: boolean|number }} [options] - Playback options
      */
-    gameInstance.playSFX = async function(track, volume = 1) {
+    gameInstance.playSFX = async function(track, volume = 1, options = {}) {
+        const waitOption = options?.wait;
+        const shouldWait = waitOption === true || (Number.isFinite(waitOption) && Number(waitOption) > 0);
+        const waitMs = Number.isFinite(waitOption) && Number(waitOption) > 0
+            ? Number(waitOption)
+            : null;
+
         if (typeof this.audio?.playSFX === "function") {
-            return this.audio.playSFX(track, volume);
+            const result = this.audio.playSFX(track, volume, options);
+            return Promise.resolve(result);
         }
 
         // Fallback: create audio element for SFX
         try {
             const sfx = new Audio(track);
             sfx.volume = Math.min(volume * this.sfxVolume, 1);
-            sfx.play();
-            return Promise.resolve();
+            const playPromise = sfx.play();
+
+            if (!shouldWait) {
+                return Promise.resolve(playPromise).catch(() => Promise.resolve());
+            }
+
+            return new Promise((resolve) => {
+                let resolved = false;
+                let timeoutId = null;
+
+                const resolveOnce = () => {
+                    if (resolved) {
+                        return;
+                    }
+
+                    resolved = true;
+                    if (timeoutId) {
+                        clearTimeout(timeoutId);
+                    }
+                    sfx.removeEventListener("ended", resolveOnce);
+                    sfx.removeEventListener("error", resolveOnce);
+                    resolve();
+                };
+
+                sfx.addEventListener("ended", resolveOnce, { once: true });
+                sfx.addEventListener("error", resolveOnce, { once: true });
+
+                if (waitMs !== null) {
+                    timeoutId = setTimeout(resolveOnce, waitMs);
+                }
+
+                Promise.resolve(playPromise).catch(resolveOnce);
+            });
         } catch (e) {
             console.warn("Failed to play SFX:", track, e);
             return Promise.resolve();

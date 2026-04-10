@@ -538,7 +538,9 @@ async function executeActions(actions = [], runtime) {
             if (gameInstance) {
                 const volume = action.volume ?? 1;
                 if (typeof gameInstance.playSFX === "function") {
-                    await gameInstance.playSFX(action.track, volume);
+                    await gameInstance.playSFX(action.track, volume, {
+                        wait: action.wait
+                    });
                 }
             }
             break;
