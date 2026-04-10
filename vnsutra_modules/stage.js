@@ -8,7 +8,31 @@
 import errorTracking from "./error-tracking.js";
 
 const Konva = globalThis.Konva;
-const docRect = document.body?.getBoundingClientRect?.() ?? { width: 0, height: 0 };
+
+function getInitialStageRect() {
+    const viewport = globalThis.visualViewport;
+    const bodyRect = document.body?.getBoundingClientRect?.() ?? { width: 0, height: 0 };
+    const docRect = document.documentElement?.getBoundingClientRect?.() ?? { width: 0, height: 0 };
+    const innerWidth = Number(globalThis.innerWidth) || 0;
+    const innerHeight = Number(globalThis.innerHeight) || 0;
+    const viewportWidth = Number(viewport?.width) || 0;
+    const viewportHeight = Number(viewport?.height) || 0;
+
+    const width = Math.max(
+        Math.round(bodyRect.width) || 0,
+        Math.round(docRect.width) || 0,
+        Math.round(viewportWidth),
+        Math.round(innerWidth)
+    );
+    const height = Math.max(
+        Math.round(bodyRect.height) || 0,
+        Math.round(docRect.height) || 0,
+        Math.round(viewportHeight),
+        Math.round(innerHeight)
+    );
+
+    return { width, height };
+}
 
 const createFallbackStage = () => ({
     width: () => 0,
@@ -36,8 +60,8 @@ if (!Konva) {
 const konvaStage = Konva
     ? new Konva.Stage({
         container: "playground",   // id of container <div>
-        width: docRect.width,
-        height: docRect.height
+        width: getInitialStageRect().width,
+        height: getInitialStageRect().height
     })
     : createFallbackStage();
 

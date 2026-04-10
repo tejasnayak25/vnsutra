@@ -45,6 +45,7 @@ async function loadgame(config, actionbar, title, fonts, remove_img, click = () 
     actionbar.clear();
     actionbar.title = title;
 
+    actionbar.addBtn.off("click touchstart");
     actionbar.addBtn.visible(add);
 
     if(add) {

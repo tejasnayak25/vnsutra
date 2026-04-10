@@ -1,8 +1,9 @@
 import { setIsPortrait, setIsAndroid } from "../runtime-state.js";
 
 function checkPortrait() {
-    const width = globalThis.innerWidth;
-    const height = globalThis.innerHeight;
+    const viewport = globalThis.visualViewport;
+    const width = Number(viewport?.width) || Number(globalThis.innerWidth) || 0;
+    const height = Number(viewport?.height) || Number(globalThis.innerHeight) || 0;
 
     if(width < height) {
         return true;

@@ -21,6 +21,7 @@ import {
     setState,
     setInstructionCount,
     setConfiguration,
+    getIsPortrait,
     setIsPortrait,
     setIsAndroid,
     getIsAndroid,
@@ -196,6 +197,72 @@ function initializeAriaSupport() {
     alertCard?.setAttribute("tabindex", "-1");
     alertMessage?.setAttribute("aria-live", "polite");
     loadStatus?.setAttribute("role", "status");
+}
+
+function isInputDebugEnabled() {
+    if (typeof globalThis === "undefined") {
+        return false;
+    }
+
+    const globalFlag = globalThis.VNSUTRA_DEBUG_INPUT;
+    if (globalFlag === true || globalFlag === 1 || globalFlag === "1" || globalFlag === "true") {
+        return true;
+    }
+
+    try {
+        const stored = globalThis.localStorage?.getItem?.("vnsutra-debug-input");
+        return stored === "1" || stored === "true";
+    } catch {
+        return false;
+    }
+}
+
+function logInputDebug(message, context = undefined) {
+    if (!isInputDebugEnabled()) {
+        return;
+    }
+
+    if (context === undefined) {
+        // eslint-disable-next-line no-console
+        console.log(`[Input][Debug] ${message}`);
+        return;
+    }
+
+    // eslint-disable-next-line no-console
+    console.log(`[Input][Debug] ${message}`, context);
+}
+
+function isResizeDebugEnabled() {
+    if (typeof globalThis === "undefined") {
+        return false;
+    }
+
+    const globalFlag = globalThis.VNSUTRA_DEBUG_RESIZE;
+    if (globalFlag === true || globalFlag === 1 || globalFlag === "1" || globalFlag === "true") {
+        return true;
+    }
+
+    try {
+        const stored = globalThis.localStorage?.getItem?.("vnsutra-debug-resize");
+        return stored === "1" || stored === "true";
+    } catch {
+        return false;
+    }
+}
+
+function logResizeDebug(message, context = undefined) {
+    if (!isResizeDebugEnabled()) {
+        return;
+    }
+
+    if (context === undefined) {
+        // eslint-disable-next-line no-console
+        console.log(`[Resize][Debug] ${message}`);
+        return;
+    }
+
+    // eslint-disable-next-line no-console
+    console.log(`[Resize][Debug] ${message}`, context);
 }
 
 const defaultAchievementDefinitions = [
@@ -868,6 +935,117 @@ async function loadChapterDefinitions(config) {
     let isApplyingAndroidHistoryState = false;
     let isHandlingAndroidFullscreenBack = false;
     let androidBackFullscreenGuardUntil = 0;
+    const scheduledLayerDraws = new WeakSet();
+    let stageDrawScheduled = false;
+
+    const getViewportSize = () => {
+        const viewport = globalThis.visualViewport;
+        const bodyRect = document.body?.getBoundingClientRect?.() ?? { width: 0, height: 0 };
+        const docRect = document.documentElement?.getBoundingClientRect?.() ?? { width: 0, height: 0 };
+        const viewportWidth = Number(viewport?.width) || 0;
+        const viewportHeight = Number(viewport?.height) || 0;
+        const innerWidth = Number(globalThis.innerWidth) || 0;
+        const innerHeight = Number(globalThis.innerHeight) || 0;
+
+        return {
+            width: Math.max(Math.round(bodyRect.width) || 0, Math.round(docRect.width) || 0, Math.round(viewportWidth), Math.round(innerWidth)),
+            height: Math.max(Math.round(bodyRect.height) || 0, Math.round(docRect.height) || 0, Math.round(viewportHeight), Math.round(innerHeight))
+        };
+    };
+
+    const scheduleLayerBatchDraw = (layer) => {
+        if (!layer || typeof layer.batchDraw !== "function") {
+            return;
+        }
+
+        if (scheduledLayerDraws.has(layer)) {
+            return;
+        }
+
+        scheduledLayerDraws.add(layer);
+        requestAnimationFrame(() => {
+            scheduledLayerDraws.delete(layer);
+            try {
+                layer.batchDraw();
+            } catch (error) {
+                errorTracking?.captureError(error, {
+                    type: "warning",
+                    message: "[Init] Deferred layer batchDraw failed",
+                    context: { scope: "init", subsystem: "draw-scheduler" }
+                });
+            }
+        });
+    };
+
+    const requestStageBatchDraw = ({ immediate = false } = {}) => {
+        if (!konvaStage || typeof konvaStage.batchDraw !== "function") {
+            return;
+        }
+
+        if (stageDrawScheduled) {
+            return;
+        }
+
+        stageDrawScheduled = true;
+
+        const release = () => {
+            stageDrawScheduled = false;
+        };
+
+        if (immediate) {
+            try {
+                konvaStage.batchDraw();
+            } catch (error) {
+                errorTracking?.captureError(error, {
+                    type: "warning",
+                    message: "[Init] Immediate stage batchDraw failed",
+                    context: { scope: "init", subsystem: "draw-scheduler" }
+                });
+            } finally {
+                requestAnimationFrame(release);
+            }
+            return;
+        }
+
+        requestAnimationFrame(() => {
+            try {
+                konvaStage.batchDraw();
+            } catch (error) {
+                errorTracking?.captureError(error, {
+                    type: "warning",
+                    message: "[Init] Deferred stage batchDraw failed",
+                    context: { scope: "init", subsystem: "draw-scheduler" }
+                });
+            } finally {
+                release();
+            }
+        });
+    };
+
+    if (isInputDebugEnabled() && typeof konvaStage?.on === "function") {
+        konvaStage.on("mousedown touchstart", () => {
+            const pointer = konvaStage.getPointerPosition?.() ?? null;
+            const intersection = pointer ? konvaStage.getIntersection?.(pointer) : null;
+            const activeLayerName = getActiveLayer();
+            const activeUiLayer = pages?.[activeLayerName]?.ui?.layer;
+            const activeActionbar = pages?.[activeLayerName]?.ui?.actionbar;
+            const activeMenuOverlay = pages?.[activeLayerName]?.ui?.menuOverlay;
+
+            logInputDebug("Stage pointer interaction", {
+                activeLayer: activeLayerName,
+                pointer,
+                hitNodeType: intersection?.className ?? null,
+                hitNodeId: intersection?.id?.() ?? null,
+                stageChildren: konvaStage.getChildren?.().length ?? null,
+                activeLayerListening: typeof activeUiLayer?.listening === "function" ? activeUiLayer.listening() : null,
+                activeLayerVisible: typeof activeUiLayer?.visible === "function" ? activeUiLayer.visible() : null,
+                actionbarVisible: Boolean(activeActionbar?.actionrect?.visible?.()),
+                menuVisible: Boolean(activeMenuOverlay?.visible?.()),
+                openWindow: getOpenWindow()
+            });
+        });
+        logInputDebug("Input diagnostics enabled");
+    }
 
     const canUseAndroidHistory = () => {
         return getIsAndroid()
@@ -957,8 +1135,13 @@ async function loadChapterDefinitions(config) {
 
         if (overlayType === "actionbar") {
             if (instant) {
+                if (typeof overlayNode.__scrollCleanup === "function") {
+                    overlayNode.__scrollCleanup();
+                }
+                overlayNode.__scrollSuppressTapUntil = 0;
                 overlayNode.actionrect.y(konvaStage.height());
                 overlayNode.actionrect.visible(false);
+                scheduleLayerBatchDraw(overlayNode.actionrect.getLayer?.());
                 resolve();
                 return;
             }
@@ -969,6 +1152,7 @@ async function loadChapterDefinitions(config) {
         if (instant) {
             overlayNode.y(konvaStage.height());
             overlayNode.visible(false);
+            scheduleLayerBatchDraw(overlayNode.getLayer?.());
             resolve();
             return;
         }
@@ -1259,13 +1443,22 @@ async function loadChapterDefinitions(config) {
 
     let resizeDispatchTimer = null;
     const isResizeTemporarilySuppressed = () => getResizeSuppressedUntil() > Date.now();
+    const RESIZE_EPSILON_PX = 2;
+
+    const getRoundedStageAndDocSize = () => {
+        const docRect = getViewportSize();
+        return {
+            docWidth: Math.round(docRect.width),
+            docHeight: Math.round(docRect.height),
+            stageWidth: Math.round(konvaStage.width()),
+            stageHeight: Math.round(konvaStage.height())
+        };
+    };
+
     const hasStageDimensionChanged = () => {
-        const docRect = document.body.getBoundingClientRect();
-        const nextWidth = Math.round(docRect.width);
-        const nextHeight = Math.round(docRect.height);
-        const currentWidth = Math.round(konvaStage.width());
-        const currentHeight = Math.round(konvaStage.height());
-        return nextWidth !== currentWidth || nextHeight !== currentHeight;
+        const { docWidth, docHeight, stageWidth, stageHeight } = getRoundedStageAndDocSize();
+        return Math.abs(docWidth - stageWidth) > RESIZE_EPSILON_PX
+            || Math.abs(docHeight - stageHeight) > RESIZE_EPSILON_PX;
     };
 
     const scheduleGameResize = (forceRefresh = false) => {
@@ -1327,21 +1520,46 @@ async function loadChapterDefinitions(config) {
     });
 
     globalThis.addEventListener(EVENTS.GAME_RESIZE, async () => {
+        const resizeStartTs = performance.now();
+        let resizePassCount = 0;
+
         if (isResizeTemporarilySuppressed()) {
+            logResizeDebug("Skipped GAME_RESIZE due to temporary suppression");
             return;
         }
 
         if(getIsInputFocused()) {
+            logResizeDebug("Skipped GAME_RESIZE because input is focused");
             return;
         }
 
         if (!isPortraitCompatible && isPortraitMode()) {
+            logResizeDebug("Skipped GAME_RESIZE due to portrait compatibility block");
             showPortraitBlockNotice();
+            return;
+        }
+
+        const { docWidth, docHeight, stageWidth, stageHeight } = getRoundedStageAndDocSize();
+        const nextPortrait = checkPortrait();
+        const isDimensionNoop = Math.abs(docWidth - stageWidth) <= RESIZE_EPSILON_PX
+            && Math.abs(docHeight - stageHeight) <= RESIZE_EPSILON_PX;
+        const isOrientationNoop = nextPortrait === getIsPortrait();
+        const arePagesMounted = Boolean(pages.home?.ui?.layer) && Boolean(pages.game?.ui?.layer);
+
+        if (isDimensionNoop && isOrientationNoop && arePagesMounted) {
+            logResizeDebug("Skipped GAME_RESIZE because dimensions/orientation are unchanged", {
+                docWidth,
+                docHeight,
+                stageWidth,
+                stageHeight,
+                nextPortrait
+            });
             return;
         }
 
         if (isGameResizeInProgress) {
             isGameResizeQueued = true;
+            logResizeDebug("Queued GAME_RESIZE because another resize is in progress");
             return;
         }
 
@@ -1349,6 +1567,7 @@ async function loadChapterDefinitions(config) {
 
         try {
             do {
+                resizePassCount += 1;
                 isGameResizeQueued = false;
 
                 // Capture open window state before redraw
@@ -1362,7 +1581,7 @@ async function loadChapterDefinitions(config) {
 
                 Konva.autoDrawEnabled = false;
 
-                const docRect = document.body.getBoundingClientRect();
+                const docRect = getViewportSize();
                 konvaStage.width(docRect.width);
                 konvaStage.height(docRect.height);
 
@@ -1403,21 +1622,25 @@ async function loadChapterDefinitions(config) {
                         return;
                     }
 
-                    const { openBar } = await import("./ui/utils.js");
+                    let didRender = false;
                     if (windowName === "settings" && typeof pages.home.ui.settings?.render === "function") {
                         pages.home.ui.settings.render();
-                        openBar(pages.home.ui.actionbar.actionrect);
+                        didRender = true;
                     } else if (windowName === "credits" && typeof pages.home.ui.credits?.render === "function") {
                         pages.home.ui.credits.render();
-                        openBar(pages.home.ui.actionbar.actionrect);
+                        didRender = true;
                     } else if (windowName === "loadgame" && typeof pages.home.ui.loadgame?.render === "function") {
                         await pages.home.ui.loadgame.render();
-                        openBar(pages.home.ui.actionbar.actionrect);
+                        didRender = true;
                     } else if (windowName === "achievements" && typeof pages.home.ui.achievements?.render === "function") {
                         pages.home.ui.achievements.render();
-                        openBar(pages.home.ui.actionbar.actionrect);
+                        didRender = true;
                     } else if (windowName === "chapters" && typeof pages.home.ui.chapters?.render === "function") {
                         pages.home.ui.chapters.render();
+                        didRender = true;
+                    }
+
+                    if (didRender) {
                         openBar(pages.home.ui.actionbar.actionrect);
                     }
                 };
@@ -1522,7 +1745,12 @@ async function loadChapterDefinitions(config) {
                     };
                     navigate(targetLayer, resizeNavigationData);
 
-                    if (targetLayer === "home" && shouldRestoreWindow) {
+                    const isWindowAlreadyRestored = targetLayer === "home"
+                        && Boolean(wasWindowOpen)
+                        && getOpenWindow() === wasWindowOpen
+                        && (pages.home?.ui?.actionbar?.actionrect?.visible?.() ?? false);
+
+                    if (targetLayer === "home" && shouldRestoreWindow && !isWindowAlreadyRestored) {
                         await restoreHomeWindow(wasWindowOpen);
                     }
 
@@ -1531,7 +1759,7 @@ async function loadChapterDefinitions(config) {
                     }
                     
                     // Render immediately and re-enable autoDrawEnabled
-                    konvaStage.batchDraw();
+                    requestStageBatchDraw({ immediate: true });
                     Konva.autoDrawEnabled = true;
                     
                     globalThis.dispatchEvent(new CustomEvent("game-ui-ready"));
@@ -1543,6 +1771,12 @@ async function loadChapterDefinitions(config) {
             } while (isGameResizeQueued);
         } finally {
             isGameResizeInProgress = false;
+            logResizeDebug("Completed GAME_RESIZE", {
+                passes: resizePassCount,
+                durationMs: Math.round((performance.now() - resizeStartTs) * 100) / 100,
+                activeLayer: getActiveLayer(),
+                openWindow: getOpenWindow()
+            });
         }
     });
 
@@ -1634,9 +1868,9 @@ async function loadChapterDefinitions(config) {
 
     globalThis.addEventListener("game-ended", async () => {
         chapters.clearCurrentChapter();
+        setShouldAbortGame(true);
         const abortFn = getAbortInstruction();
         abortFn();
-        setShouldAbortGame(true);
         setState({});
         setActiveScene(null);
         setInstructionCount(0);
@@ -1683,7 +1917,7 @@ async function loadChapterDefinitions(config) {
             }
             
             // Immediately render the layer to avoid black screen
-            konvaStage.batchDraw();
+            requestStageBatchDraw({ immediate: true });
             
             const funcResult = pages[name].func(data);
             setActiveLayer(name);

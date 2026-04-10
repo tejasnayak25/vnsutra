@@ -880,6 +880,10 @@ async function gameUI(config, fonts, navigate) {
     });
 
     dialog_text.on("update", () => {
+        if (isGameUiDisposed || !game_layer?.getStage?.()) {
+            return;
+        }
+
         if(name_text.text() === "" && dialog_text.text() === "") {
             dialogContainer.visible(false);
             return;

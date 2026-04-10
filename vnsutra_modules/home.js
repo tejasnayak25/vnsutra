@@ -473,14 +473,26 @@ async function home(config, fonts, navigate) {
 
     const actionbar = await actionBar(config, siderect, width, height, fonts, close_square_img, add_img);
 
-    const credit_details = credits(config, actionbar, fonts);
+    let credit_details = null;
+    const getCreditDetails = () => credit_details ??= credits(config, actionbar, fonts);
 
-    const settings_details = settings(config, actionbar, fonts, credit_details);
+    let settings_details = null;
+    const getSettingsDetails = () => settings_details ??= settings(config, actionbar, fonts, getCreditDetails());
+
     const achievementsEnabled = Boolean(config?.ui?.achievements?.enabled);
-    const achievements_details = achievementsPage(config, actionbar, fonts);
+    let achievements_details = null;
+    const getAchievementsDetails = () => achievements_details ??= achievementsPage(config, actionbar, fonts);
+
     const chaptersEnabled = Boolean(config?.ui?.chapters?.enabled) && chapters.hasChapters();
     const chapterMapLabel = config?.ui?.chapters?.sidebarLabel || "Chapter Map";
-    const chapters_details = chaptersEnabled ? chaptersPage(config, actionbar, fonts, navigate) : null;
+    let chapters_details = null;
+    const getChaptersDetails = () => {
+        if (!chaptersEnabled) {
+            return null;
+        }
+
+        return chapters_details ??= chaptersPage(config, actionbar, fonts, navigate);
+    };
 
     const resolveDefaultStartPayload = () => {
         if (chaptersEnabled) {
@@ -600,7 +612,7 @@ async function home(config, fonts, navigate) {
                 return;
             }
             openBar(actionbar.actionrect, () => {
-                chapters_details?.render?.();
+                getChaptersDetails()?.render?.();
             });
         } }] : []),
         { name: "Load Game", onclick: async (btnHolder) => {
@@ -616,21 +628,21 @@ async function home(config, fonts, navigate) {
             if(getOpenWindow() === "settings") {
                 return;
             }
-            settings_details.render();
+            getSettingsDetails().render();
             openBar(actionbar.actionrect);
         } },
         { name: "Credits", onclick: () => {
             if(getOpenWindow() === "credits") {
                 return;
             }
-            credit_details.render();
+            getCreditDetails().render();
             openBar(actionbar.actionrect);
         } },
         ...(achievementsEnabled ? [{ name: "Achievements", onclick: () => {
             if(getOpenWindow() === "achievements") {
                 return;
             }
-            achievements_details.render();
+            getAchievementsDetails().render();
             openBar(actionbar.actionrect);
         } }] : []),
         { name: "Fullscreen", onclick: () => {
@@ -1085,11 +1097,11 @@ async function home(config, fonts, navigate) {
     return ({
         layer: home_layer,
         menuOverlay: siderect,
-        settings: settings_details,
-        credits: credit_details,
+        get settings() { return getSettingsDetails(); },
+        get credits() { return getCreditDetails(); },
         loadgame: loadgame_details,
-        chapters: chapters_details,
-        achievements: achievements_details,
+        get chapters() { return getChaptersDetails(); },
+        get achievements() { return getAchievementsDetails(); },
         actionbar: actionbar,
     });
 }

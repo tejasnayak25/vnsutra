@@ -117,6 +117,20 @@ function dialog(speaker, text = "", wait = true, params = {}) {
     }
 
     const data = gameInstance.ui.dialog;
+
+    const isDialogMounted = () => {
+        if (getShouldAbortGame()) {
+            return false;
+        }
+
+        const stage = data?.message?.getLayer?.()?.getStage?.();
+        return Boolean(stage);
+    };
+
+    if (!isDialogMounted()) {
+        return Promise.resolve();
+    }
+
     if(speaker === null) {
         data.name.text("");
         data.message.text("");
@@ -139,6 +153,15 @@ function dialog(speaker, text = "", wait = true, params = {}) {
                     clearInterval(interval);
                     return;
                 }
+
+                if (!isDialogMounted()) {
+                    completed = true;
+                    clearInterval(interval);
+                    cleanup();
+                    resolve(true);
+                    return;
+                }
+
                 time++;
                 if(time <= text.length) {
                     data.message.text(text.substring(0, time));
@@ -157,6 +180,15 @@ function dialog(speaker, text = "", wait = true, params = {}) {
                 if (completed) {
                     return;
                 }
+
+                if (!isDialogMounted()) {
+                    completed = true;
+                    clearInterval(interval);
+                    cleanup();
+                    resolve(true);
+                    return;
+                }
+
                 completed = true;
                 if(e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
@@ -176,6 +208,15 @@ function dialog(speaker, text = "", wait = true, params = {}) {
                 if (completed) {
                     return;
                 }
+
+                if (!isDialogMounted()) {
+                    completed = true;
+                    clearInterval(interval);
+                    cleanup();
+                    resolve(true);
+                    return;
+                }
+
                 completed = true;
                 userSkipped = true;
                 clearInterval(interval);
@@ -220,6 +261,12 @@ function dialog(speaker, text = "", wait = true, params = {}) {
 
             const keyHandler = (e) => {
                 if (completed) return;
+                if (!isDialogMounted()) {
+                    completed = true;
+                    cleanup();
+                    resolve();
+                    return;
+                }
                 if (shouldIgnoreAdvanceInteraction()) {
                     return;
                 }
@@ -234,6 +281,12 @@ function dialog(speaker, text = "", wait = true, params = {}) {
 
             const clickHandler = () => {
                 if (completed) return;
+                if (!isDialogMounted()) {
+                    completed = true;
+                    cleanup();
+                    resolve();
+                    return;
+                }
                 if (shouldIgnoreAdvanceInteraction()) {
                     return;
                 }
@@ -281,6 +334,10 @@ function dialog(speaker, text = "", wait = true, params = {}) {
 
     // Helper async function for dialog logic
     async function showDialog() {
+        if (!isDialogMounted()) {
+            return;
+        }
+
         data.name.text(speaker?.data?.name ?? "");
     
         if(gameSettings && gameSettings["text_animation"]) {
@@ -323,6 +380,10 @@ function dialog(speaker, text = "", wait = true, params = {}) {
                 });
             });
         } else {
+            if (!isDialogMounted()) {
+                return;
+            }
+
             data.message.text(displayText);
             data.message.fire("update");
             dispatchGameEvent(EVENTS.DIALOG, { speaker: speaker?.data?.name ?? null, text: displayText });

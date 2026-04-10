@@ -14,8 +14,8 @@
     {
         "id": "notice-1",
         "type": "notice",
-        "status": "coming-soon",
-        "title": "Coming Soon",
-        "description": "New chapters and features are on the way! Stay tuned."
+        "status": "completed",
+        "title": "Demo Complete",
+        "description": "You've reached the end of the demo. Thanks for playing!"
     }
 ]
