@@ -138,13 +138,14 @@ function closeBar(bar, done = () => {}) {
         return;
     }
 
+    if (typeof bar?.listening === "function") {
+        bar.listening(false);
+    }
+
     bar.to({
         y: konvaStage.height(),
         duration: 0.1,
         onFinish: () => {
-            if (typeof bar?.listening === "function") {
-                bar.listening(false);
-            }
             bar.visible(false);
             const overlayType = bar?.__vnsutraHistoryOverlay;
             if (overlayType) {

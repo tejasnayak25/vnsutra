@@ -1357,37 +1357,10 @@ async function loadChapterDefinitions(config) {
                 return;
             }
 
-            if (Date.now() <= androidBackFullscreenGuardUntil) {
-                isHandlingAndroidFullscreenBack = true;
-                Promise.resolve()
-                    .then(async () => {
-                        await restoreFullscreenIfNeeded({
-                            wasFullscreenBefore: true,
-                            userExitedFullscreen: false,
-                            doc: document,
-                            timeoutMs: 300,
-                            onError: (error) => {
-                                errorTracking?.captureError(error, {
-                                    type: "warning",
-                                    message: "[Init] Failed to restore fullscreen during Android back guard",
-                                    context: { scope: "init", subsystem: "history-fullscreen" }
-                                });
-                            }
-                        });
-                    })
-                    .finally(() => {
-                        isHandlingAndroidFullscreenBack = false;
-                    });
-                return;
-            }
-
-            if (isApplyingAndroidHistoryState) {
-                return;
-            }
-
             const targetLayer = getActiveLayer();
             const openOverlayType = getOpenOverlayTypeForLayer(targetLayer);
-            if (targetLayer === "game" && !openOverlayType) {
+
+            if (targetLayer === "game" && !openOverlayType && !isApplyingAndroidHistoryState) {
                 const alertWinEl = document.getElementById("alert-win");
                 const isAlertVisible = Boolean(alertWinEl && !alertWinEl.classList.contains("hidden"));
 
@@ -1415,6 +1388,34 @@ async function loadChapterDefinitions(config) {
                     .finally(() => {
                         isHandlingAndroidFullscreenBack = false;
                     });
+                return;
+            }
+
+            if (Date.now() <= androidBackFullscreenGuardUntil) {
+                isHandlingAndroidFullscreenBack = true;
+                Promise.resolve()
+                    .then(async () => {
+                        await restoreFullscreenIfNeeded({
+                            wasFullscreenBefore: true,
+                            userExitedFullscreen: false,
+                            doc: document,
+                            timeoutMs: 300,
+                            onError: (error) => {
+                                errorTracking?.captureError(error, {
+                                    type: "warning",
+                                    message: "[Init] Failed to restore fullscreen during Android back guard",
+                                    context: { scope: "init", subsystem: "history-fullscreen" }
+                                });
+                            }
+                        });
+                    })
+                    .finally(() => {
+                        isHandlingAndroidFullscreenBack = false;
+                    });
+                return;
+            }
+
+            if (isApplyingAndroidHistoryState) {
                 return;
             }
 
