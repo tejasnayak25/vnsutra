@@ -674,6 +674,16 @@ async function home(config, fonts, navigate) {
         { name: "Exit", onclick: () => {
             proceedBtn.onclick = () => {
                 alertWin.close();
+                if (typeof globalThis.closeApp === "function") {
+                    globalThis.closeApp();
+                    return;
+                }
+
+                if (typeof globalThis.close === "function") {
+                    globalThis.close();
+                    return;
+                }
+
                 if (typeof exitApp === "function") {
                     exitApp();
                 }
