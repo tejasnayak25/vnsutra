@@ -546,7 +546,7 @@ async function home(config, fonts, navigate) {
     }
 
     homeOverlayClosedHandler = (event) => {
-        if (!isPortrait) {
+        if (!isAndroid) {
             return;
         }
 
