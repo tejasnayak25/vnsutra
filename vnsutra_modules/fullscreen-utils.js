@@ -17,6 +17,12 @@ async function restoreFullscreenIfNeeded({
         return;
     }
 
+    // Global suppression flag: when set, callers (like app exit) don't want
+    // fullscreen to be re-enabled automatically.
+    if (globalThis.__vnsutraSuppressFullscreenRestore) {
+        return;
+    }
+
     if (!wasFullscreenBefore || userExitedFullscreen || isFullscreenActive(doc)) {
         return;
     }

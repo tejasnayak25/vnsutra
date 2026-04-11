@@ -374,7 +374,6 @@ function buildHomeImperativeLayout({
 async function home(config, fonts, navigate) {
     const isPortrait = getIsPortrait();
     const isAndroid = getIsAndroid();
-    const exitApp = getExitApp();
     window.onbeforeunload = () => {};
 
     const home_layer = new Konva.Layer();
@@ -546,8 +545,8 @@ async function home(config, fonts, navigate) {
     }
 
     homeOverlayClosedHandler = (event) => {
-        // Don't auto-close the menu on Android devices when in landscape.
-        if (isAndroid && !isPortrait) {
+        // Only auto-close the menu on mobile portrait devices.
+        if (!(isAndroid && isPortrait)) {
             return;
         }
 
@@ -680,13 +679,24 @@ async function home(config, fonts, navigate) {
                     return;
                 }
 
-                if (typeof globalThis.close === "function") {
-                    globalThis.close();
+                // Only call `close()` if the window was opened by a script (has an opener).
+                if (globalThis.opener && typeof globalThis.close === "function") {
+                    try { globalThis.close(); } catch (e) { void e; }
                     return;
                 }
 
-                if (typeof exitApp === "function") {
-                    exitApp();
+                // Use the runtime accessor so we always invoke the current exit implementation.
+                const runtimeExit = getExitApp();
+                if (typeof runtimeExit === "function") {
+                    runtimeExit();
+                    return;
+                }
+
+                // Fallback: prefer history.back or navigate away to avoid invoking `close()` illegally.
+                if (globalThis.history && globalThis.history.length > 1) {
+                    history.back();
+                } else {
+                    globalThis.location.href = "about:blank";
                 }
             };
             alertWin.show();

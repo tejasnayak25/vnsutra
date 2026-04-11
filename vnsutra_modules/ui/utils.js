@@ -62,7 +62,12 @@ function openBar(bar, done = () => {}) {
     }
 
     const gameSettings = getGameSettings();
-    if (gameSettings && gameSettings[REDUCE_MOTION_KEY]) {
+    // Allow callers to suppress actionbar/menu animation during transient
+    // operations (fullscreen changes, resizes) by setting
+    // `globalThis.__vnsutraSuppressActionbarAnimation = true`.
+    const suppressAnimation = globalThis.__vnsutraSuppressActionbarAnimation === true;
+
+    if (gameSettings && gameSettings[REDUCE_MOTION_KEY] || suppressAnimation) {
         bar.y(0);
         if (typeof bar?.listening === "function") {
             bar.listening(true);

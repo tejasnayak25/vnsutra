@@ -415,14 +415,58 @@ async function loadChapterDefinitions(config) {
                 globalThis.closeApp();
                 return;
             }
-            document.exitFullscreen();
-            setTimeout(() => {
-                if (globalThis.matchMedia("(display-mode: standalone)").matches) {
-                    globalThis.closeApp?.() || globalThis.close();
-                } else {
-                    globalThis.closeApp?.() || history.back();
+            // Prevent other code from re-entering fullscreen while we're trying to exit the app
+            try { globalThis.__vnsutraSuppressFullscreenRestore = true; } catch (e) { void e; }
+
+            try {
+                if (isFullscreenActive(document) && typeof document.exitFullscreen === "function") {
+                    document.exitFullscreen();
                 }
-            }, 100);
+            } catch (e) { void e; }
+
+            // Wait for fullscreenchange (preferred) or timeout before performing fallback navigation/close.
+            (function () {
+                let fallbackCalled = false;
+                const performFallback = () => {
+                    if (fallbackCalled) return;
+                    fallbackCalled = true;
+                    try { globalThis.__vnsutraSuppressFullscreenRestore = false; } catch (e) { void e; }
+
+                    if (globalThis.matchMedia("(display-mode: standalone)").matches) {
+                        if (typeof globalThis.closeApp === "function") {
+                            globalThis.closeApp();
+                            return;
+                        }
+                        if (globalThis.opener) {
+                            try { globalThis.close(); } catch (e) { void e; }
+                            return;
+                        }
+                        globalThis.location.href = "about:blank";
+                        return;
+                    }
+
+                    if (globalThis.history && globalThis.history.length > 1) {
+                        history.back();
+                    } else {
+                        globalThis.location.href = "about:blank";
+                    }
+                };
+
+                const onFullChange = () => {
+                    // Only act when fullscreen has actually changed (exited)
+                    if (!isFullscreenActive(document)) {
+                        performFallback();
+                        document.removeEventListener("fullscreenchange", onFullChange);
+                    }
+                };
+
+                document.addEventListener("fullscreenchange", onFullChange);
+                // As a safety, fallback after 700ms if no fullscreenchange fired
+                setTimeout(() => {
+                    performFallback();
+                    document.removeEventListener("fullscreenchange", onFullChange);
+                }, 700);
+            }());
         });
     }
 
@@ -448,14 +492,53 @@ async function loadChapterDefinitions(config) {
                     globalThis.closeApp();
                     return;
                 }
-                document.exitFullscreen();
-                setTimeout(() => {
-                    if (globalThis.matchMedia("(display-mode: standalone)").matches) {
-                        globalThis.closeApp?.() || globalThis.close();
-                    } else {
-                        globalThis.closeApp?.() || history.back();
+                try { globalThis.__vnsutraSuppressFullscreenRestore = true; } catch (e) { void e; }
+                try {
+                    if (isFullscreenActive(document) && typeof document.exitFullscreen === "function") {
+                        document.exitFullscreen();
                     }
-                }, 100);
+                } catch (e) { void e; }
+
+                (function () {
+                    let fallbackCalled = false;
+                    const performFallback = () => {
+                        if (fallbackCalled) return;
+                        fallbackCalled = true;
+                        try { globalThis.__vnsutraSuppressFullscreenRestore = false; } catch (e) { void e; }
+
+                        if (globalThis.matchMedia("(display-mode: standalone)").matches) {
+                            if (typeof globalThis.closeApp === "function") {
+                                globalThis.closeApp();
+                                return;
+                            }
+                            if (globalThis.opener) {
+                                try { globalThis.close(); } catch (e) { void e; }
+                                return;
+                            }
+                            globalThis.location.href = "about:blank";
+                            return;
+                        }
+
+                        if (globalThis.history && globalThis.history.length > 1) {
+                            history.back();
+                        } else {
+                            globalThis.location.href = "about:blank";
+                        }
+                    };
+
+                    const onFullChange = () => {
+                        if (!isFullscreenActive(document)) {
+                            performFallback();
+                            document.removeEventListener("fullscreenchange", onFullChange);
+                        }
+                    };
+
+                    document.addEventListener("fullscreenchange", onFullChange);
+                    setTimeout(() => {
+                        performFallback();
+                        document.removeEventListener("fullscreenchange", onFullChange);
+                    }, 700);
+                }());
             });
         } else {
             setExitApp(() => {
@@ -1054,7 +1137,7 @@ async function loadChapterDefinitions(config) {
             && typeof globalThis.history?.replaceState === "function";
     };
 
-    const shouldCollapseAllHomeOverlaysOnBackSwipe = () => mobileCheck();
+    const shouldCollapseAllHomeOverlaysOnBackSwipe = () => mobileCheck() && checkPortrait();
 
     const getLayerActionbar = (layerName) => pages?.[layerName]?.ui?.actionbar ?? null;
 
@@ -1458,6 +1541,13 @@ async function loadChapterDefinitions(config) {
                 return;
             }
 
+            // Only auto-close overlays on fullscreen-exit when the actionbar is open
+            // or when both actionbar+menu should collapse on back-swipe (mobile portrait).
+            if (openOverlayType !== "actionbar") {
+                // Leave the home-menu alone when it's the only open overlay.
+                return;
+            }
+
             isHandlingAndroidFullscreenBack = true;
             Promise.resolve()
                 .then(async () => {
@@ -1607,7 +1697,10 @@ async function loadChapterDefinitions(config) {
             return;
         }
 
-        if (!forceRefresh && !hasStageDimensionChanged()) {
+        const changed = hasStageDimensionChanged();
+
+        // If callers forced a refresh, always resize; otherwise only if dimensions changed
+        if (!forceRefresh && !changed) {
             return;
         }
 
@@ -1632,7 +1725,19 @@ async function loadChapterDefinitions(config) {
     document.addEventListener("fullscreenchange", () => {
         refreshPortraitCompatibilityUI();
         if (hasStarted && !isResizeTemporarilySuppressed()) {
-            scheduleGameResize();
+            // Suppress actionbar/menu animation during the fullscreen transition
+            try { globalThis.__vnsutraSuppressActionbarAnimation = true; } catch (e) { void e; }
+            setTimeout(() => { try { globalThis.__vnsutraSuppressActionbarAnimation = false; } catch (e) { void e; } }, 400);
+            // Force a refresh so dimensions update immediately after fullscreen change.
+            // If a temporary suppression is active, schedule a retry so the resize still occurs.
+            scheduleGameResize(true);
+            if (isResizeTemporarilySuppressed()) {
+                setTimeout(() => {
+                    if (!isResizeTemporarilySuppressed()) {
+                        scheduleGameResize(true);
+                    }
+                }, 800);
+            }
         }
     });
 
