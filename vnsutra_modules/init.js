@@ -1467,6 +1467,10 @@ async function loadChapterDefinitions(config) {
                     const currentState = globalThis.history.state;
                     if (openOverlayType === "actionbar" && targetLayer === "home") {
                         setOpenWindow(null);
+
+                        if (shouldCollapseAllHomeOverlaysOnBackSwipe() && isLayerMenuOpen("home")) {
+                            await closeLayerOverlay("home", "home-menu", { instant: true });
+                        }
                     }
 
                     const remainingOverlayType = getOpenOverlayTypeForLayer(targetLayer);
