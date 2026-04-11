@@ -546,7 +546,8 @@ async function home(config, fonts, navigate) {
     }
 
     homeOverlayClosedHandler = (event) => {
-        if (!isAndroid) {
+        // Don't auto-close the menu on Android devices when in landscape.
+        if (isAndroid && !isPortrait) {
             return;
         }
 
