@@ -142,10 +142,3 @@ Here are some screenshots of the vnsutra demo game:
 ## License
 
 This project is licensed under the MIT License. See the `LICENSE` file for details.
-
----
-
-If you'd like, I can also:
-
-- Add or update CI workflow badges to match the repo's Actions file.
-- Commit this change and create a branch/PR for review.
