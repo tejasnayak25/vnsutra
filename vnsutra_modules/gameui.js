@@ -290,17 +290,17 @@ async function gameUI(config, fonts, navigate) {
     closeBtn.className = "btn btn-outline hover:bg-inherit";
     closeBtn.style.borderColor = config.colors.text;
     closeBtn.style.color = config.colors.text;
-    closeBtn.onclick = () => {
-        document.getElementById("alert-win").classList.replace("flex", "hidden");
+    closeBtn.onclick = async () => {
         if (globalThis.__vnsutraNeedsFullscreenRestore) {
             globalThis.__vnsutraNeedsFullscreenRestore = false;
             try {
                 const p = document.documentElement.requestFullscreen?.();
-                if (p && typeof p.catch === "function") {
-                    p.catch(() => {});
+                if (p && typeof p.then === "function") {
+                    await p.catch(() => {});
                 }
             } catch (err) { void err; }
         }
+        document.getElementById("alert-win").classList.replace("flex", "hidden");
     };
 
     const proceedBtn = document.createElement("button");
