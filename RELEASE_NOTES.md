@@ -1,6 +1,6 @@
 # VN-Sutra 2.0.0 — Release Notes
 
-**Release Date:** 2026-03-29
+**Release Date:** 2026-04-12
 
 **Summary**
 - **Focus:** Reliability, save/load consistency, safe scene transitions, and developer experience improvements.
@@ -17,6 +17,10 @@
 - **Abort & Prompt lifecycle:** Centralized one-shot abort helpers and deterministic cleanup for prompts and listeners.
 - **Fullscreen & UI helpers:** Shared fullscreen restore helpers and accessibility improvements.
 - **Developer experience:** Updated contributor guide and lint/test automation; reduced noisy lint findings.
+- **Program status:** 53+ roadmap items completed across security, performance, code quality, docs, DX, accessibility, monitoring, and CI/CD.
+- **March upgrade sessions (17.1-17.6):** Coverage harness alignment, story scripting docs completion, scene lifecycle integration tests, remote scene loader regressions, chapter map/progression system, and end-screen fullscreen persistence polish.
+- **Feature set maturity:** Auto-save, playback controls, i18n, achievements, dynamic sprites, and story-script extensibility hooks are implemented and validated.
+- **Operational consistency:** Dual-track governance (`IMPROVEMENTS.md` for active/upcoming, `COMPLETED.md` for shipped sessions) is established and maintained per session.
 
 **Files Added / Expanded**
 - `vnsutra_modules/save-utils.js`
@@ -36,10 +40,3 @@
 - [CONTRIBUTING.md](CONTRIBUTING.md)
 - [IMPROVEMENTS.md](IMPROVEMENTS.md)
 - [RELEASE_NOTES_DRAFT.md](RELEASE_NOTES_DRAFT.md)
-
-**Developer / Release Notes**
-- Run the project's validation locally before tagging: `npm run lint && npm test && npm run test:coverage`.
-- Consider increasing coverage targeting core runtime helpers and UI modules before public release.
-
-**Notes**
-- This release finalizes the draft and records the local validation baseline. For public release, update release notes with changelog highlights appropriate for end users and set the release tag.
