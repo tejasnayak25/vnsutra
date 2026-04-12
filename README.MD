@@ -1,22 +1,28 @@
 <!-- Title & badges -->
-<h1 align="center">vnsutra</h1>
+<h1 align="center">VN-Sutra</h1>
 
 <p align="center">
   Modular Visual Novel SDK for the Web — build interactive visual novels with JavaScript.
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/vnsutra"><img alt="npm" src="https://img.shields.io/npm/v/vnsutra.svg" /></a>
   <a href="https://github.com/tejasnayak25/vnsutra/actions"><img alt="build" src="https://img.shields.io/github/actions/workflow/status/tejasnayak25/vnsutra/ci.yml?branch=main" /></a>
   <a href="https://github.com/tejasnayak25/vnsutra/blob/main/LICENSE"><img alt="license" src="https://img.shields.io/github/license/tejasnayak25/vnsutra.svg" /></a>
-  <a href="https://github.com/tejasnayak25/vnsutra/issues"><img alt="issues" src="https://img.shields.io/github/issues/tejasnayak25/vnsutra.svg" /></a>
+  <a href="https://codecov.io/gh/tejasnayak25/vnsutra"><img alt="coverage" src="https://img.shields.io/codecov/c/github/tejasnayak25/vnsutra/main" /></a>
+  <a href="https://github.com/tejasnayak25/vnsutra/stargazers"><img alt="stars" src="https://img.shields.io/github/stars/tejasnayak25/vnsutra.svg?style=social&label=Star" /></a>
+</p>
+
+<p align="center">
+  <a href="#quick-start"><img alt="Get Started" src="https://img.shields.io/badge/Get%20Started-Quick%20Start-brightgreen" /></a>
+  <a href="docs/"><img alt="Docs" src="https://img.shields.io/badge/Docs-Usage%20Guide-blue" /></a>
+  <a href="https://github.com/tejasnayak25/vnsutra/issues/new"><img alt="Report Issue" src="https://img.shields.io/badge/Report%20Issue-Bug%20Report-red" /></a>
 </p>
 
 ---
 
 ## Project Overview
 
-vnsutra is a modular Visual Novel SDK that helps you author and ship browser-based visual novels. It provides:
+VN-Sutra is a modular Visual Novel SDK that helps you author and ship browser-based visual novels. It provides:
 
 - Modular game and UI modules in `vnsutra_modules/`.
 - A story scripting system, assets pipeline, and save/load utilities.
