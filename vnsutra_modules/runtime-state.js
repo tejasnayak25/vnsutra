@@ -20,10 +20,6 @@ let exitApp = () => {
         globalThis.closeApp();
         return true;
     }
-    if (globalThis.Capacitor?.Plugins?.App?.exitApp) {
-        globalThis.Capacitor.Plugins.App.exitApp();
-        return true;
-    }
     if (globalThis.navigator?.app?.exitApp) {
         globalThis.navigator.app.exitApp();
         return true;
