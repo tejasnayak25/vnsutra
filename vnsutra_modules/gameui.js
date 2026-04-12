@@ -293,6 +293,10 @@ async function gameUI(config, fonts, navigate) {
     closeBtn.onclick = async () => {
         if (globalThis.__vnsutraNeedsFullscreenRestore) {
             globalThis.__vnsutraNeedsFullscreenRestore = false;
+            // One-shot flag consumed in init fullscreenchange listener.
+            // This keeps cancel->restore from forcing a full remount when
+            // dimensions did not actually change.
+            globalThis.__vnsutraSkipNextFullscreenForcedResize = true;
             try {
                 const p = document.documentElement.requestFullscreen?.();
                 if (p && typeof p.then === "function") {

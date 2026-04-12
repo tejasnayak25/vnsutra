@@ -1752,16 +1752,20 @@ async function loadChapterDefinitions(config) {
     document.addEventListener("fullscreenchange", () => {
         refreshPortraitCompatibilityUI();
         if (hasStarted && !isResizeTemporarilySuppressed()) {
+            const skipForcedResize = globalThis.__vnsutraSkipNextFullscreenForcedResize === true;
+            if (skipForcedResize) {
+                globalThis.__vnsutraSkipNextFullscreenForcedResize = false;
+            }
             // Suppress actionbar/menu animation during the fullscreen transition
             try { globalThis.__vnsutraSuppressActionbarAnimation = true; } catch (e) { void e; }
             setTimeout(() => { try { globalThis.__vnsutraSuppressActionbarAnimation = false; } catch (e) { void e; } }, 400);
             // Force a refresh so dimensions update immediately after fullscreen change.
             // If a temporary suppression is active, schedule a retry so the resize still occurs.
-            scheduleGameResize(true);
+            scheduleGameResize(!skipForcedResize);
             if (isResizeTemporarilySuppressed()) {
                 setTimeout(() => {
                     if (!isResizeTemporarilySuppressed()) {
-                        scheduleGameResize(true);
+                        scheduleGameResize(!skipForcedResize);
                     }
                 }, 800);
             }
