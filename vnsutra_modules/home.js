@@ -709,10 +709,10 @@ async function home(config, fonts, navigate) {
                         }
                     }
 
-                    // Fallback: prefer history.back or navigate away to avoid invoking `close()` illegally.
-                    if (globalThis.history && globalThis.history.length > 1) {
-                        history.back();
-                    } else {
+                    // Fallback: navigate away without reusing the previous app history entry.
+                    try {
+                        history.go(-history.length);
+                    } catch (e) {
                         globalThis.location.href = "about:blank";
                     }
                 };
