@@ -11,4 +11,7 @@ export default {
     testMatch: ["**/__tests__/**/*.js", "**/?(*.)+(spec|test).js"],
     testPathIgnorePatterns: ["/node_modules/"],
     coveragePathIgnorePatterns: ["/node_modules/"],
+    moduleNameMapper: {
+        "^https://unpkg.com/konva.*$": "<rootDir>/vnsutra_modules/konva.js"
+    }
 };

@@ -97,7 +97,8 @@ describe("Game Utils Lifecycle Integration", () => {
                     },
                     message: {
                         text: jest.fn(),
-                        fire: jest.fn()
+                        fire: jest.fn(),
+                        getLayer: () => ({ getStage: () => ({}) })
                     }
                 },
                 game: {
@@ -136,7 +137,7 @@ describe("Game Utils Lifecycle Integration", () => {
         await expect(pendingDialog).rejects.toThrow("Dialog aborted");
     });
 
-    it("resets scene state and starts the next scene", () => {
+    it("resets scene state and starts the next scene", async () => {
         setInstructionCount(5);
         setState({ instruction_count: 5, history: { "start-1": "hello" } });
 
@@ -146,6 +147,8 @@ describe("Game Utils Lifecycle Integration", () => {
         }
 
         next(chapterTwo);
+        
+        await Promise.resolve();
 
         expect(sceneSpy).toHaveBeenCalledTimes(1);
         expect(getInstructionCount()).toBe(0);
