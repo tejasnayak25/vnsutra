@@ -1,170 +1,151 @@
+<!-- Title & badges -->
+<h1 align="center">vnsutra</h1>
+
 <p align="center">
-  <b>Modular Visual Novel SDK for the Web</b><br>
-  <i>Build beautiful, interactive visual novels with JavaScript and Node.js</i>
+  Modular Visual Novel SDK for the Web — build interactive visual novels with JavaScript.
+</p>
+
+<p align="center">
+  <a href="https://www.npmjs.com/package/vnsutra"><img alt="npm" src="https://img.shields.io/npm/v/vnsutra.svg" /></a>
+  <a href="https://github.com/tejasnayak25/vnsutra/actions"><img alt="build" src="https://img.shields.io/github/actions/workflow/status/tejasnayak25/vnsutra/ci.yml?branch=main" /></a>
+  <a href="https://github.com/tejasnayak25/vnsutra/blob/main/LICENSE"><img alt="license" src="https://img.shields.io/github/license/tejasnayak25/vnsutra.svg" /></a>
+  <a href="https://github.com/tejasnayak25/vnsutra/issues"><img alt="issues" src="https://img.shields.io/github/issues/tejasnayak25/vnsutra.svg" /></a>
 </p>
 
 ---
 
-## ✨ Features
+## Project Overview
 
-- **Modular JavaScript SDK** for game logic, UI, storage, and asset management ([`vnsutra_modules/`](./vnsutra_modules))
-- **Modern ES module architecture** with singleton and named exports for maintainability and IDE support
-- **Customizable UI** with [Konva.js](https://konvajs.org/)
-- **Modular asset system**: backgrounds, characters, outfits, music, SFX ([`vnsutra_modules/assets/`](./vnsutra_modules/assets))
-- **Save/load system** for game state (IndexedDB, localStorage fallback)
-- **Accessibility features**: high contrast mode, font scaling, reduce motion ([`vnsutra_modules/accessibility.js`](./vnsutra_modules/accessibility.js))
-- **Performance monitoring**: FPS, memory, operation timing ([`vnsutra_modules/performance.js`](./vnsutra_modules/performance.js))
-- **Cross-platform**: works in modern browsers, supports mobile and desktop
-- **Node.js (Express) server** for asset delivery and packaging
-- **Tailwind CSS** for rapid UI styling
-- **Vercel-ready** with middleware and deployment config
-- **Centralized error handling** and JSDoc documentation for core APIs
+vnsutra is a modular Visual Novel SDK that helps you author and ship browser-based visual novels. It provides:
+
+- Modular game and UI modules in `vnsutra_modules/`.
+- A story scripting system, assets pipeline, and save/load utilities.
+- Local development tooling (dev server, Tailwind CSS watch, hot reload).
+
+This repository includes an Express-based `api/` server used for local development and packaging, plus build scripts for production bundles.
 
 ---
 
-## 📁 Project Structure
+## Quick Start
 
-```text
-api/                # Node.js (Express) server
-assets/             # Game assets: images, music, fonts, backgrounds, characters
-css/                # Tailwind CSS input and output
-game/               # Game configuration, manifest, and story scripts
-vnsutra_modules/    # Core SDK modules (game logic, UI, storage, etc.)
-  assets/           # Modular asset system (background, character, outfit, music, sfx)
-  accessibility.js  # Accessibility features
-  performance.js    # Performance monitoring
-  constants.js      # Centralized string constants
-middleware.js       # Vercel Edge middleware
-package.json        # Node.js dependencies and scripts
-vercel.json         # Vercel deployment config
-```
+Install dependencies and run the full local development environment:
 
----
-
-## 🚀 Quick Start
-
-```sh
+```bash
 npm install
-npm start
-npm run tailwindcss
+npm run dev
+```
+
+What this runs (concurrently):
+
+- `dev:server` — Express dev server with `nodemon` (api/dev.js)
+- `dev:css` — Tailwind CSS watch that compiles `css/input.css` → `css/output.css`
+- `dev:reload` — simple reload server (`dev-server.js`) used by the UI
+- `story:watch` — watches story files and rebuilds during editing
+
+Open http://localhost:3000 (or the port printed by `api/dev.js`).
+
+---
+
+## Setup
+
+Prerequisites:
+
+- Node.js 20.x (per `engines` in `package.json`)
+- npm 8+ (or yarn/pnpm)
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Build production CSS once (optional):
+
+```bash
+npm run build:css
 ```
 
 ---
 
-## 🛠️ Implementation Overview
+## Development
 
-### Defining Assets ([`game/assets.js`](./game/assets.js))
+Local development commands (high-level):
 
-```js
-import { Background, Character, Music, IMG, Sfx } from "../vnsutra_modules/assets/index.js";
-let futon_room = new Background("backgrounds/Noraneko_Background_Pack_1/Futon_Room.png");
-let mary = new Character({ name: "Mary", folder: "characters/Rin", scale: 1.5 });
-let music = new Music("../assets/music/bgm.mp3");
-let logo = new IMG({ src: "../assets/images/logo.png", scale: 0.5 });
-let clickSound = new Sfx("../assets/sfx/click.mp3");
-export { futon_room, mary, music, logo, clickSound };
-```
+- `npm run dev` — Start all dev helpers (server, CSS watch, reload, story watch).
+- `npm run dev:server` — Start only the Express dev server (`api/dev.js`) with `nodemon`.
+- `npm run dev:css` — Tailwind CSS watch mode.
+- `npm run dev:reload` — Start the reload helper `dev-server.js`.
 
-### Writing the Story ([`game/story.js`](./game/story.js))
+Build commands:
 
-You can now write stories using a **declarative action format** (writer-friendly) instead of full async JavaScript control flow.  
-See [`docs/STORY_SCRIPTING.md`](./docs/STORY_SCRIPTING.md) for all supported action types.
-For planned XML/CSS-driven home/game shell UI compilation, see [`docs/UI_LAYOUT_WORKFLOW.md`](./docs/UI_LAYOUT_WORKFLOW.md).
+- `npm run build` — Full build: story build, UI build, then `scripts/build.js`.
+- `npm run build:bundle` — Build + webpack production bundle + bundle script.
+- `npm run build:css` — Compile and minify CSS for production.
 
-```js
-import { createStoryFromScript } from "../vnsutra_modules/story-script-runner.js";
+Notes:
 
-const scenes = {
-  start: [
-    { type: "dialog", actor: "mary", text: "@scene1.hello" },
-    { type: "input", var: "name", message: "@scene1.namePrompt", trim: true },
-    { type: "storage-set", key: "name", value: { fromVar: "name" } },
-    { type: "dialog", actor: "mary", text: "@scene1.greeting", params: { name: { fromVar: "name" } } },
-    { type: "jump", scene: "scene2" }
-  ],
-  scene2: [
-    { type: "dialog", actor: "mary", text: "@scene2.goodbye" },
-    { type: "end" }
-  ]
-};
-
-export const story = createStoryFromScript({ scenes, actors: { mary }, assets: { futon_room } });
-```
+- The dev server serves `api/` routes and static assets; see [api/index.js](api/index.js) and [api/dev.js](api/dev.js).
+- The UI build pipeline is in `scripts/ui-build.js` and `webpack.config.cjs`.
 
 ---
 
-## 🧩 Core APIs
+## Tests & Linting
 
-<details>
-<summary><b>Assets</b></summary>
+- Run tests: `npm test`
+- Run tests with coverage: `npm run test:coverage`
+- Lint: `npm run lint` — autofix with `npm run lint:fix`
+- Format: `npm run format`
 
-- `Background(path)` — Add a background image
-- `Character({ name, folder, scale })` — Add a character and their folder of images
-- `Music(path)` — Add background music
-- `IMG({ src, scale })` — Add a generic image
-- `Sfx(path)` — Add a sound effect
-</details>
-
-<details>
-<summary><b>Story</b></summary>
-
-- `dialog(character, text)` — Show dialog from a character
-- `input(question, default)` — Ask the player for input
-- `choice(question, options)` — Present choices to the player
-- `next(sceneFunction)` — Move to the next scene
-- `wait(seconds)` — Wait before continuing
-- `end()` — End the story
-- `loading.start()` / `loading.stop()` — Show/hide loading animation
-- `storage.setItem(key, value)`, `storage.getItem(key)` — Save/load data
-</details>
-
-<details>
-<summary><b>Character & Game</b></summary>
-
-- `character.fadeIn(duration)`, `character.fadeOut(duration)` — Fade character in/out
-- `character.slideIn(x, duration)`, `character.slideOut(x, duration)` — Slide character in/out
-- `character.to({...})` — Animate multiple properties at once
-- `character.reset([except])` — Reset character properties
-- `game.background = bgObj` — Set the background image
-- `game.background.grayscale = true/false` — Grayscale background
-</details>
-
-<details>
-<summary><b>Utilities & Patterns</b></summary>
-
-- `load(path)` — Fetch a file (Promise)
-- `loadJSON(path)` — Fetch and parse a JSON file
-- `loadFonts(fonts, root)` — Load custom fonts
-- **Singleton pattern** for stateful modules (see IMPROVEMENTS.md)
-- **Named exports** for utilities (see IMPROVEMENTS.md)
-- **Centralized error handling** via `errorTracking.captureError()`
-- **JSDoc documentation** for all public APIs
-</details>
+The repository uses Jest for unit and integration tests; many tests live in `tests/`.
 
 ---
 
-## 🗂️ Game Folder Files
+## Contributing
 
-| File           | Purpose                                                                 |
-|----------------|-------------------------------------------------------------------------|
-| `assets.js`    | Define and export backgrounds, characters, music, images, sound effects |
-| `story.js`     | Write your story logic, scenes, and dialog using the SDK APIs           |
-| `config.json`  | Main configuration: title, icons, music, fonts, UI, author, etc.        |
-| `manifest.json`| Web app manifest for PWA support and installability                     |
+Contributions are welcome. Recommended workflow:
+
+1. Fork the repo and create a topic branch.
+2. Run `npm install` and `npm run dev` to verify dev experience.
+3. Add tests where applicable and run `npm test`.
+4. Open a pull request describing the change.
+
+Please follow the coding conventions (ES modules, JSDoc for public APIs). Pre-commit hooks are enabled via `husky` and `lint-staged`.
 
 ---
 
-## 📸 Screenshots
+## Files of Interest
+
+- `api/` — Express server and development entry points
+- `vnsutra_modules/` — Core SDK modules used by games
+- `scripts/` — Build scripts (`story-build.js`, `ui-build.js`, `build.js`)
+- `css/input.css` → `css/output.css` — Tailwind input/output
+
+---
+
+# Screenshots
+
+Here are some screenshots of the vnsutra demo game:
 
 <div align="center" style="overflow-x:auto; white-space:nowrap;">
-  <img src="./assets/screenshots/screenshot1.png" width="200" style="display:inline-block; margin-right:8px;"/>
-  <img src="./assets/screenshots/screenshot2.png" width="200" style="display:inline-block; margin-right:8px;"/>
-  <img src="./assets/screenshots/screenshot3.png" width="200" style="display:inline-block; margin-right:8px;"/>
-  <img src="./assets/screenshots/screenshot4.png" width="200" style="display:inline-block;"/>
+  <img src="./assets/screenshots/screenshot1.png" width="240" style="display:inline-block; margin-right:8px;"/>
+  <img src="./assets/screenshots/screenshot2.png" width="240" style="display:inline-block; margin-right:8px;"/>
+  <img src="./assets/screenshots/screenshot3.png" width="240" style="display:inline-block; margin-right:8px;"/>
+  <img src="./assets/screenshots/screenshot4.png" width="240" style="display:inline-block; margin-right:8px;"/>
+  <img src="./assets/screenshots/screenshot5.png" width="240" style="display:inline-block; margin-right:8px;"/>
+  <img src="./assets/screenshots/screenshot6.png" width="240" style="display:inline-block; margin-right:8px;"/>
+  <img src="./assets/screenshots/screenshot7.png" width="240" style="display:inline-block; margin-right:8px;"/>
+  <img src="./assets/screenshots/screenshot8.png" width="240" style="display:inline-block; margin-right:8px;"/>
+  <img src="./assets/screenshots/screenshot9.png" width="240" style="display:inline-block;"/>
 </div>
+
+
+## License
+
+This project is licensed under the MIT License. See the `LICENSE` file for details.
 
 ---
 
-## 📄 License
+If you'd like, I can also:
 
-MIT
+- Add or update CI workflow badges to match the repo's Actions file.
+- Commit this change and create a branch/PR for review.
