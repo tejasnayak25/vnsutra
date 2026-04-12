@@ -1543,8 +1543,10 @@ async function loadChapterDefinitions(config) {
 
             // Only auto-close overlays on fullscreen-exit when the actionbar is open
             // or when both actionbar+menu should collapse on back-swipe (mobile portrait).
-            if (openOverlayType !== "actionbar") {
-                // Leave the home-menu alone when it's the only open overlay.
+            // However, on Android Web where the back button unilaterally exits fullscreen,
+            // we MUST handle home-menu to prevent it getting stuck open while exiting fullscreen.
+            if (openOverlayType !== "actionbar" && !(openOverlayType === "home-menu" && canUseAndroidHistory())) {
+                // Leave the home-menu alone when it's the only open overlay (on desktop).
                 return;
             }
 

@@ -703,8 +703,10 @@ async function home(config, fonts, navigate) {
                     // Use the runtime accessor so we always invoke the current exit implementation.
                     const runtimeExit = getExitApp();
                     if (typeof runtimeExit === "function") {
-                        runtimeExit();
-                        return;
+                        const handled = runtimeExit();
+                        if (handled !== false) {
+                            return;
+                        }
                     }
 
                     // Fallback: prefer history.back or navigate away to avoid invoking `close()` illegally.

@@ -15,9 +15,21 @@ let gameSettings = {
     [STORAGE_KEYS.ACCESSIBILITY_REDUCE_MOTION]: false,
     [STORAGE_KEYS.ACCESSIBILITY_FONT_SCALE]: 1
 };
-/** @type {() => void} */
 let exitApp = () => {
-    globalThis.closeApp?.() || globalThis.navigator?.app?.exitApp?.() || history.back();
+    if (typeof globalThis.closeApp === "function") {
+        globalThis.closeApp();
+        return true;
+    }
+    if (globalThis.Capacitor?.Plugins?.App?.exitApp) {
+        globalThis.Capacitor.Plugins.App.exitApp();
+        return true;
+    }
+    if (globalThis.navigator?.app?.exitApp) {
+        globalThis.navigator.app.exitApp();
+        return true;
+    }
+
+    return false;
 };
 /** @type {() => void} */
 let bgm = () => {
