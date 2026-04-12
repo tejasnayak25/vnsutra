@@ -394,6 +394,69 @@ async function loadChapterDefinitions(config) {
         document.addEventListener("fullscreenchange", handleVisibilityChange);
     }
 
+    const createStandaloneExitHandler = () => () => {
+        globalThis.closeApp?.() || globalThis.close();
+    };
+
+    const createFullscreenExitHandler = () => () => {
+        if (globalThis.closeApp) {
+            globalThis.closeApp();
+            return;
+        }
+        // Prevent other code from re-entering fullscreen while we're trying to exit the app
+        try { globalThis.__vnsutraSuppressFullscreenRestore = true; } catch (e) { void e; }
+
+        try {
+            if (isFullscreenActive(document) && typeof document.exitFullscreen === "function") {
+                document.exitFullscreen();
+            }
+        } catch (e) { void e; }
+
+        // Wait for fullscreenchange (preferred) or timeout before performing fallback navigation/close.
+        (function () {
+            let fallbackCalled = false;
+            const performFallback = () => {
+                if (fallbackCalled) return;
+                fallbackCalled = true;
+                try { globalThis.__vnsutraSuppressFullscreenRestore = false; } catch (e) { void e; }
+
+                if (globalThis.matchMedia("(display-mode: standalone)").matches) {
+                    if (typeof globalThis.closeApp === "function") {
+                        globalThis.closeApp();
+                        return;
+                    }
+                    if (globalThis.opener) {
+                        try { globalThis.close(); } catch (e) { void e; }
+                        return;
+                    }
+                    globalThis.location.href = "about:blank";
+                    return;
+                }
+
+                if (globalThis.history && globalThis.history.length > 1) {
+                    history.back();
+                } else {
+                    globalThis.location.href = "about:blank";
+                }
+            };
+
+            const onFullChange = () => {
+                // Only act when fullscreen has actually changed (exited)
+                if (!isFullscreenActive(document)) {
+                    performFallback();
+                    document.removeEventListener("fullscreenchange", onFullChange);
+                }
+            };
+
+            document.addEventListener("fullscreenchange", onFullChange);
+            // As a safety, fallback after 700ms if no fullscreenchange fired
+            setTimeout(() => {
+                performFallback();
+                document.removeEventListener("fullscreenchange", onFullChange);
+            }, 700);
+        }());
+    };
+
     let displayMode = "browser tab";
     if (globalThis.matchMedia("(display-mode: standalone)").matches) {
         displayMode = "standalone";
@@ -404,70 +467,11 @@ async function loadChapterDefinitions(config) {
     }
 
     if (displayMode === "standalone") {
-        setExitApp(() => {
-            globalThis.closeApp?.() || globalThis.close();
-        });
+        setExitApp(createStandaloneExitHandler());
     }
 
     if (displayMode === "fullscreen") {
-        setExitApp(() => {
-            if (globalThis.closeApp) {
-                globalThis.closeApp();
-                return;
-            }
-            // Prevent other code from re-entering fullscreen while we're trying to exit the app
-            try { globalThis.__vnsutraSuppressFullscreenRestore = true; } catch (e) { void e; }
-
-            try {
-                if (isFullscreenActive(document) && typeof document.exitFullscreen === "function") {
-                    document.exitFullscreen();
-                }
-            } catch (e) { void e; }
-
-            // Wait for fullscreenchange (preferred) or timeout before performing fallback navigation/close.
-            (function () {
-                let fallbackCalled = false;
-                const performFallback = () => {
-                    if (fallbackCalled) return;
-                    fallbackCalled = true;
-                    try { globalThis.__vnsutraSuppressFullscreenRestore = false; } catch (e) { void e; }
-
-                    if (globalThis.matchMedia("(display-mode: standalone)").matches) {
-                        if (typeof globalThis.closeApp === "function") {
-                            globalThis.closeApp();
-                            return;
-                        }
-                        if (globalThis.opener) {
-                            try { globalThis.close(); } catch (e) { void e; }
-                            return;
-                        }
-                        globalThis.location.href = "about:blank";
-                        return;
-                    }
-
-                    if (globalThis.history && globalThis.history.length > 1) {
-                        history.back();
-                    } else {
-                        globalThis.location.href = "about:blank";
-                    }
-                };
-
-                const onFullChange = () => {
-                    // Only act when fullscreen has actually changed (exited)
-                    if (!isFullscreenActive(document)) {
-                        performFallback();
-                        document.removeEventListener("fullscreenchange", onFullChange);
-                    }
-                };
-
-                document.addEventListener("fullscreenchange", onFullChange);
-                // As a safety, fallback after 700ms if no fullscreenchange fired
-                setTimeout(() => {
-                    performFallback();
-                    document.removeEventListener("fullscreenchange", onFullChange);
-                }, 700);
-            }());
-        });
+        setExitApp(createFullscreenExitHandler());
     }
 
     const modes = ["standalone", "fullscreen", "minimal-ui"];
@@ -483,63 +487,9 @@ async function loadChapterDefinitions(config) {
 
     function onDisplayModeChange(mode) {
         if (mode === "standalone") {
-            setExitApp(() => {
-                globalThis.closeApp?.() || globalThis.close();
-            });
+            setExitApp(createStandaloneExitHandler());
         } else if (mode === "fullscreen") {
-            setExitApp(() => {
-                if (globalThis.closeApp) {
-                    globalThis.closeApp();
-                    return;
-                }
-                try { globalThis.__vnsutraSuppressFullscreenRestore = true; } catch (e) { void e; }
-                try {
-                    if (isFullscreenActive(document) && typeof document.exitFullscreen === "function") {
-                        document.exitFullscreen();
-                    }
-                } catch (e) { void e; }
-
-                (function () {
-                    let fallbackCalled = false;
-                    const performFallback = () => {
-                        if (fallbackCalled) return;
-                        fallbackCalled = true;
-                        try { globalThis.__vnsutraSuppressFullscreenRestore = false; } catch (e) { void e; }
-
-                        if (globalThis.matchMedia("(display-mode: standalone)").matches) {
-                            if (typeof globalThis.closeApp === "function") {
-                                globalThis.closeApp();
-                                return;
-                            }
-                            if (globalThis.opener) {
-                                try { globalThis.close(); } catch (e) { void e; }
-                                return;
-                            }
-                            globalThis.location.href = "about:blank";
-                            return;
-                        }
-
-                        if (globalThis.history && globalThis.history.length > 1) {
-                            history.back();
-                        } else {
-                            globalThis.location.href = "about:blank";
-                        }
-                    };
-
-                    const onFullChange = () => {
-                        if (!isFullscreenActive(document)) {
-                            performFallback();
-                            document.removeEventListener("fullscreenchange", onFullChange);
-                        }
-                    };
-
-                    document.addEventListener("fullscreenchange", onFullChange);
-                    setTimeout(() => {
-                        performFallback();
-                        document.removeEventListener("fullscreenchange", onFullChange);
-                    }, 700);
-                }());
-            });
+            setExitApp(createFullscreenExitHandler());
         } else {
             setExitApp(() => {
                 globalThis.closeApp?.() || history.back();

@@ -7,17 +7,10 @@ import errorTracking from "../error-tracking.js";
 const Konva = globalThis.Konva;
 const JSZip = globalThis.JSZip;
 
-let updateObjects = [];
 const repositionObjects = new Set(); // Persistent list for repositioning on every game-ui-ready (for fullscreen/resize)
 
 globalThis.addEventListener("game-ui-ready", () => {
     const game = getGame();
-    // One-time initialization for new objects
-    updateObjects.forEach(obj => {
-        obj(game);
-    });
-    updateObjects = [];
-    
     // Persistent repositioning for fullscreen/resize transitions
     repositionObjects.forEach(obj => {
         obj(game);
