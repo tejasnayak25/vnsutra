@@ -1483,6 +1483,7 @@ async function loadChapterDefinitions(config) {
                 const isAlertVisible = Boolean(alertWinEl && !alertWinEl.classList.contains("hidden"));
 
                 if (!isAlertVisible) {
+                    globalThis.__vnsutraNeedsFullscreenRestore = true;
                     pages?.game?.ui?.promptExitToHome?.({ animateButton: false });
                 }
 

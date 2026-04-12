@@ -292,6 +292,15 @@ async function gameUI(config, fonts, navigate) {
     closeBtn.style.color = config.colors.text;
     closeBtn.onclick = () => {
         document.getElementById("alert-win").classList.replace("flex", "hidden");
+        if (globalThis.__vnsutraNeedsFullscreenRestore) {
+            globalThis.__vnsutraNeedsFullscreenRestore = false;
+            try {
+                const p = document.documentElement.requestFullscreen?.();
+                if (p && typeof p.catch === "function") {
+                    p.catch(() => {});
+                }
+            } catch (err) { void err; }
+        }
     };
 
     const proceedBtn = document.createElement("button");
