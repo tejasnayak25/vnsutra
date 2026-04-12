@@ -7,8 +7,8 @@
 
 <p align="center">
   <a href="https://github.com/tejasnayak25/vnsutra/actions"><img alt="build" src="https://img.shields.io/github/actions/workflow/status/tejasnayak25/vnsutra/ci.yml?branch=main" /></a>
-  <a href="https://github.com/tejasnayak25/vnsutra/blob/main/LICENSE"><img alt="license" src="https://img.shields.io/github/license/tejasnayak25/vnsutra.svg" /></a>
-  <a href="https://codecov.io/gh/tejasnayak25/vnsutra"><img alt="coverage" src="https://img.shields.io/codecov/c/github/tejasnayak25/vnsutra/main" /></a>
+  <a href="https://github.com/tejasnayak25/vnsutra/blob/main/LICENSE"><img alt="license" src="https://img.shields.io/github/license/tejasnayak25/vnsutra" /></a>
+  <a href="https://codecov.io/gh/tejasnayak25/vnsutra"><img alt="coverage" src="https://codecov.io/gh/tejasnayak25/vnsutra/branch/main/graph/badge.svg" /></a>
   <a href="https://github.com/tejasnayak25/vnsutra/stargazers"><img alt="stars" src="https://img.shields.io/github/stars/tejasnayak25/vnsutra.svg?style=social&label=Star" /></a>
 </p>
 
