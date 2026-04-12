@@ -491,12 +491,12 @@ function createMockKonva() {
         }
     }
 
-    class MockText extends MockNode {}
-    class MockGroup extends MockNode {}
-    class MockRect extends MockNode {}
-    class MockLine extends MockNode {}
-    class MockCircle extends MockNode {}
-    class MockImage extends MockNode {}
+    class MockText extends MockNode { }
+    class MockGroup extends MockNode { }
+    class MockRect extends MockNode { }
+    class MockLine extends MockNode { }
+    class MockCircle extends MockNode { }
+    class MockImage extends MockNode { }
 
     class MockSwitch {
         constructor({ label = "", checked = true } = {}) {
@@ -620,8 +620,6 @@ describe("Settings accessibility refresh", () => {
                 openWindowState = value;
             }
         }));
-
-        await jest.unstable_mockModule("../vnsutra_modules/konva.js", () => ({}));
 
         accessibilityMock = {
             getSettings: () => ({ fontScale: 1 }),

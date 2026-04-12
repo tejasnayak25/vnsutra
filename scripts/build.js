@@ -25,7 +25,7 @@ const copyTargets = [
     ".env.example",
 ];
 
-const skipMinifyPatterns = [".min.js", "konva.js", "jszip.min.js"];
+const skipMinifyPatterns = [".min.js", "jszip.min.js"];
 
 function shouldMinifyJs(filePath) {
     const fileName = path.basename(filePath);
