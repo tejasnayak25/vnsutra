@@ -1659,7 +1659,7 @@ async function loadChapterDefinitions(config) {
                         scheduleGameResize(forceRefresh);
                     }
                 });
-                alertWinObserver.observe(alertWinEl, { attributes: true, attributeFilter: ['class'] });
+                alertWinObserver.observe(alertWinEl, { attributes: true, attributeFilter: ["class"] });
             }
             return;
         }
