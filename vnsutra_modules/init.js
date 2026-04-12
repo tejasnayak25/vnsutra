@@ -1692,6 +1692,8 @@ async function loadChapterDefinitions(config) {
             || Math.abs(docHeight - stageHeight) > RESIZE_EPSILON_PX;
     };
 
+    let pendingResizeForce = false;
+
     const scheduleGameResize = (forceRefresh = false) => {
         if (isResizeTemporarilySuppressed()) {
             return;
@@ -1704,12 +1706,18 @@ async function loadChapterDefinitions(config) {
             return;
         }
 
+        if (forceRefresh) {
+            pendingResizeForce = true;
+        }
+
         if (resizeDispatchTimer) {
             clearTimeout(resizeDispatchTimer);
         }
 
         resizeDispatchTimer = setTimeout(() => {
-            globalThis.dispatchEvent(new CustomEvent(EVENTS.GAME_RESIZE));
+            const force = pendingResizeForce;
+            pendingResizeForce = false;
+            globalThis.dispatchEvent(new CustomEvent(EVENTS.GAME_RESIZE, { detail: { force } }));
             resizeDispatchTimer = null;
         }, 120);
     };
@@ -1765,7 +1773,8 @@ async function loadChapterDefinitions(config) {
         }
     });
 
-    globalThis.addEventListener(EVENTS.GAME_RESIZE, async () => {
+    globalThis.addEventListener(EVENTS.GAME_RESIZE, async (event) => {
+        const forceRefresh = event?.detail?.force === true;
         const resizeStartTs = performance.now();
         let resizePassCount = 0;
 
@@ -1792,7 +1801,7 @@ async function loadChapterDefinitions(config) {
         const isOrientationNoop = nextPortrait === getIsPortrait();
         const arePagesMounted = Boolean(pages.home?.ui?.layer) && Boolean(pages.game?.ui?.layer);
 
-        if (isDimensionNoop && isOrientationNoop && arePagesMounted) {
+        if (!forceRefresh && isDimensionNoop && isOrientationNoop && arePagesMounted) {
             logResizeDebug("Skipped GAME_RESIZE because dimensions/orientation are unchanged", {
                 docWidth,
                 docHeight,
@@ -1851,9 +1860,11 @@ async function loadChapterDefinitions(config) {
 
                 if (pages.home?.ui?.layer) {
                     pages.home.ui.layer.removeChildren();
+                    pages.home.ui.layer.destroy();
                 }
                 if (pages.game?.ui?.layer) {
                     pages.game.ui.layer.removeChildren();
+                    pages.game.ui.layer.destroy();
                 }
 
                 const [home, gameUI, Game, autoSaveModule] = await Promise.all([
@@ -1868,26 +1879,32 @@ async function loadChapterDefinitions(config) {
                         return;
                     }
 
-                    let didRender = false;
-                    if (windowName === "settings" && typeof pages.home.ui.settings?.render === "function") {
-                        pages.home.ui.settings.render();
-                        didRender = true;
-                    } else if (windowName === "credits" && typeof pages.home.ui.credits?.render === "function") {
-                        pages.home.ui.credits.render();
-                        didRender = true;
-                    } else if (windowName === "loadgame" && typeof pages.home.ui.loadgame?.render === "function") {
-                        await pages.home.ui.loadgame.render();
-                        didRender = true;
-                    } else if (windowName === "achievements" && typeof pages.home.ui.achievements?.render === "function") {
-                        pages.home.ui.achievements.render();
-                        didRender = true;
-                    } else if (windowName === "chapters" && typeof pages.home.ui.chapters?.render === "function") {
-                        pages.home.ui.chapters.render();
-                        didRender = true;
-                    }
+                    try {
+                        globalThis.__vnsutraSuppressActionbarAnimation = true;
+                        
+                        let didRender = false;
+                        if (windowName === "settings" && typeof pages.home.ui.settings?.render === "function") {
+                            pages.home.ui.settings.render();
+                            didRender = true;
+                        } else if (windowName === "credits" && typeof pages.home.ui.credits?.render === "function") {
+                            pages.home.ui.credits.render();
+                            didRender = true;
+                        } else if (windowName === "loadgame" && typeof pages.home.ui.loadgame?.render === "function") {
+                            await pages.home.ui.loadgame.render();
+                            didRender = true;
+                        } else if (windowName === "achievements" && typeof pages.home.ui.achievements?.render === "function") {
+                            pages.home.ui.achievements.render();
+                            didRender = true;
+                        } else if (windowName === "chapters" && typeof pages.home.ui.chapters?.render === "function") {
+                            pages.home.ui.chapters.render();
+                            didRender = true;
+                        }
 
-                    if (didRender) {
-                        openBar(pages.home.ui.actionbar.actionrect);
+                        if (didRender) {
+                            openBar(pages.home.ui.actionbar.actionrect);
+                        }
+                    } finally {
+                        globalThis.__vnsutraSuppressActionbarAnimation = false;
                     }
                 };
 

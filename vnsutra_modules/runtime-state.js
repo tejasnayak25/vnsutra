@@ -17,7 +17,7 @@ let gameSettings = {
 };
 /** @type {() => void} */
 let exitApp = () => {
-    globalThis.closeApp?.() || history.back();
+    globalThis.closeApp?.() || globalThis.navigator?.app?.exitApp?.() || history.back();
 };
 /** @type {() => void} */
 let bgm = () => {
