@@ -40,6 +40,41 @@ describe("Fullscreen Utils", () => {
         expect(requestFullscreen).toHaveBeenCalledTimes(1);
     });
 
+    it("skips restore when fullscreen suppression flag is active", async () => {
+        const requestFullscreen = jest.fn(() => Promise.resolve());
+        const doc = {
+            fullscreenElement: null,
+            documentElement: { requestFullscreen }
+        };
+
+        globalThis.__vnsutraSuppressFullscreenRestore = true;
+
+        await restoreFullscreenIfNeeded({
+            wasFullscreenBefore: true,
+            userExitedFullscreen: false,
+            doc
+        });
+
+        expect(requestFullscreen).not.toHaveBeenCalled();
+        delete globalThis.__vnsutraSuppressFullscreenRestore;
+    });
+
+    it("skips restore when document is already fullscreen", async () => {
+        const requestFullscreen = jest.fn(() => Promise.resolve());
+        const doc = {
+            fullscreenElement: {},
+            documentElement: { requestFullscreen }
+        };
+
+        await restoreFullscreenIfNeeded({
+            wasFullscreenBefore: true,
+            userExitedFullscreen: false,
+            doc
+        });
+
+        expect(requestFullscreen).not.toHaveBeenCalled();
+    });
+
     it("invokes onError when requestFullscreen throws", async () => {
         const expectedError = new Error("fullscreen failed");
         const onError = jest.fn();

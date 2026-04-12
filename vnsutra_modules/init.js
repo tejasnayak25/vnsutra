@@ -1701,25 +1701,32 @@ async function loadChapterDefinitions(config) {
 
     document.addEventListener("fullscreenchange", () => {
         refreshPortraitCompatibilityUI();
-        if (hasStarted && !isResizeTemporarilySuppressed()) {
-            const skipForcedResize = globalThis.__vnsutraSkipNextFullscreenForcedResize === true;
-            if (skipForcedResize) {
-                globalThis.__vnsutraSkipNextFullscreenForcedResize = false;
-            }
-            // Suppress actionbar/menu animation during the fullscreen transition
-            try { globalThis.__vnsutraSuppressActionbarAnimation = true; } catch (e) { void e; }
-            setTimeout(() => { try { globalThis.__vnsutraSuppressActionbarAnimation = false; } catch (e) { void e; } }, 400);
-            // Force a refresh so dimensions update immediately after fullscreen change.
-            // If a temporary suppression is active, schedule a retry so the resize still occurs.
-            scheduleGameResize(!skipForcedResize);
-            if (isResizeTemporarilySuppressed()) {
-                setTimeout(() => {
-                    if (!isResizeTemporarilySuppressed()) {
-                        scheduleGameResize(!skipForcedResize);
-                    }
-                }, 800);
-            }
+
+        if (!hasStarted) {
+            return;
         }
+
+        const skipForcedResize = globalThis.__vnsutraSkipNextFullscreenForcedResize === true;
+        if (skipForcedResize) {
+            globalThis.__vnsutraSkipNextFullscreenForcedResize = false;
+        }
+
+        // Suppress actionbar/menu animation during the fullscreen transition
+        try { globalThis.__vnsutraSuppressActionbarAnimation = true; } catch (e) { void e; }
+        setTimeout(() => { try { globalThis.__vnsutraSuppressActionbarAnimation = false; } catch (e) { void e; } }, 400);
+
+        // If resize is temporarily suppressed, ensure we still retry once suppression ends.
+        if (isResizeTemporarilySuppressed()) {
+            setTimeout(() => {
+                if (!isResizeTemporarilySuppressed()) {
+                    scheduleGameResize(!skipForcedResize);
+                }
+            }, 850);
+            return;
+        }
+
+        // Force a refresh so dimensions update immediately after fullscreen change.
+        scheduleGameResize(!skipForcedResize);
     });
 
     globalThis.addEventListener("orientationchange", (e) => {
@@ -1802,6 +1809,8 @@ async function loadChapterDefinitions(config) {
                 const wasWindowOpen = getOpenWindow();
                 const wasActionbarVisible = pages.home?.ui?.actionbar?.actionrect?.visible?.() ?? false;
                 const wasActiveLayer = getActiveLayer();
+                const wasHomeMenuVisible = wasActiveLayer === "home"
+                    && (pages.home?.ui?.menuOverlay?.visible?.() ?? false);
                 // Preserve ending overlays through resize/fullscreen remounts.
                 const wasCreditsEndingVisible = pages.game?.ui?.game?.endingSequence?.visible?.() === true;
                 const wasEndScreenVisible = pages.game?.ui?.game?.end?.visible?.() === true;
@@ -1992,6 +2001,18 @@ async function loadChapterDefinitions(config) {
 
                     if (targetLayer === "home" && shouldRestoreWindow && !isWindowAlreadyRestored) {
                         await restoreHomeWindow(wasWindowOpen);
+                    }
+
+                    if (targetLayer === "home" && wasHomeMenuVisible) {
+                        const menuOverlay = pages.home?.ui?.menuOverlay;
+                        if (menuOverlay && !menuOverlay.visible?.()) {
+                            menuOverlay.y(0);
+                            if (typeof menuOverlay.listening === "function") {
+                                menuOverlay.listening(true);
+                            }
+                            menuOverlay.visible(true);
+                            scheduleLayerBatchDraw(menuOverlay.getLayer?.());
+                        }
                     }
 
                     if (hasStarted && !loadwin.classList.contains("hidden")) {
