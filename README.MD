@@ -6,15 +6,9 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/tejasnayak25/vnsutra/actions"><img alt="build" src="https://img.shields.io/github/actions/workflow/status/tejasnayak25/vnsutra/ci.yml?branch=main" /></a>
-  <a href="https://github.com/tejasnayak25/vnsutra/blob/main/LICENSE"><img alt="license" src="https://img.shields.io/github/license/tejasnayak25/vnsutra" /></a>
-  <a href="https://codecov.io/gh/tejasnayak25/vnsutra"><img alt="coverage" src="https://codecov.io/gh/tejasnayak25/vnsutra/branch/main/graph/badge.svg" /></a>
-  <a href="https://github.com/tejasnayak25/vnsutra/stargazers"><img alt="stars" src="https://img.shields.io/github/stars/tejasnayak25/vnsutra.svg?style=social&label=Star" /></a>
-</p>
-
-<p align="center">
   <a href="#quick-start"><img alt="Get Started" src="https://img.shields.io/badge/Get%20Started-Quick%20Start-brightgreen" /></a>
   <a href="docs/"><img alt="Docs" src="https://img.shields.io/badge/Docs-Usage%20Guide-blue" /></a>
+  <a href="https://github.com/tejasnayak25/vnsutra/stargazers"><img alt="stars" src="https://img.shields.io/github/stars/tejasnayak25/vnsutra.svg?style=social&label=Star" /></a>
   <a href="https://github.com/tejasnayak25/vnsutra/issues/new"><img alt="Report Issue" src="https://img.shields.io/badge/Report%20Issue-Bug%20Report-red" /></a>
 </p>
 
