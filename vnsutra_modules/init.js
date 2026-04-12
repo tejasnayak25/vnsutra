@@ -1695,9 +1695,25 @@ async function loadChapterDefinitions(config) {
     };
 
     let pendingResizeForce = false;
+    let alertWinObserver = null;
 
     const scheduleGameResize = (forceRefresh = false) => {
         if (isResizeTemporarilySuppressed()) {
+            return;
+        }
+
+        const alertWinEl = document.getElementById("alert-win");
+        if (alertWinEl && !alertWinEl.classList.contains("hidden")) {
+            if (!alertWinObserver) {
+                alertWinObserver = new MutationObserver(() => {
+                    if (alertWinEl.classList.contains("hidden")) {
+                        alertWinObserver.disconnect();
+                        alertWinObserver = null;
+                        scheduleGameResize(forceRefresh);
+                    }
+                });
+                alertWinObserver.observe(alertWinEl, { attributes: true, attributeFilter: ['class'] });
+            }
             return;
         }
 
