@@ -1,4 +1,4 @@
-import "./konva.js";
+import "https://unpkg.com/konva@10.0.0-1/konva.min.js";
 import { getIsPortrait, getIsAndroid, setOpenWindow, scaleFontSize } from "./runtime-state.js";
 import { bindActionbarScroll } from "./ui/scrollable-content.js";
 import chapters from "./chapters.js";

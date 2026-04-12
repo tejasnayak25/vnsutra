@@ -1,4 +1,4 @@
-import "./konva.js";
+import "https://unpkg.com/konva@10.0.0-1/konva.min.js";
 import { getIsPortrait, getIsAndroid, setOpenWindow, scaleFontSize } from "./runtime-state.js";
 import errorTracking from "./error-tracking.js";
 import achievements from "./achievements.js";
@@ -20,7 +20,7 @@ function achievementsPage(config, actionbar, fonts) {
     let pendingRenderFrame = null;
 
     actionbar.addBtn.visible(false);
-    
+
     const { width: containerWidth } = actionContent.getAttrs();
 
     const outerPadding = isPortrait ? 8 : 14;

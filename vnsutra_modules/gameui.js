@@ -1,4 +1,4 @@
-import "./konva.js";
+import "https://unpkg.com/konva@10.0.0-1/konva.min.js";
 import { konvaStage } from "./stage.js";
 import { getIsPortrait, getIsAndroid, getState, getActiveScene, getInstructionCount, setGameKeyboardActions, setShouldAbortGame, scaleFontSize } from "./runtime-state.js";
 import { storage } from "./storage.js";
@@ -184,8 +184,8 @@ async function gameUI(config, fonts, navigate) {
 
     const backPadding = 5;
     const backBtn = new Konva.Image({
-        width: topbarInnerHeight - 2*backPadding,
-        height: topbarInnerHeight - 2*backPadding,
+        width: topbarInnerHeight - 2 * backPadding,
+        height: topbarInnerHeight - 2 * backPadding,
         x: backPadding,
         y: backPadding,
         image: backicon.cloneNode(true)
@@ -194,7 +194,7 @@ async function gameUI(config, fonts, navigate) {
     const expandIcon = new Image();
     expandIcon.src = config.gui["expand-icon"];
 
-    const expandButtonWidth = topbarInnerHeight - 2*backPadding;
+    const expandButtonWidth = topbarInnerHeight - 2 * backPadding;
     const rightOffset = isPortrait ? 0 : 10;
 
     const expandBtn = new Konva.Image({
@@ -226,7 +226,7 @@ async function gameUI(config, fonts, navigate) {
         }
 
         stopTopbarTweens();
-        
+
         if (isPortrait) {
             // On mobile: fade effect, always visible
             const targetOpacity = document.fullscreenElement ? 0.3 : 1;
@@ -300,7 +300,7 @@ async function gameUI(config, fonts, navigate) {
     proceedBtn.style.backgroundColor = config.colors.primary;
     proceedBtn.style.color = config.colors["primary-text"];
 
-    const alertWin = new AlertWindow("Are you sure you want to exit?", [ closeBtn, proceedBtn ], config);
+    const alertWin = new AlertWindow("Are you sure you want to exit?", [closeBtn, proceedBtn], config);
     alertWin.color = config.colors.primary;
 
     const promptExitToHome = ({ animateButton = true } = {}) => {
@@ -348,7 +348,7 @@ async function gameUI(config, fonts, navigate) {
                 games = [];
             }
 
-            const url = game_layer.findOne("#game-box").toDataURL({ imageSmoothingEnabled: true, width: width, height: (height-topbarHeight) });
+            const url = game_layer.findOne("#game-box").toDataURL({ imageSmoothingEnabled: true, width: width, height: (height - topbarHeight) });
             const id = Date.now();
             const state = getState() ?? {};
             const activeScene = getActiveScene();
@@ -411,7 +411,7 @@ async function gameUI(config, fonts, navigate) {
             onclick: (element) => {
                 loadgame(config, load_win, "Save Game", fonts, remove_img, (details) => {
                     proceedBtn.onclick = async () => {
-                        const url = game_layer.findOne("#game-box").toDataURL({ imageSmoothingEnabled: true, width: width, height: (height-topbarHeight) });
+                        const url = game_layer.findOne("#game-box").toDataURL({ imageSmoothingEnabled: true, width: width, height: (height - topbarHeight) });
 
                         storage.getItem("saved-games").then((games) => {
                             const index = games.findIndex(item => item.id === details.id);
@@ -450,11 +450,11 @@ async function gameUI(config, fonts, navigate) {
                     alertWin.message = "Are you sure you want to overwrite this game?";
                     alertWin.show();
                 }, true, () => {
-                    const url = game_layer.findOne("#game-box").toDataURL({ imageSmoothingEnabled: true, width: width, height: (height-topbarHeight) });
+                    const url = game_layer.findOne("#game-box").toDataURL({ imageSmoothingEnabled: true, width: width, height: (height - topbarHeight) });
 
                     storage.getItem("saved-games").then((games) => {
                         const id = Date.now();
-                        if(games === null) {
+                        if (games === null) {
                             games = [];
                         }
 
@@ -486,7 +486,7 @@ async function gameUI(config, fonts, navigate) {
                         });
                     });
                 });
-                if(!isBarOpen(load_win.actionrect)) {
+                if (!isBarOpen(load_win.actionrect)) {
                     openBar(load_win.actionrect);
                 }
             }
@@ -498,7 +498,7 @@ async function gameUI(config, fonts, navigate) {
                     proceedBtn.onclick = () => {
                         alertWin.close();
                         closeBar(load_win.actionrect);
-                        window.dispatchEvent(new CustomEvent("load-game", {detail: { ...details }}));
+                        window.dispatchEvent(new CustomEvent("load-game", { detail: { ...details } }));
                     };
 
                     alertWin.message = "Are you sure you want to quit the active game?";
@@ -536,7 +536,7 @@ async function gameUI(config, fonts, navigate) {
         // On desktop: adjust menu position based on expand button visibility
         const expandBtnVisible = !document.fullscreenElement;
         if (expandBtnVisible) {
-            const requiredSpace = expandButtonWidth + 2*rightOffset + 20;
+            const requiredSpace = expandButtonWidth + 2 * rightOffset + 20;
             return Math.max(backPadding, width - menuHolder.width() - requiredSpace);
         } else {
             return Math.max(0, width - menuHolder.width());
@@ -544,12 +544,12 @@ async function gameUI(config, fonts, navigate) {
     };
 
     const menuHolder = new Konva.Group({
-        height: isPortrait ? ((menuItems.length * topbarInnerHeight) + 2*mobilePadding) : topbarInnerHeight,
+        height: isPortrait ? ((menuItems.length * topbarInnerHeight) + 2 * mobilePadding) : topbarInnerHeight,
         y: isPortrait ? topbarInnerHeight : 0,
         visible: !isPortrait
     });
 
-    if(isPortrait) {
+    if (isPortrait) {
         const menuBg = new Konva.Rect({
             fill: config.colors.menu,
             id: "game-menu-bg"
@@ -571,16 +571,16 @@ async function gameUI(config, fonts, navigate) {
         element.img = img;
 
         const btn_img = new Konva.Image({
-            width: topbarInnerHeight - 2*iconPadding,
-            height: topbarInnerHeight - 2*iconPadding,
+            width: topbarInnerHeight - 2 * iconPadding,
+            height: topbarInnerHeight - 2 * iconPadding,
             x: iconPadding,
             y: iconPadding,
             image: img
         });
-        
+
         const btn_text = new Konva.Text({
             align: "left",
-            padding: (topbarInnerHeight - (isPortrait ? 23 : (isAndroid ? 20 : 23)))/2,
+            padding: (topbarInnerHeight - (isPortrait ? 23 : (isAndroid ? 20 : 23))) / 2,
             x: btn_img.width() + iconPadding,
             verticalAlign: "middle",
             text: element.name,
@@ -593,7 +593,7 @@ async function gameUI(config, fonts, navigate) {
 
         let x = 0;
 
-        if(btns_width.length > 0) {
+        if (btns_width.length > 0) {
             x = btns_width.reduce((prev, current) => {
                 return prev + current;
             });
@@ -609,19 +609,19 @@ async function gameUI(config, fonts, navigate) {
         btnHolder.on("mouseover", () => {
             document.body.style.cursor = "pointer";
         });
-    
+
         btnHolder.on("mouseout", () => {
             document.body.style.cursor = "auto";
         });
 
         btnHolder.on("click touchstart", () => {
             animateBtn(btnHolder);
-            if(element.onclick.length > 0) {
+            if (element.onclick.length > 0) {
                 element.onclick(element);
             } else {
                 element.onclick();
             }
-            if(isPortrait) {
+            if (isPortrait) {
                 menuBtn.fire("click");
             }
         });
@@ -636,7 +636,7 @@ async function gameUI(config, fonts, navigate) {
 
     let menuWidth = 0;
 
-    if(isPortrait) {
+    if (isPortrait) {
         menuWidth = btns_width.reduce((prev, current) => {
             return prev > current ? prev : current;
         });
@@ -646,10 +646,10 @@ async function gameUI(config, fonts, navigate) {
         });
     }
 
-    menuHolder.width(menuWidth + 2*mobilePadding);
+    menuHolder.width(menuWidth + 2 * mobilePadding);
     menuHolder.x(calculateMenuHolderX());
 
-    if(isPortrait) {
+    if (isPortrait) {
         const menuBg = menuHolder.findOne("#game-menu-bg");
         menuBg.width(menuHolder.width());
         menuBg.height(menuHolder.height());
@@ -660,8 +660,8 @@ async function gameUI(config, fonts, navigate) {
     menuicon.src = config.gui["menu-icon"];
 
     const menuBtn = new Konva.Image({
-        width: topbarInnerHeight - 2*backPadding,
-        height: topbarInnerHeight - 2*backPadding,
+        width: topbarInnerHeight - 2 * backPadding,
+        height: topbarInnerHeight - 2 * backPadding,
         x: width - (topbarInnerHeight - backPadding),
         y: backPadding,
         image: menuicon.cloneNode(true),
@@ -677,7 +677,7 @@ async function gameUI(config, fonts, navigate) {
     });
 
     menuBtn.on("click touchstart", () => {
-        if(isPortrait) {
+        if (isPortrait) {
             animateBtn(menuBtn);
             animateMenu(menuHolder);
         }
@@ -830,12 +830,12 @@ async function gameUI(config, fonts, navigate) {
         fill: config.colors.text,
         fillAfterStrokeEnabled: true,
     });
-    
-    dialogContainer.height(name_text.height() + dialog_text.height() + 2*dialogPadding);
+
+    dialogContainer.height(name_text.height() + dialog_text.height() + 2 * dialogPadding);
     dialogContainer.y(gameHeight);
     nameContainerBG.height(name_text.height());
     nameContainerBG.width(name_text.width());
-    dialogContainerBG.height(dialog_text.height() + 2*dialogPadding);
+    dialogContainerBG.height(dialog_text.height() + 2 * dialogPadding);
 
     if (!compiledGameUiLayout?.dialogBox) {
         dialogContainer.add(dialog_text);
@@ -893,13 +893,13 @@ async function gameUI(config, fonts, navigate) {
             return;
         }
 
-        if(name_text.text() === "" && dialog_text.text() === "") {
+        if (name_text.text() === "" && dialog_text.text() === "") {
             dialogContainer.visible(false);
             return;
         } else {
             dialogContainer.visible(true);
         }
-        const height = Math.max(name_text.height() + dialog_text.height() + 2*dialogPadding, (isPortrait ? 230 : (isAndroid ? 150 : 230)));
+        const height = Math.max(name_text.height() + dialog_text.height() + 2 * dialogPadding, (isPortrait ? 230 : (isAndroid ? 150 : 230)));
         dialogContainerBG.to({
             height: height - name_text.height(),
             y: name_text.height() + 3,
@@ -907,8 +907,8 @@ async function gameUI(config, fonts, navigate) {
             opacity: 0.9
         });
         const name_width = Math.max(name_text.width(), 200);
-        if(name_text.width() !== name_width) name_text.width(name_width);
-        const name_x = name_text.x() - (name_width - name_text.width())/2;
+        if (name_text.width() !== name_width) name_text.width(name_width);
+        const name_x = name_text.x() - (name_width - name_text.width()) / 2;
         nameBorderB.y(name_text.height() - 1);
         nameBorderB.x(name_x);
         nameBorderB.width(name_width);
@@ -1318,8 +1318,8 @@ async function gameUI(config, fonts, navigate) {
     const loadingImg = new Konva.Image({
         width: 50,
         height: 50,
-        x: (loadingRect.width()/2) - 25,
-        y: (loadingRect.height()/2) - 25,
+        x: (loadingRect.width() / 2) - 25,
+        y: (loadingRect.height() / 2) - 25,
         offsetX: 25, // center rotation
         offsetY: 25,
         image: loadImg(config.gui["loading-spinner-icon"])
@@ -1336,9 +1336,9 @@ async function gameUI(config, fonts, navigate) {
 
     game_layer.add(game_container, topbar_container, load_win.actionrect);
 
-    if(isPortrait) {
+    if (isPortrait) {
         game_container.on("click touchstart", () => {
-            if(menuHolder.visible()) {
+            if (menuHolder.visible()) {
                 menuBtn.fire("click");
             }
         });
@@ -1348,11 +1348,11 @@ async function gameUI(config, fonts, navigate) {
     document.removeEventListener("fullscreenchange", syncExpandBtnVisibility);
     document.removeEventListener("webkitfullscreenchange", syncExpandBtnVisibility);
     document.removeEventListener("keydown", handleFullscreenEscape);
-    
+
     document.addEventListener("fullscreenchange", syncExpandBtnVisibility);
     document.addEventListener("webkitfullscreenchange", syncExpandBtnVisibility);
     document.addEventListener("keydown", handleFullscreenEscape);
-    
+
     // Defer initial sync to next frame to ensure all layers are ready
     topbarSyncFrameId = requestAnimationFrame(() => {
         topbarSyncFrameId = null;

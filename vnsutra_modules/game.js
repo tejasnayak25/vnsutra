@@ -1,4 +1,4 @@
-import "./konva.js";
+import "https://unpkg.com/konva@10.0.0-1/konva.min.js";
 import { konvaStage } from "./stage.js";
 import errorTracking from "./error-tracking.js";
 
@@ -17,7 +17,7 @@ function scheduleBackgroundCache(image, action = "background") {
     const rafId = requestAnimationFrame(() => {
         pendingBackgroundCacheRafs.delete(image);
         try {
-            image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
+            image.cache({ pixelRatio: 1, imageSmoothingEnabled: true });
         } catch (e) {
             errorTracking?.captureError(e, {
                 type: "warning",
@@ -71,7 +71,7 @@ class Game {
             image.y((stageHeight - (sourceHeight * scale)) / 2);
 
             try {
-                image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
+                image.cache({ pixelRatio: 1, imageSmoothingEnabled: true });
             } catch (e) {
                 errorTracking?.captureError(e, {
                     message: "[Game.background] Cache failed",
@@ -123,10 +123,10 @@ class Game {
             /**
              * @param {number} value 
              */
-            set blurRadius (value) {
+            set blurRadius(value) {
                 image.blurRadius(value);
                 try {
-                    image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
+                    image.cache({ pixelRatio: 1, imageSmoothingEnabled: true });
                 } catch (e) {
                     errorTracking?.captureError(e, {
                         type: "warning",
@@ -138,10 +138,10 @@ class Game {
             /**
              * @param {number} value - Default: 1
              */
-            set pixelSize (value) {
+            set pixelSize(value) {
                 image.pixelSize(value);
                 try {
-                    image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
+                    image.cache({ pixelRatio: 1, imageSmoothingEnabled: true });
                 } catch (e) {
                     errorTracking?.captureError(e, {
                         type: "warning",
@@ -153,10 +153,10 @@ class Game {
             /**
              * @param {number} value 
              */
-            set noise (value) {
+            set noise(value) {
                 image.noise(value);
                 try {
-                    image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
+                    image.cache({ pixelRatio: 1, imageSmoothingEnabled: true });
                 } catch (e) {
                     errorTracking?.captureError(e, {
                         type: "warning",
@@ -171,7 +171,7 @@ class Game {
             set brightness(value) {
                 image.brightness(value);
                 try {
-                    image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
+                    image.cache({ pixelRatio: 1, imageSmoothingEnabled: true });
                 } catch (e) {
                     errorTracking?.captureError(e, {
                         type: "warning",
@@ -186,7 +186,7 @@ class Game {
             set contrast(value) {
                 image.contrast(value);
                 try {
-                    image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
+                    image.cache({ pixelRatio: 1, imageSmoothingEnabled: true });
                 } catch (e) {
                     errorTracking?.captureError(e, {
                         type: "warning",
@@ -201,7 +201,7 @@ class Game {
             set hue(value) {
                 image.hue(value);
                 try {
-                    image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
+                    image.cache({ pixelRatio: 1, imageSmoothingEnabled: true });
                 } catch (e) {
                     errorTracking?.captureError(e, {
                         type: "warning",
@@ -216,7 +216,7 @@ class Game {
             set saturation(value) {
                 image.saturation(value);
                 try {
-                    image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
+                    image.cache({ pixelRatio: 1, imageSmoothingEnabled: true });
                 } catch (e) {
                     errorTracking?.captureError(e, {
                         type: "warning",
@@ -231,7 +231,7 @@ class Game {
             set luminance(value) {
                 image.luminance(value);
                 try {
-                    image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
+                    image.cache({ pixelRatio: 1, imageSmoothingEnabled: true });
                 } catch (e) {
                     errorTracking?.captureError(e, {
                         type: "warning",
@@ -245,42 +245,42 @@ class Game {
              */
             set grayscale(value) {
                 const filters = image.filters();
-                if(value) {
+                if (value) {
                     const index = filters.indexOf(Konva.Filters.Grayscale);
-                    if(index < 0) {
+                    if (index < 0) {
                         filters.push(Konva.Filters.Grayscale);
                     }
                 } else {
                     const index = filters.indexOf(Konva.Filters.Grayscale);
-                    if(index >= 0) {
+                    if (index >= 0) {
                         filters.splice(index, 1);
                     }
                 }
 
                 image.filters(filters);
-                image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
+                image.cache({ pixelRatio: 1, imageSmoothingEnabled: true });
             },
             /**
              * @param {boolean} value 
              */
             set invert(value) {
                 const filters = image.filters();
-                if(value) {
+                if (value) {
                     const index = filters.indexOf(Konva.Filters.Invert);
-                    if(index < 0) {
+                    if (index < 0) {
                         filters.push(Konva.Filters.Invert);
                     }
                 } else {
                     const index = filters.indexOf(Konva.Filters.Invert);
-                    if(index >= 0) {
+                    if (index >= 0) {
                         filters.splice(index, 1);
                     }
                 }
 
                 image.filters(filters);
-                image.cache({pixelRatio: 1, imageSmoothingEnabled: true});
+                image.cache({ pixelRatio: 1, imageSmoothingEnabled: true });
             },
-            to: ({blurRadius = null, noise = null, pixelSize = null, brightness = null, contrast = null, hue = null, saturation = null, luminance = null, duration = 0.5}) => {
+            to: ({ blurRadius = null, noise = null, pixelSize = null, brightness = null, contrast = null, hue = null, saturation = null, luminance = null, duration = 0.5 }) => {
                 return new Promise((resolve) => {
                     const nextAttrs = {};
 
@@ -313,17 +313,17 @@ class Game {
             },
             reset: (except = []) => {
                 const attrs = {};
-                if(!except.includes("blurRadius")) attrs.blurRadius = 0;
-                if(!except.includes("noise")) attrs.noise = 0;
-                if(!except.includes("pixelSize")) attrs.pixelSize = 1;
-                if(!except.includes("brightness")) attrs.brightness = 0;
-                if(!except.includes("contrast")) attrs.contrast = 0;
-                if(!except.includes("hue")) attrs.hue = 0;
-                if(!except.includes("saturation")) attrs.saturation = 0;
-                if(!except.includes("luminance")) attrs.luminance = 0;
+                if (!except.includes("blurRadius")) attrs.blurRadius = 0;
+                if (!except.includes("noise")) attrs.noise = 0;
+                if (!except.includes("pixelSize")) attrs.pixelSize = 1;
+                if (!except.includes("brightness")) attrs.brightness = 0;
+                if (!except.includes("contrast")) attrs.contrast = 0;
+                if (!except.includes("hue")) attrs.hue = 0;
+                if (!except.includes("saturation")) attrs.saturation = 0;
+                if (!except.includes("luminance")) attrs.luminance = 0;
                 image.setAttrs(attrs);
-                if(!except.includes("grayscale")) this.background.grayscale = false;
-                if(!except.includes("invert")) this.background.invert = false;
+                if (!except.includes("grayscale")) this.background.grayscale = false;
+                if (!except.includes("invert")) this.background.invert = false;
             }
         };
     }

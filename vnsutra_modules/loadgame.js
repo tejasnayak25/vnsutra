@@ -1,4 +1,4 @@
-import "./konva.js";
+import "https://unpkg.com/konva@10.0.0-1/konva.min.js";
 import AlertWindow from "./alert-window.js";
 import autoSave from "./autosave.js";
 import { storage } from "./storage.js";
@@ -11,7 +11,7 @@ import { mergeLoadEntries, toPersistedSaves } from "./save-utils.js";
 
 const Konva = globalThis.Konva;
 
-async function loadgame(config, actionbar, title, fonts, remove_img, click = () => {}, add = false, addFunc = () => {}) {
+async function loadgame(config, actionbar, title, fonts, remove_img, click = () => { }, add = false, addFunc = () => { }) {
     if (!Konva) {
         errorTracking?.captureError("Konva not available", {
             message: "[LoadGame] Konva not available",
@@ -48,7 +48,7 @@ async function loadgame(config, actionbar, title, fonts, remove_img, click = () 
     actionbar.addBtn.off("click touchstart");
     actionbar.addBtn.visible(add);
 
-    if(add) {
+    if (add) {
         actionbar.addBtn.on("click touchstart", () => {
             animateBtn(actionbar.addBtn);
             addFunc();
@@ -113,7 +113,7 @@ async function loadgame(config, actionbar, title, fonts, remove_img, click = () 
     }
     const includeAutosave = !add;
 
-    if((data && data.length > 0) || (includeAutosave && autosaveData)) {
+    if ((data && data.length > 0) || (includeAutosave && autosaveData)) {
         data = mergeLoadEntries(data, autosaveData, { includeAutosave });
         i = data.length;
 
@@ -122,7 +122,7 @@ async function loadgame(config, actionbar, title, fonts, remove_img, click = () 
             await storage.setItem("saved-games", regularSaves);
         };
 
-        let currentIndex = 0, j=0;
+        let currentIndex = 0, j = 0;
 
         const closeBtn = document.createElement("button");
         closeBtn.innerText = "Close";
@@ -132,29 +132,29 @@ async function loadgame(config, actionbar, title, fonts, remove_img, click = () 
         closeBtn.onclick = () => {
             document.getElementById("alert-win").classList.replace("flex", "hidden");
         };
-    
+
         const proceedBtn = document.createElement("button");
         proceedBtn.innerText = "Proceed";
         proceedBtn.className = "btn hover:bg-inherit border-0";
         proceedBtn.style.backgroundColor = config.colors.primary;
         proceedBtn.style.color = config.colors["primary-text"];
-    
-        const alertWin = new AlertWindow("Are you sure you want to delete this?", [ closeBtn, proceedBtn ], config);
+
+        const alertWin = new AlertWindow("Are you sure you want to delete this?", [closeBtn, proceedBtn], config);
         alertWin.color = config.colors.primary;
 
-        if(isPortrait) {
+        if (isPortrait) {
             const imgWidth = mainContainer.width();
             imgHeight = (konvaStage.height() * imgWidth) / konvaStage.width();
 
             for (let i = 0; i < data.length; i++) {
                 const element = data[i];
-            
+
                 const img = new Image();
                 img.src = element.src;
-    
+
                 // Container area (black background) to enforce uniform aspect ratio
                 const containerX = 0;
-                const containerY = i*(imgHeight + gap);
+                const containerY = i * (imgHeight + gap);
                 const container = new Konva.Rect({
                     x: containerX,
                     y: containerY,
@@ -218,7 +218,7 @@ async function loadgame(config, actionbar, title, fonts, remove_img, click = () 
                 const timebg = new Konva.Rect({
                     width: imgWidth,
                     height: isPortrait ? 40 : 30,
-                    y: i*(imgHeight + gap) - (isPortrait ? 40 : 30) + imgHeight,
+                    y: i * (imgHeight + gap) - (isPortrait ? 40 : 30) + imgHeight,
                     fill: "black",
                     opacity: 0.7
                 });
@@ -235,7 +235,7 @@ async function loadgame(config, actionbar, title, fonts, remove_img, click = () 
                     verticalAlign: "middle",
                     width: imgWidth,
                     height: isPortrait ? 40 : 30,
-                    y: i*(imgHeight + gap) - (isPortrait ? 40 : 30) + imgHeight,
+                    y: i * (imgHeight + gap) - (isPortrait ? 40 : 30) + imgHeight,
                     text: time,
                     fontFamily: fonts["other"],
                     fontSize: timestampFontSize,
@@ -248,8 +248,8 @@ async function loadgame(config, actionbar, title, fonts, remove_img, click = () 
                 const deletePadding = 5;
 
                 const deleteBtn = new Konva.Image({
-                    width: timestamp.height() - 2*deletePadding,
-                    height: timestamp.height() - 2*deletePadding,
+                    width: timestamp.height() - 2 * deletePadding,
+                    height: timestamp.height() - 2 * deletePadding,
                     image: remove_img.cloneNode(true),
                     x: imgWidth - timestamp.height() - deletePadding,
                     y: timestamp.y() + deletePadding,
@@ -259,7 +259,7 @@ async function loadgame(config, actionbar, title, fonts, remove_img, click = () 
                 deleteBtn.on("mouseover", () => {
                     document.body.style.cursor = "pointer";
                 });
-            
+
                 deleteBtn.on("mouseout", () => {
                     document.body.style.cursor = "auto";
                 });
@@ -281,13 +281,13 @@ async function loadgame(config, actionbar, title, fonts, remove_img, click = () 
                                     context: { scope: "loadgame", action: "deleteSave" }
                                 });
                             });
-                            
+
                             alertWin.close();
                         };
                         alertWin.show();
                     });
                 });
-    
+
                 // Add background container first, then image (if distinct), then overlays
                 if (imageNode === container) {
                     mainContainer.add(container, timebg, timestamp, deleteBtn);
@@ -296,23 +296,23 @@ async function loadgame(config, actionbar, title, fonts, remove_img, click = () 
                 }
             }
         } else {
-            const imgWidth = (mainContainer.width() - 2*gap)/3;
+            const imgWidth = (mainContainer.width() - 2 * gap) / 3;
             imgHeight = (9 * imgWidth) / 16;
-        
+
             while (currentIndex < i) {
                 const block = new Konva.Group({
                     width: mainContainer.width(),
                     height: imgHeight + gap,
-                    y: j*(imgHeight + gap)
+                    y: j * (imgHeight + gap)
                 });
-    
+
                 for (let k = 0; k < 3; k++) {
                     if (currentIndex < i) {
                         const element = data[currentIndex++];
                         const img = new Image();
                         img.src = element.src;
 
-                        const containerX = k*(imgWidth + gap);
+                        const containerX = k * (imgWidth + gap);
                         const containerY = 0;
                         const container = new Konva.Rect({
                             x: containerX,
@@ -374,7 +374,7 @@ async function loadgame(config, actionbar, title, fonts, remove_img, click = () 
                         const timebg = new Konva.Rect({
                             width: imgWidth,
                             height: isPortrait ? 40 : 30,
-                            x: k*(imgWidth + gap),
+                            x: k * (imgWidth + gap),
                             y: imgHeight - (isPortrait ? 40 : 30),
                             fill: "black",
                             opacity: 0.7
@@ -392,7 +392,7 @@ async function loadgame(config, actionbar, title, fonts, remove_img, click = () 
                             verticalAlign: "middle",
                             width: imgWidth,
                             height: isPortrait ? 40 : 30,
-                            x: k*(imgWidth + gap),
+                            x: k * (imgWidth + gap),
                             y: imgHeight - (isPortrait ? 40 : 30),
                             text: time,
                             fontFamily: fonts["other"],
@@ -406,8 +406,8 @@ async function loadgame(config, actionbar, title, fonts, remove_img, click = () 
                         const deletePadding = 4;
 
                         const deleteBtn = new Konva.Image({
-                            width: timestamp.height() - 2*deletePadding,
-                            height: timestamp.height() - 2*deletePadding,
+                            width: timestamp.height() - 2 * deletePadding,
+                            height: timestamp.height() - 2 * deletePadding,
                             image: remove_img.cloneNode(true),
                             x: timestamp.x() + imgWidth - timestamp.height() - deletePadding,
                             y: timestamp.y() + deletePadding,
@@ -417,7 +417,7 @@ async function loadgame(config, actionbar, title, fonts, remove_img, click = () 
                         deleteBtn.on("mouseover", () => {
                             document.body.style.cursor = "pointer";
                         });
-                    
+
                         deleteBtn.on("mouseout", () => {
                             document.body.style.cursor = "auto";
                         });
@@ -446,7 +446,7 @@ async function loadgame(config, actionbar, title, fonts, remove_img, click = () 
                                 alertWin.show();
                             });
                         });
-            
+
                         // Add background container first, then image (if distinct), then overlays
                         if (imageNode === container) {
                             block.add(container, timebg, timestamp, deleteBtn);
@@ -457,7 +457,7 @@ async function loadgame(config, actionbar, title, fonts, remove_img, click = () 
                         break;
                     }
                 }
-    
+
                 mainContainer.add(block);
                 j++;
             }

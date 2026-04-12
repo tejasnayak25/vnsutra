@@ -1,4 +1,4 @@
-import "./konva.js";
+import "https://unpkg.com/konva@10.0.0-1/konva.min.js";
 import { konvaStage } from "./stage.js";
 import { getIsPortrait, getIsAndroid, getExitApp, getOpenWindow, scaleFontSize } from "./runtime-state.js";
 import { animateBtn, openBar, closeBar } from "./ui/utils.js";
@@ -374,7 +374,7 @@ function buildHomeImperativeLayout({
 async function home(config, fonts, navigate) {
     const isPortrait = getIsPortrait();
     const isAndroid = getIsAndroid();
-    window.onbeforeunload = () => {};
+    window.onbeforeunload = () => { };
 
     const home_layer = new Konva.Layer();
 
@@ -558,9 +558,9 @@ async function home(config, fonts, navigate) {
     };
 
     globalThis.addEventListener("vnsutra:overlay-closed", homeOverlayClosedHandler);
-    
+
     const optionRowHeight = isPortrait ? 80 : (isAndroid ? 55 : 70);
-    
+
     const optsViewport = homeLayout?.optsViewport;
     const optsGroup = homeLayout?.optsGroup;
     if (!optsViewport) {
@@ -578,7 +578,7 @@ async function home(config, fonts, navigate) {
     const titleHeight = sidebar_title.height();
     const borderHeight = 2; // from CSS
     const optsViewportHeight = sidebarHeight - titleHeight - borderHeight;
-    
+
     optsViewport.height(optsViewportHeight);
     const optsViewportWidth = optsViewport.width();
 
@@ -618,89 +618,105 @@ async function home(config, fonts, navigate) {
     proceedBtn.style.backgroundColor = config.colors.primary;
     proceedBtn.style.color = config.colors["primary-text"];
 
-    const alertWin = new AlertWindow("Are you sure you want to quit?", [ closeBtn, proceedBtn ], config);
+    const alertWin = new AlertWindow("Are you sure you want to quit?", [closeBtn, proceedBtn], config);
     alertWin.color = config.colors.primary;
 
     const opts = [
-        { name: "New Game", onclick: async (btnHolder) => {
-            btnHolder.fire("mouseout");
-            await goToGame(resolveDefaultStartPayload(), { closeSidebar: isPortrait });
-        } },
-        ...(chaptersEnabled ? [{ name: chapterMapLabel, onclick: () => {
-            if(getOpenWindow() === "chapters") {
-                return;
-            }
-            openBar(actionbar.actionrect, () => {
-                getChaptersDetails()?.render?.();
-            });
-        } }] : []),
-        { name: "Load Game", onclick: async (btnHolder) => {
-            if(getOpenWindow() === "loadgame") {
+        {
+            name: "New Game", onclick: async (btnHolder) => {
                 btnHolder.fire("mouseout");
-                return;
+                await goToGame(resolveDefaultStartPayload(), { closeSidebar: isPortrait });
             }
-            await loadgame_details.render();
-            openBar(actionbar.actionrect);
-            btnHolder.fire("mouseout");
-        } },
-        { name: "Settings", onclick: () => {
-            if(getOpenWindow() === "settings") {
-                return;
-            }
-            getSettingsDetails().render();
-            openBar(actionbar.actionrect);
-        } },
-        { name: "Credits", onclick: () => {
-            if(getOpenWindow() === "credits") {
-                return;
-            }
-            getCreditDetails().render();
-            openBar(actionbar.actionrect);
-        } },
-        ...(achievementsEnabled ? [{ name: "Achievements", onclick: () => {
-            if(getOpenWindow() === "achievements") {
-                return;
-            }
-            getAchievementsDetails().render();
-            openBar(actionbar.actionrect);
-        } }] : []),
-        { name: "Fullscreen", onclick: () => {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen();
-            } else {
-                document.exitFullscreen();
-            }
-        } },
-        { name: "Exit", onclick: () => {
-            proceedBtn.onclick = () => {
-                alertWin.close();
-                if (typeof globalThis.closeApp === "function") {
-                    globalThis.closeApp();
+        },
+        ...(chaptersEnabled ? [{
+            name: chapterMapLabel, onclick: () => {
+                if (getOpenWindow() === "chapters") {
                     return;
                 }
-
-                // Only call `close()` if the window was opened by a script (has an opener).
-                if (globalThis.opener && typeof globalThis.close === "function") {
-                    try { globalThis.close(); } catch (e) { void e; }
+                openBar(actionbar.actionrect, () => {
+                    getChaptersDetails()?.render?.();
+                });
+            }
+        }] : []),
+        {
+            name: "Load Game", onclick: async (btnHolder) => {
+                if (getOpenWindow() === "loadgame") {
+                    btnHolder.fire("mouseout");
                     return;
                 }
-
-                // Use the runtime accessor so we always invoke the current exit implementation.
-                const runtimeExit = getExitApp();
-                if (typeof runtimeExit === "function") {
-                    runtimeExit();
+                await loadgame_details.render();
+                openBar(actionbar.actionrect);
+                btnHolder.fire("mouseout");
+            }
+        },
+        {
+            name: "Settings", onclick: () => {
+                if (getOpenWindow() === "settings") {
                     return;
                 }
-
-                // Fallback: prefer history.back or navigate away to avoid invoking `close()` illegally.
-                if (globalThis.history && globalThis.history.length > 1) {
-                    history.back();
+                getSettingsDetails().render();
+                openBar(actionbar.actionrect);
+            }
+        },
+        {
+            name: "Credits", onclick: () => {
+                if (getOpenWindow() === "credits") {
+                    return;
+                }
+                getCreditDetails().render();
+                openBar(actionbar.actionrect);
+            }
+        },
+        ...(achievementsEnabled ? [{
+            name: "Achievements", onclick: () => {
+                if (getOpenWindow() === "achievements") {
+                    return;
+                }
+                getAchievementsDetails().render();
+                openBar(actionbar.actionrect);
+            }
+        }] : []),
+        {
+            name: "Fullscreen", onclick: () => {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen();
                 } else {
-                    globalThis.location.href = "about:blank";
+                    document.exitFullscreen();
                 }
-            };
-            alertWin.show();
-        } }
+            }
+        },
+        {
+            name: "Exit", onclick: () => {
+                proceedBtn.onclick = () => {
+                    alertWin.close();
+                    if (typeof globalThis.closeApp === "function") {
+                        globalThis.closeApp();
+                        return;
+                    }
+
+                    // Only call `close()` if the window was opened by a script (has an opener).
+                    if (globalThis.opener && typeof globalThis.close === "function") {
+                        try { globalThis.close(); } catch (e) { void e; }
+                        return;
+                    }
+
+                    // Use the runtime accessor so we always invoke the current exit implementation.
+                    const runtimeExit = getExitApp();
+                    if (typeof runtimeExit === "function") {
+                        runtimeExit();
+                        return;
+                    }
+
+                    // Fallback: prefer history.back or navigate away to avoid invoking `close()` illegally.
+                    if (globalThis.history && globalThis.history.length > 1) {
+                        history.back();
+                    } else {
+                        globalThis.location.href = "about:blank";
+                    }
+                };
+                alertWin.show();
+            }
+        }
     ];
 
     let lastScrollTs = 0;
@@ -718,7 +734,7 @@ async function home(config, fonts, navigate) {
             height: optionRowHeight,
             y: j * optionRowHeight
         });
-        
+
         const opt_text = new Konva.Text({
             align: "left",
             padding: isPortrait ? 60 : (isAndroid ? 20 : 30),
@@ -764,8 +780,8 @@ async function home(config, fonts, navigate) {
                 },
             });
 
-            if(opt.onclick) {
-                if(opt.onclick.length > 0) {
+            if (opt.onclick) {
+                if (opt.onclick.length > 0) {
                     opt.onclick(opt_group);
                 } else {
                     opt.onclick();
@@ -781,7 +797,7 @@ async function home(config, fonts, navigate) {
 
     const optsContentHeight = opts.length * optionRowHeight;
     const optsOverflow = Math.max(0, optsContentHeight - optsViewportHeight);
-    let resetOptsScroll = () => {};
+    let resetOptsScroll = () => { };
 
     if (optsOverflow > 0) {
         let scrollY = 0;
@@ -995,10 +1011,10 @@ async function home(config, fonts, navigate) {
         return null;
     }
 
-    if(!isPortrait) {
+    if (!isPortrait) {
         title_group.y(height - (subtitle.y() + subtitle.height()));
     } else {
-        title_group.y((height/2) - ((title.height()*title.scaleX()) + subtitle.height()));
+        title_group.y((height / 2) - ((title.height() * title.scaleX()) + subtitle.height()));
     }
 
     if (!usingCompiledHomeLayout) {
@@ -1006,23 +1022,29 @@ async function home(config, fonts, navigate) {
     }
 
     const btnimage = new Image();
-    
-    if(config.gui.button) {
+
+    if (config.gui.button) {
         btnimage.src = config.gui.button;
     }
 
-    const btns = isPortrait ? [ 
-        { name: "New Game", onclick: async () => {
-            await goToGame(resolveDefaultStartPayload(), { closeSidebar: isPortrait });
-        } },
-        { name: "Load Game", onclick: async () => {
-            await loadgame_details.render();
-            openBar(actionbar.actionrect);
-        } },
-        { name: "More", onclick: () => {
-            resetOptsScroll();
-            openBar(siderect);
-        } }
+    const btns = isPortrait ? [
+        {
+            name: "New Game", onclick: async () => {
+                await goToGame(resolveDefaultStartPayload(), { closeSidebar: isPortrait });
+            }
+        },
+        {
+            name: "Load Game", onclick: async () => {
+                await loadgame_details.render();
+                openBar(actionbar.actionrect);
+            }
+        },
+        {
+            name: "More", onclick: () => {
+                resetOptsScroll();
+                openBar(siderect);
+            }
+        }
     ] : [];
 
     const mobileButtonFontSize = scaleFontSize(isPortrait ? 22 : (isAndroid ? 16 : 18));
@@ -1035,7 +1057,7 @@ async function home(config, fonts, navigate) {
         console.error("[Home] Missing mobile button holder");
         return null;
     }
-    
+
     if (btns_holder) {
         btns_holder.width(width - 60);
         btns_holder.height(btns.length * 50);
@@ -1055,17 +1077,17 @@ async function home(config, fonts, navigate) {
 
         btn_group.on("mouseover", () => {
             btn_group.scale({ x: 1.05, y: 1.05 });
-            const widthdiff = btn_group.width()*(0.05);
-            const heightdiff = btn_group.height()*(0.05);
-            btn_group.x(0 - widthdiff/2);
-            btn_group.y( i*60 - heightdiff/2 );
+            const widthdiff = btn_group.width() * (0.05);
+            const heightdiff = btn_group.height() * (0.05);
+            btn_group.x(0 - widthdiff / 2);
+            btn_group.y(i * 60 - heightdiff / 2);
             document.body.style.cursor = "pointer";
         });
 
         btn_group.on("mouseout", () => {
             btn_group.scale({ x: 1, y: 1 });
             btn_group.x(0);
-            btn_group.y(i*60);
+            btn_group.y(i * 60);
             document.body.style.cursor = "auto";
         });
 
@@ -1075,8 +1097,8 @@ async function home(config, fonts, navigate) {
         });
 
         let btn_img;
-        
-        if(config.gui.button !== null) {
+
+        if (config.gui.button !== null) {
             btn_img = new Konva.Image({
                 width: btn_group.width(),
                 height: btn_rect.height(),
@@ -1087,7 +1109,7 @@ async function home(config, fonts, navigate) {
                 width: btn_group.width(),
                 height: btn_rect.height(),
                 fill: config.colors.button ?? config.colors.primary,
-                cornerRadius: btn_group.width()/2
+                cornerRadius: btn_group.width() / 2
             });
         }
 

@@ -1,4 +1,4 @@
-import "../konva.js";
+import "https://unpkg.com/konva@10.0.0-1/konva.min.js";
 import { animateBtn, closeBar } from "./utils.js";
 import { cleanupActionbarScroll } from "./scrollable-content.js";
 import { getIsPortrait, getIsAndroid, setOpenWindow, scaleFontSize } from "../runtime-state.js";
@@ -186,12 +186,12 @@ async function actionBar(config, siderect, width, height, fonts, close_square_im
         x: borderPadding,
         y: actionbar_title.height() - 10,
         height: 2,
-        width: actionbar.width() - 2*borderPadding
+        width: actionbar.width() - 2 * borderPadding
     });
     actionbar_title_border.setAttrs({
         x: borderPadding,
         y: actionbar_title.height() - 10,
-        width: actionbar.width() - 2*borderPadding,
+        width: actionbar.width() - 2 * borderPadding,
         fill: config.colors["menu-border"]
     });
 
@@ -236,8 +236,8 @@ async function actionBar(config, siderect, width, height, fonts, close_square_im
 
     const padding = 30;
 
-    const contentWidth = actionrect.width() - 2*padding;
-    const contentHeight = height - actionbar_title.height() - 2*padding;
+    const contentWidth = actionrect.width() - 2 * padding;
+    const contentHeight = height - actionbar_title.height() - 2 * padding;
     const actionContent = new Konva.Group({
         width: contentWidth,
         height: contentHeight,
@@ -273,12 +273,12 @@ async function actionBar(config, siderect, width, height, fonts, close_square_im
         draggable: true
     });
 
-    scrollbar.dragBoundFunc(function(pos){
+    scrollbar.dragBoundFunc(function (pos) {
         const actionHeight = actionbar_title.height();
         const totalHeight = actionHeight + actionContent.height() + padding;
-        if(pos.y < actionHeight + padding) {
+        if (pos.y < actionHeight + padding) {
             pos.y = actionHeight + padding;
-        } else if(pos.y > (totalHeight - scrollbar.height())) {
+        } else if (pos.y > (totalHeight - scrollbar.height())) {
             pos.y = totalHeight - scrollbar.height();
         }
         return {
@@ -321,28 +321,28 @@ async function actionBar(config, siderect, width, height, fonts, close_square_im
          * @param {number} value 
          */
         set scrollbarHeight(value) {
-            if(value > 1) {
+            if (value > 1) {
                 value = 0;
             }
             this.scrollScale = value;
             scrollbar.height(value * scrollContainer.height());
 
-            if(value === 0) {
+            if (value === 0) {
                 scrollbarBg.visible(false);
             } else {
                 scrollbarBg.visible(true);
             }
         },
         get scrollbarHeight() {
-            return scrollbar.height()/scrollContainer.height();
+            return scrollbar.height() / scrollContainer.height();
         },
         /**
          * @param {number} value 
          */
         set scrollHeight(value) {
-            if(value < 0) {
+            if (value < 0) {
                 value = 0;
-            } else if(value > (scrollContainer.height() - scrollbar.height())) {
+            } else if (value > (scrollContainer.height() - scrollbar.height())) {
                 value = (scrollContainer.height() - scrollbar.height());
             }
             scrollbar.y(value);
@@ -356,7 +356,7 @@ async function actionBar(config, siderect, width, height, fonts, close_square_im
             actionContent.removeChildren();
             this.scrollbarHeight = 0;
         },
-        close(done = () => {}, options = {}) {
+        close(done = () => { }, options = {}) {
             const { animateButton = true } = options;
             cleanupActionbarScroll(this);
             setOpenWindow(null);

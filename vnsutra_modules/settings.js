@@ -1,4 +1,4 @@
-import "./konva.js";
+import "https://unpkg.com/konva@10.0.0-1/konva.min.js";
 import { Switch, animateBtn, openBar } from "./ui/utils.js";
 import * as runtimeState from "./runtime-state.js";
 const { getIsPortrait, getIsAndroid, getOpenWindow, setOpenWindow } = runtimeState;
@@ -31,7 +31,7 @@ function settings(config, actionbar, fonts, credit_details) {
     const actionContent = actionbar.actionContent;
 
     actionbar.addBtn.visible(false);
-    
+
     const { width: containerWidth, height: containerHeight } = actionContent.getAttrs();
 
     const padding = isPortrait ? 20 : 28;
@@ -60,10 +60,10 @@ function settings(config, actionbar, fonts, credit_details) {
         listening: true,
         visible: false
     });
-    
+
     // Divider will be added later after calculating section heights
     let divider = null;
-    
+
     const audioSectionLabel = new Konva.Text({
         x: isPortrait ? 0 : 0,
         width: isPortrait ? mainContainer.width() : mainContainer.width() / 2,
@@ -75,7 +75,7 @@ function settings(config, actionbar, fonts, credit_details) {
         fillAfterStrokeEnabled: true
     });
 
-    const textAnimation = new Switch({ label: "Text Animation", id: "text-animation", variable: "text_animation", checked: true, listener: () => {} }, config, mainContainer, fonts);
+    const textAnimation = new Switch({ label: "Text Animation", id: "text-animation", variable: "text_animation", checked: true, listener: () => { } }, config, mainContainer, fonts);
     const getSwitchHeight = (item) => item.container.height() * toggleScale;
     const scaleSwitch = (item) => {
         item.container.scale({ x: toggleScale, y: toggleScale });
@@ -91,31 +91,35 @@ function settings(config, actionbar, fonts, credit_details) {
         textAnimation.container.x(columnPadding);
     }
 
-    const music = new Switch({ label: "Music", id: "settings-music", variable: "settings-music", checked: true, listener: (value) => {
-        const elem = document.getElementById("music");
-        if(value) {
-            if(elem.paused) {
-                elem.play();
-            }
-        } else {
-            if(!elem.paused) {
-                elem.pause();
-            }
-        }
-    } }, config, mainContainer, fonts);
-    
-    const sfx = new Switch({ label: "Sound Effects", id: "settings-sfx", variable: "settings-sfx", checked: true, listener: (value) => {
-        const elem = document.getElementById("sfx");
-        if(value) {
-            if(elem.paused) {
-                elem.play();
-            }
-        } else {
-            if(!elem.paused) {
-                elem.pause();
+    const music = new Switch({
+        label: "Music", id: "settings-music", variable: "settings-music", checked: true, listener: (value) => {
+            const elem = document.getElementById("music");
+            if (value) {
+                if (elem.paused) {
+                    elem.play();
+                }
+            } else {
+                if (!elem.paused) {
+                    elem.pause();
+                }
             }
         }
-    } }, config, mainContainer, fonts);
+    }, config, mainContainer, fonts);
+
+    const sfx = new Switch({
+        label: "Sound Effects", id: "settings-sfx", variable: "settings-sfx", checked: true, listener: (value) => {
+            const elem = document.getElementById("sfx");
+            if (value) {
+                if (elem.paused) {
+                    elem.play();
+                }
+            } else {
+                if (!elem.paused) {
+                    elem.pause();
+                }
+            }
+        }
+    }, config, mainContainer, fonts);
 
     scaleSwitch(music);
     scaleSwitch(sfx);
@@ -181,7 +185,7 @@ function settings(config, actionbar, fonts, credit_details) {
 
     highContrast.container.y(accessibilitySectionLabel.y() + accessibilitySectionLabel.height() + 8);
     reduceMotion.container.y(highContrast.container.y() + getSwitchHeight(highContrast) + sectionGap);
-    
+
     if (isPortrait) {
         highContrast.container.x(0);
         reduceMotion.container.x(0);
@@ -190,7 +194,7 @@ function settings(config, actionbar, fonts, credit_details) {
         const columnPadding = 20;
         highContrast.container.x(mainContainer.width() / 2 + columnPadding);
         reduceMotion.container.x(mainContainer.width() / 2 + columnPadding);
-        
+
         // Create divider with height matching the max of both sections
         const a11yMaxHeight = reduceMotion.container.y() + getSwitchHeight(reduceMotion);
         const maxSectionHeight = Math.max(audioSectionHeight, a11yMaxHeight);
@@ -459,24 +463,30 @@ function settings(config, actionbar, fonts, credit_details) {
     const btnny = linksSectionLabel.y() + linksSectionLabel.height() + 10;
 
     const btnimage = new Image();
-    
-    if(config.gui.button) {
+
+    if (config.gui.button) {
         btnimage.src = config.gui.button;
     }
 
 
     // Use SVG icon URLs from config.json gui properties
-    const btns = [ 
-        { name: "Support", onclick: () => {
-            window.open(config["support-url"], "_system");
-        }, iconUrl: config.gui["settings-icon"] },
-        { name: "Credits", onclick: () => {
-            credit_details.render();
-            openBar(actionbar.actionrect);
-        }, iconUrl: config.gui["group-icon"] },
-        { name: "About", onclick: () => {
-            window.open(config["about-url"], "_system");
-        }, iconUrl: config.gui["info-icon"] }
+    const btns = [
+        {
+            name: "Support", onclick: () => {
+                window.open(config["support-url"], "_system");
+            }, iconUrl: config.gui["settings-icon"]
+        },
+        {
+            name: "Credits", onclick: () => {
+                credit_details.render();
+                openBar(actionbar.actionrect);
+            }, iconUrl: config.gui["group-icon"]
+        },
+        {
+            name: "About", onclick: () => {
+                window.open(config["about-url"], "_system");
+            }, iconUrl: config.gui["info-icon"]
+        }
     ];
 
     const btny = btnny;
@@ -652,7 +662,7 @@ function settings(config, actionbar, fonts, credit_details) {
         copyright_text
     );
 
-    if(config.ui["vnsutra-label"]) {
+    if (config.ui["vnsutra-label"]) {
         mainContainer.add(label_text);
     }
 

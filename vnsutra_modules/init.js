@@ -1,5 +1,5 @@
 // Import core modules
-import "./konva.js";
+import "https://unpkg.com/konva@10.0.0-1/konva.min.js";
 import { konvaStage } from "./stage.js";
 import { loadJSON, loadFonts } from "./utils.js";
 import storage from "./storage.js";
@@ -381,7 +381,7 @@ async function loadChapterDefinitions(config) {
                 });
             }
         };
-        
+
         const handleVisibilityChange = () => {
             if (document.visibilityState === "visible") {
                 requestWakeLock();
@@ -389,7 +389,7 @@ async function loadChapterDefinitions(config) {
         };
 
         requestWakeLock();
-        
+
         document.addEventListener("visibilitychange", handleVisibilityChange);
         document.addEventListener("fullscreenchange", handleVisibilityChange);
     }
@@ -403,13 +403,13 @@ async function loadChapterDefinitions(config) {
         displayMode = "fullscreen";
     }
 
-    if(displayMode === "standalone") {
+    if (displayMode === "standalone") {
         setExitApp(() => {
             globalThis.closeApp?.() || globalThis.close();
         });
     }
 
-    if(displayMode === "fullscreen") {
+    if (displayMode === "fullscreen") {
         setExitApp(() => {
             if (globalThis.closeApp) {
                 globalThis.closeApp();
@@ -482,11 +482,11 @@ async function loadChapterDefinitions(config) {
     });
 
     function onDisplayModeChange(mode) {
-        if(mode === "standalone") {
+        if (mode === "standalone") {
             setExitApp(() => {
                 globalThis.closeApp?.() || globalThis.close();
             });
-        } else if(mode === "fullscreen") {
+        } else if (mode === "fullscreen") {
             setExitApp(() => {
                 if (globalThis.closeApp) {
                     globalThis.closeApp();
@@ -708,7 +708,7 @@ async function loadChapterDefinitions(config) {
                         message: "Failed to fetch disclaimer",
                         context: { scope: "init", path: disclaimerPath }
                     });
-                    
+
                     // Show error modal
                     await disclaimerWindow.showError("Could not load disclaimer.");
                     return true;
@@ -748,10 +748,10 @@ async function loadChapterDefinitions(config) {
             }
 
             hasStarted = true;
-            
+
             // Hide splash immediately before any async operations
             loadwin.classList.add("hidden");
-            
+
             // Show home page immediately (don't wait for GAME_RESIZE)
             if (pages.home) {
                 navigate("home", {});
@@ -759,18 +759,18 @@ async function loadChapterDefinitions(config) {
                 // Fallback: if prewarm is still in progress, force a resize build now.
                 globalThis.dispatchEvent(new CustomEvent(EVENTS.GAME_RESIZE));
             }
-        
+
             // Request fullscreen (async, doesn't block UI)
             document.documentElement.requestFullscreen().catch(() => {
                 // Fullscreen request might fail on some browsers
             });
-        
+
             // Dispatch resize after fullscreen processes
             setTimeout(() => {
                 globalThis.dispatchEvent(new CustomEvent(EVENTS.GAME_RESIZE));
             }, 250);
-            
-            document.onclick = () => {};
+
+            document.onclick = () => { };
         };
     }
 
@@ -779,7 +779,7 @@ async function loadChapterDefinitions(config) {
         loadspin.classList.add("hidden");
         loadstatus.classList.remove("hidden");
         loadwin.classList.remove("hidden");
-        document.onclick = () => {};
+        document.onclick = () => { };
     }
 
     function refreshPortraitCompatibilityUI() {
@@ -863,7 +863,7 @@ async function loadChapterDefinitions(config) {
             });
         }
     }
-    
+
     // Initialize security settings based on configuration
     initializeSecuritySettings();
 
@@ -894,7 +894,7 @@ async function loadChapterDefinitions(config) {
         });
         // Apply all settings to the DOM
         accessibility.applyAll();
-        
+
         const settings = accessibility.getSettings();
         const gameSettings = getGameSettings();
         if (gameSettings) {
@@ -976,7 +976,7 @@ async function loadChapterDefinitions(config) {
     closeBtn.onclick = () => {
         document.getElementById("alert-win").classList.replace("flex", "hidden");
     };
-        
+
     const proceedBtn = document.createElement("button");
     proceedBtn.innerText = "Reload";
     proceedBtn.className = "btn hover:bg-inherit border-0";
@@ -984,7 +984,7 @@ async function loadChapterDefinitions(config) {
     proceedBtn.style.color = CONFIG.colors["primary-text"];
     const AlertWindow = await loadDefaultModule("alert-window");
 
-    const alertWin = new AlertWindow("Change orientation?", [ closeBtn, proceedBtn ], CONFIG);
+    const alertWin = new AlertWindow("Change orientation?", [closeBtn, proceedBtn], CONFIG);
     alertWin.color = CONFIG.colors.primary;
 
     globalThis.addEventListener(EVENTS.UPDATE_AVAILABLE, () => {
@@ -1783,7 +1783,7 @@ async function loadChapterDefinitions(config) {
             return;
         }
 
-        if(getIsInputFocused()) {
+        if (getIsInputFocused()) {
             logResizeDebug("Skipped GAME_RESIZE because input is focused");
             return;
         }
@@ -1881,7 +1881,7 @@ async function loadChapterDefinitions(config) {
 
                     try {
                         globalThis.__vnsutraSuppressActionbarAnimation = true;
-                        
+
                         let didRender = false;
                         if (windowName === "settings" && typeof pages.home.ui.settings?.render === "function") {
                             pages.home.ui.settings.render();
@@ -1909,75 +1909,79 @@ async function loadChapterDefinitions(config) {
                 };
 
                 pages = {
-                    home: { ui: await home(CONFIG, fonts, navigate), func: () => {
-                        music.pause();
-                        document.getElementById("sfx").pause();
-                        const gameSettings = getGameSettings();
-                        if(gameSettings && gameSettings["settings-music"] === true) {
-                            music.src = CONFIG.bgm;
-                            music.onloadedmetadata = () => {
-                                const bgmFn = getBgm();
-                                if (typeof bgmFn === "function") {
-                                    bgmFn();
+                    home: {
+                        ui: await home(CONFIG, fonts, navigate), func: () => {
+                            music.pause();
+                            document.getElementById("sfx").pause();
+                            const gameSettings = getGameSettings();
+                            if (gameSettings && gameSettings["settings-music"] === true) {
+                                music.src = CONFIG.bgm;
+                                music.onloadedmetadata = () => {
+                                    const bgmFn = getBgm();
+                                    if (typeof bgmFn === "function") {
+                                        bgmFn();
+                                    }
+                                };
+                            }
+                        }
+                    },
+                    game: {
+                        ui: await gameUI(CONFIG, fonts, navigate), func: async (data) => {
+                            music.pause();
+                            music.src = "";
+                            const payload = data ?? {};
+                            const shouldRestoreEndingUi = payload.endingUiMode === "credits" || payload.endingUiMode === "end";
+
+                            if (shouldRestoreEndingUi) {
+                                if (payload.endingUiMode === "credits" && typeof pages.game.ui.game.playEndingSequence === "function") {
+                                    const endConfig = CONFIG?.ui?.end ?? {};
+                                    void pages.game.ui.game.playEndingSequence({
+                                        creditsDurationMs: endConfig?.creditsDurationMs,
+                                        endHoldMs: endConfig?.endHoldMs,
+                                        allowSkip: endConfig?.allowSkip !== false
+                                    });
+                                } else {
+                                    pages.game.ui.game.stopEndingSequence?.({ showEnd: true });
+                                    pages.game.ui.game.end?.visible(true);
                                 }
-                            };
-                        }
-                    } },
-                    game: { ui: await gameUI(CONFIG, fonts, navigate), func: async (data) => {
-                        music.pause();
-                        music.src = "";
-                        const payload = data ?? {};
-                        const shouldRestoreEndingUi = payload.endingUiMode === "credits" || payload.endingUiMode === "end";
 
-                        if (shouldRestoreEndingUi) {
-                            if (payload.endingUiMode === "credits" && typeof pages.game.ui.game.playEndingSequence === "function") {
-                                const endConfig = CONFIG?.ui?.end ?? {};
-                                void pages.game.ui.game.playEndingSequence({
-                                    creditsDurationMs: endConfig?.creditsDurationMs,
-                                    endHoldMs: endConfig?.endHoldMs,
-                                    allowSkip: endConfig?.allowSkip !== false
-                                });
-                            } else {
-                                pages.game.ui.game.stopEndingSequence?.({ showEnd: true });
-                                pages.game.ui.game.end?.visible(true);
+                                pages.game.ui.game.loading?.visible(false);
+                                return;
                             }
 
-                            pages.game.ui.game.loading?.visible(false);
-                            return;
-                        }
-
-                        let sceneName = payload.scene;
-                        let nextState = payload.state ?? {};
-                        let chapterId = payload.chapterId ?? null;
-                        if (!sceneName) {
-                            // No scene provided - check for autosave
-                            const autosavedState = await autoSaveModule.load();
-                            if (autosavedState?.scene) {
-                                // Loading from autosave
-                                sceneName = autosavedState.scene;
-                                nextState = autosavedState.state ?? {};
-                                chapterId = autosavedState.chapterId ?? chapterId;
-                                isNewGame = false;
-                            } else {
-                                // Starting new game from "start"
-                                sceneName = "start";
-                                nextState = {};
+                            let sceneName = payload.scene;
+                            let nextState = payload.state ?? {};
+                            let chapterId = payload.chapterId ?? null;
+                            if (!sceneName) {
+                                // No scene provided - check for autosave
+                                const autosavedState = await autoSaveModule.load();
+                                if (autosavedState?.scene) {
+                                    // Loading from autosave
+                                    sceneName = autosavedState.scene;
+                                    nextState = autosavedState.state ?? {};
+                                    chapterId = autosavedState.chapterId ?? chapterId;
+                                    isNewGame = false;
+                                } else {
+                                    // Starting new game from "start"
+                                    sceneName = "start";
+                                    nextState = {};
+                                    isNewGame = true;
+                                }
+                            } else if (sceneName === "start" && !payload.state) {
+                                // Explicitly starting new game with { scene: "start" }
                                 isNewGame = true;
+                            } else {
+                                // Loading a specific saved scene
+                                isNewGame = false;
                             }
-                        } else if (sceneName === "start" && !payload.state) {
-                            // Explicitly starting new game with { scene: "start" }
-                            isNewGame = true;
-                        } else {
-                            // Loading a specific saved scene
-                            isNewGame = false;
+                            startScene({
+                                scene: sceneName,
+                                state: nextState,
+                                source: "navigate-game",
+                                chapterId
+                            });
                         }
-                        startScene({
-                            scene: sceneName,
-                            state: nextState,
-                            source: "navigate-game",
-                            chapterId
-                        });
-                    } }
+                    }
                 };
 
                 const gameInstance = new Game(pages.game.ui);
@@ -2020,11 +2024,11 @@ async function loadChapterDefinitions(config) {
                     if (hasStarted && !loadwin.classList.contains("hidden")) {
                         loadwin.classList.add("hidden");
                     }
-                    
+
                     // Render immediately and re-enable autoDrawEnabled
                     requestStageBatchDraw({ immediate: true });
                     Konva.autoDrawEnabled = true;
-                    
+
                     globalThis.dispatchEvent(new CustomEvent("game-ui-ready"));
                     resizeNavigateTimer = null;
                 }, 100);
@@ -2153,7 +2157,7 @@ async function loadChapterDefinitions(config) {
 
     function navigate(name, data, options = {}) {
         const { skipAndroidHistoryPush = false } = options;
-        if(pages[name]) {
+        if (pages[name]) {
             const previousLayer = getActiveLayer();
             const isLeavingGame = previousLayer === "game" && name !== "game";
 
@@ -2174,7 +2178,7 @@ async function loadChapterDefinitions(config) {
             if (previousLayer !== name) {
                 setOpenWindow(null);
             }
-            
+
             konvaStage.removeChildren();
             konvaStage.add(pages[name].ui.layer);
             if (typeof konvaStage.listening === "function") {
@@ -2184,16 +2188,16 @@ async function loadChapterDefinitions(config) {
             if (stageContainer?.style) {
                 stageContainer.style.pointerEvents = "auto";
             }
-            
+
             // Ensure layer is listening after being re-added to stage
             // This prevents button clicks from being unresponsive after game exit
             if (pages[name].ui.layer.listening !== undefined) {
                 pages[name].ui.layer.listening(true);
             }
-            
+
             // Immediately render the layer to avoid black screen
             requestStageBatchDraw({ immediate: true });
-            
+
             const funcResult = pages[name].func(data);
             setActiveLayer(name);
 
@@ -2203,7 +2207,7 @@ async function loadChapterDefinitions(config) {
                 replaceAndroidHistoryState(name, data ?? null);
             }
 
-            if(name === "game") {
+            if (name === "game") {
                 // Wait for async function to set isNewGame before dispatching event
                 if (funcResult instanceof Promise) {
                     funcResult.then(() => {
@@ -2218,7 +2222,7 @@ async function loadChapterDefinitions(config) {
                     gameInstance?.ui?.dialog?.message?.fire?.("update");
                     globalThis.dispatchEvent(new CustomEvent("game-started"));
                 }
-            }            
+            }
         }
     }
 })();
