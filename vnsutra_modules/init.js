@@ -526,8 +526,25 @@ async function loadChapterDefinitions(config) {
     // Install App utility (browser only, not standalone/fullscreen)
     let deferredPrompt = null;
     const installPromptId = "install-app-utility";
-    const isStandalone = globalThis.matchMedia("(display-mode: standalone)").matches;
-    const isFullscreen = globalThis.matchMedia("(display-mode: fullscreen)").matches;
+    const installPromptSeenSessionKey = "vnsutra-install-prompt-seen-session";
+    const standaloneMediaQuery = globalThis.matchMedia("(display-mode: standalone)");
+    const fullscreenMediaQuery = globalThis.matchMedia("(display-mode: fullscreen)");
+    let installPromptSeenThisSession = false;
+
+    try {
+        installPromptSeenThisSession = globalThis.sessionStorage?.getItem(installPromptSeenSessionKey) === "1";
+    } catch {
+        installPromptSeenThisSession = false;
+    }
+
+    const markInstallPromptSeenThisSession = () => {
+        installPromptSeenThisSession = true;
+        try {
+            globalThis.sessionStorage?.setItem(installPromptSeenSessionKey, "1");
+        } catch {
+            // Ignore sessionStorage failures (privacy mode, quota, etc.)
+        }
+    };
 
     window.addEventListener("beforeinstallprompt", (e) => {
         e.preventDefault();
@@ -539,11 +556,15 @@ async function loadChapterDefinitions(config) {
 
     function maybeShowInstallPrompt() {
         const prompt = document.getElementById(installPromptId);
-        if (isStandalone || isFullscreen || !deferredPrompt) {
+        const isStandalone = standaloneMediaQuery.matches;
+        const isFullscreen = fullscreenMediaQuery.matches;
+
+        if (isStandalone || isFullscreen || !deferredPrompt || installPromptSeenThisSession) {
             if (prompt) prompt.classList.replace("flex", "hidden");
             return;
         }
         if (!prompt) return;
+        markInstallPromptSeenThisSession();
         prompt.querySelector("img")?.setAttribute("src", CONFIG.icon);
         prompt.classList.replace("hidden", "flex");
         const installBtn = prompt.querySelector("#install-app-btn");
@@ -570,8 +591,8 @@ async function loadChapterDefinitions(config) {
             maybeShowInstallPrompt();
         });
     });
-    globalThis.matchMedia("(display-mode: standalone)").addEventListener("change", maybeShowInstallPrompt);
-    globalThis.matchMedia("(display-mode: fullscreen)").addEventListener("change", maybeShowInstallPrompt);
+    standaloneMediaQuery.addEventListener("change", maybeShowInstallPrompt);
+    fullscreenMediaQuery.addEventListener("change", maybeShowInstallPrompt);
 
     const isPortraitCompatible = CONFIG?.ui?.["portrait-compatible"] !== false;
     const portraitBlockMessage = CONFIG?.ui?.["portrait-block-message"] ?? "This story supports landscape mode only. Please rotate your device.";
