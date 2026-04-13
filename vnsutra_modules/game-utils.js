@@ -498,8 +498,9 @@ function next(scene, targetSceneName = "") {
     const previousSceneName = getActiveScene();
     const currentChapter = chapters.getCurrentChapter() ?? chapters.getByScene(previousSceneName);
     const nextChapter = nextSceneName ? chapters.getByScene(nextSceneName) : null;
+    const shouldPromptChapterEnd = Boolean(currentChapter && nextChapter && currentChapter.id !== nextChapter.id);
 
-    if (currentChapter && nextChapter && currentChapter.id !== nextChapter.id) {
+    if (shouldPromptChapterEnd) {
         chapters.completeChapter(currentChapter.id).catch((error) => {
             errorTracking?.captureError(error, {
                 type: "warning",
@@ -515,35 +516,58 @@ function next(scene, targetSceneName = "") {
         });
     }
 
-    if (nextSceneName) {
-        setActiveScene(nextSceneName);
-        chapters.startChapterForScene(nextSceneName, {
-            resetOnMiss: false,
-            preserveCurrent: !nextChapter
+    const queueSceneSwitch = () => {
+        if (nextSceneName) {
+            setActiveScene(nextSceneName);
+            chapters.startChapterForScene(nextSceneName, {
+                resetOnMiss: false,
+                preserveCurrent: !nextChapter
+            });
+        }
+
+        setInstructionCount(0);
+        const state = getState();
+        if (state) {
+            state.instruction_count = 0;
+        }
+
+        const switchToken = ++pendingSceneSwitchToken;
+        const queueTask = typeof queueMicrotask === "function"
+            ? queueMicrotask
+            : (cb) => Promise.resolve().then(cb);
+
+        // Queue scene switch without a full-frame delay to avoid visible
+        // pauses between scenes while still collapsing stale rapid switches.
+        queueTask(() => {
+            if (switchToken !== pendingSceneSwitchToken) {
+                return;
+            }
+            if (getShouldAbortGame()) {
+                return;
+            }
+            scene();
         });
+    };
+
+    if (!shouldPromptChapterEnd || typeof gameInstance?.ui?.game?.showChapterEndPrompt !== "function") {
+        queueSceneSwitch();
+        return;
     }
 
-    setInstructionCount(0);
-    const state = getState();
-    if (state) {
-        state.instruction_count = 0;
-    }
-
-    const switchToken = ++pendingSceneSwitchToken;
-    const queueTask = typeof queueMicrotask === "function"
-        ? queueMicrotask
-        : (cb) => Promise.resolve().then(cb);
-
-    // Queue scene switch without a full-frame delay to avoid visible
-    // pauses between scenes while still collapsing stale rapid switches.
-    queueTask(() => {
-        if (switchToken !== pendingSceneSwitchToken) {
-            return;
-        }
-        if (getShouldAbortGame()) {
-            return;
-        }
-        scene();
+    gameInstance.ui.game.showChapterEndPrompt().catch((error) => {
+        errorTracking?.captureError(error, {
+            type: "warning",
+            message: "[GameUtils] Failed to display chapter end prompt",
+            context: {
+                scope: "game-utils",
+                action: "next",
+                fromScene: previousSceneName,
+                toScene: nextSceneName,
+                chapterId: currentChapter.id
+            }
+        });
+    }).finally(() => {
+        queueSceneSwitch();
     });
 }
 

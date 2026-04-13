@@ -979,6 +979,50 @@ async function gameUI(config, fonts, navigate) {
 
     endGroup.add(endRect, endText);
 
+    const chapterEndGroup = new Konva.Group({
+        id: "chapter-end-group",
+        width: width,
+        height: game_container.height(),
+        visible: false,
+        listening: true
+    });
+
+    const chapterEndRect = new Konva.Rect({
+        width: width,
+        height: chapterEndGroup.height(),
+        fill: config.colors.menu,
+        opacity: 0.97
+    });
+
+    const chapterEndTitle = new Konva.Text({
+        align: "center",
+        verticalAlign: "middle",
+        width: width,
+        height: chapterEndGroup.height(),
+        text: "Chapter Complete",
+        fontFamily: fonts["other"],
+        fontSize: scaleFontSize(isPortrait ? 38 : (isAndroid ? 34 : 38)),
+        fill: config.colors.text,
+        fillAfterStrokeEnabled: true,
+        wrap: "none",
+        offsetY: isPortrait ? 20 : 24
+    });
+
+    const chapterEndHint = new Konva.Text({
+        align: "center",
+        width: width,
+        y: chapterEndGroup.height() - (isPortrait ? 44 : 48),
+        text: "Tap / Enter to continue",
+        fontFamily: fonts["other"],
+        fontSize: scaleFontSize(isPortrait ? 18 : (isAndroid ? 16 : 18)),
+        fill: config.colors["menu-border"],
+        fillAfterStrokeEnabled: true,
+        wrap: "none",
+        opacity: 0.85
+    });
+
+    chapterEndGroup.add(chapterEndRect, chapterEndTitle, chapterEndHint);
+
     const endingSequenceGroup = new Konva.Group({
         id: "ending-sequence-group",
         width: width,
@@ -1104,6 +1148,9 @@ async function gameUI(config, fonts, navigate) {
     let endingResolve = null;
     let endingRunToken = 0;
     let endingCreditsTween = null;
+    let chapterEndKeyHandler = null;
+    let chapterEndResolve = null;
+    let chapterEndPromptToken = 0;
     let expandBtnTween = null;
     let menuHolderTween = null;
     let topbarSyncFrameId = null;
@@ -1144,6 +1191,15 @@ async function gameUI(config, fonts, navigate) {
         if (endingHoldTimer) {
             clearTimeout(endingHoldTimer);
             endingHoldTimer = null;
+        }
+    };
+
+    const clearChapterEndHandlers = () => {
+        chapterEndGroup.off("click.chapter-end touchstart.chapter-end");
+
+        if (chapterEndKeyHandler) {
+            document.removeEventListener("keydown", chapterEndKeyHandler);
+            chapterEndKeyHandler = null;
         }
     };
 
@@ -1204,6 +1260,51 @@ async function gameUI(config, fonts, navigate) {
         }
     };
 
+    const hideChapterEndPrompt = ({ skipDraw = false } = {}) => {
+        chapterEndPromptToken += 1;
+        clearChapterEndHandlers();
+        chapterEndGroup.visible(false);
+        if (!skipDraw) {
+            safeEndingBatchDraw();
+        }
+
+        if (typeof chapterEndResolve === "function") {
+            const resolve = chapterEndResolve;
+            chapterEndResolve = null;
+            resolve();
+        }
+    };
+
+    const showChapterEndPrompt = ({ title = "Chapter Complete", hint = "Tap / Enter to continue" } = {}) => {
+        hideChapterEndPrompt({ skipDraw: true });
+
+        const token = ++chapterEndPromptToken;
+        chapterEndTitle.text(typeof title === "string" && title.trim().length > 0 ? title.trim() : "Chapter Complete");
+        chapterEndHint.text(typeof hint === "string" && hint.trim().length > 0 ? hint.trim() : "Tap / Enter to continue");
+        chapterEndGroup.visible(true);
+        safeEndingBatchDraw();
+
+        const completePrompt = () => {
+            if (token !== chapterEndPromptToken) {
+                return;
+            }
+            hideChapterEndPrompt();
+        };
+
+        chapterEndGroup.on("click.chapter-end touchstart.chapter-end", completePrompt);
+        chapterEndKeyHandler = (event) => {
+            if (event.key === "Enter" || event.key === " " || event.key === "Escape") {
+                event.preventDefault();
+                completePrompt();
+            }
+        };
+        document.addEventListener("keydown", chapterEndKeyHandler);
+
+        return new Promise((resolve) => {
+            chapterEndResolve = resolve;
+        });
+    };
+
     const teardown = () => {
         if (isGameUiDisposed) {
             return;
@@ -1216,6 +1317,7 @@ async function gameUI(config, fonts, navigate) {
         }
 
         stopEndingSequence({ showEnd: false, skipDraw: true });
+        hideChapterEndPrompt({ skipDraw: true });
         stopTopbarTweens();
         if (typeof load_win?.__scrollCleanup === "function") {
             load_win.__scrollCleanup();
@@ -1311,7 +1413,7 @@ async function gameUI(config, fonts, navigate) {
         });
     };
 
-    game_container.add(endGroup, endingSequenceGroup);
+    game_container.add(endGroup, chapterEndGroup, endingSequenceGroup);
 
     // Loading
 
@@ -1383,9 +1485,12 @@ async function gameUI(config, fonts, navigate) {
             transitionOverlay: game_layer.findOne("#game-transition-overlay"),
             flashOverlay: game_layer.findOne("#game-flash-overlay"),
             end: game_layer.findOne("#end-group"),
+            chapterEnd: game_layer.findOne("#chapter-end-group"),
             endingSequence: game_layer.findOne("#ending-sequence-group"),
             playEndingSequence,
             stopEndingSequence,
+            showChapterEndPrompt,
+            hideChapterEndPrompt,
             teardown,
             loading: game_layer.findOne("#loading-group")
         },
