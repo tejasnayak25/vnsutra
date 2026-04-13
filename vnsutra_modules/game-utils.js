@@ -554,7 +554,13 @@ function next(scene, targetSceneName = "") {
         return;
     }
 
-    gameInstance.ui.game.showChapterEndPrompt().catch((error) => {
+    const chapterName = typeof currentChapter?.title === "string" ? currentChapter.title.trim() : "";
+    const chapterLabel = chapterName.length > 0 ? chapterName : `Chapter ${currentChapter?.id ?? ""}`.trim();
+
+    gameInstance.ui.game.showChapterEndPrompt({
+        title: "Chapter Complete",
+        subtitle: chapterLabel
+    }).catch((error) => {
         errorTracking?.captureError(error, {
             type: "warning",
             message: "[GameUtils] Failed to display chapter end prompt",

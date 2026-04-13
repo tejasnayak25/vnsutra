@@ -1005,7 +1005,20 @@ async function gameUI(config, fonts, navigate) {
         fill: config.colors.text,
         fillAfterStrokeEnabled: true,
         wrap: "none",
-        offsetY: isPortrait ? 20 : 24
+        offsetY: isPortrait ? 48 : 54
+    });
+
+    const chapterEndSubtitle = new Konva.Text({
+        align: "center",
+        width: width,
+        y: Math.round(chapterEndGroup.height() * 0.56),
+        text: "",
+        fontFamily: fonts["other"],
+        fontSize: scaleFontSize(isPortrait ? 22 : (isAndroid ? 20 : 22)),
+        fill: config.colors.primary,
+        fillAfterStrokeEnabled: true,
+        wrap: "word",
+        padding: isPortrait ? 18 : 28
     });
 
     const chapterEndHint = new Konva.Text({
@@ -1021,7 +1034,7 @@ async function gameUI(config, fonts, navigate) {
         opacity: 0.85
     });
 
-    chapterEndGroup.add(chapterEndRect, chapterEndTitle, chapterEndHint);
+    chapterEndGroup.add(chapterEndRect, chapterEndTitle, chapterEndSubtitle, chapterEndHint);
 
     const endingSequenceGroup = new Konva.Group({
         id: "ending-sequence-group",
@@ -1275,11 +1288,13 @@ async function gameUI(config, fonts, navigate) {
         }
     };
 
-    const showChapterEndPrompt = ({ title = "Chapter Complete", hint = "Tap / Enter to continue" } = {}) => {
+    const showChapterEndPrompt = ({ title = "Chapter Complete", subtitle = "", hint = "Tap / Enter to continue" } = {}) => {
         hideChapterEndPrompt({ skipDraw: true });
 
         const token = ++chapterEndPromptToken;
         chapterEndTitle.text(typeof title === "string" && title.trim().length > 0 ? title.trim() : "Chapter Complete");
+        chapterEndSubtitle.text(typeof subtitle === "string" ? subtitle.trim() : "");
+        chapterEndSubtitle.visible(chapterEndSubtitle.text().length > 0);
         chapterEndHint.text(typeof hint === "string" && hint.trim().length > 0 ? hint.trim() : "Tap / Enter to continue");
         chapterEndGroup.visible(true);
         safeEndingBatchDraw();
