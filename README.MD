@@ -24,6 +24,21 @@ VN-Sutra is a modular Visual Novel SDK that helps you author and ship browser-ba
 
 This repository includes an Express-based `api/` server used for local development and packaging, plus build scripts for production bundles.
 
+## VS Code Extension
+
+For editor support while working on `.vn` story files, use the companion VS Code extension: [VN-Sutra Language Tools](https://marketplace.visualstudio.com/items?itemName=tejasnayak25.vnsutra-language-tools).
+
+It is built specifically for `.vn` files and provides:
+
+- Syntax highlighting for scene headers, shorthand commands, dialogue, variables, and `@` actions.
+- Autocomplete for scene names, actor names, variables, assets, choice options, and common `@action` keys.
+- Lint diagnostics for scene placement, flow-control alignment, indentation rules, choice nesting, and unknown lines.
+- Starter snippets for common VN-Sutra patterns such as scene headers, `if/else` blocks, choice blocks, and generic `@` actions.
+- Command: `VN-Sutra: Create New VN Project` to bootstrap a fresh project from the latest VN-Sutra source release.
+- Command: `VN-Sutra: Run Project Setup` to run `npm install` and `npm run dev` in a single terminal.
+- Commands: `VN-Sutra: Run npm Script` and `VN-Sutra: Refresh npm Script Commands` for dynamic script execution from `package.json`.
+- Dedicated `.vn` file icon contribution for clearer story-file visibility in the explorer.
+
 ---
 
 ## Quick Start

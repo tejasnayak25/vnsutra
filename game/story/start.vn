@@ -55,7 +55,7 @@ mary: @scene2.addAssets
 mary: @scene2.movement
 
 @choice var="tourFocus" message="@scene2.question" options='["Characters","Visual effects","Story flow"]' optionsI18nKey="scene2.tourOptions"
-storage set: demo-tour-focus = $tourFocus
+storage set: demo_tour_focus = $tourFocus
 
 if $tourFocus === "Characters":
     @sprite.apply actor="mary" sprite="casualEyesClosed"

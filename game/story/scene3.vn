@@ -7,7 +7,7 @@ transition: fade #000000 250
 @actor.call actor="mary" method="slideIn" args='[0.48,0.8]'
 
 storage get: name = $playerName
-storage get: demo-tour-focus = $tourFocus
+storage get: demo_tour_focus = $tourFocus
 
 mary: @scene3.return
 @dialog actor="mary" text="@scene3.named" params='{"name":{"fromVar":"playerName"}}'
