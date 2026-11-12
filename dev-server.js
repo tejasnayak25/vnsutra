@@ -1,3 +1,4 @@
+import path from "path";
 import { WebSocketServer } from "ws";
 import chokidar from "chokidar";
 
@@ -25,12 +26,22 @@ watcher.on("change", (filePath) => {
         clearTimeout(reloadTimeout);
     }
 
-    // Schedule reload after debounce period
+    // Schedule reload (or in-place scene HMR for compiled .scene.js files)
     reloadTimeout = setTimeout(() => {
-        const payload = JSON.stringify({
-            type: "reload",
-            timestamp: Date.now(),
-        });
+        const normalized = filePath.split(path.sep).join("/");
+        const sceneMatch = normalized.match(/(?:^|\/)game\/scenes\/([a-zA-Z0-9_-]+)\.scene\.js$/);
+        const payload = sceneMatch
+            ? JSON.stringify({
+                type: "scene-hmr",
+                scene: sceneMatch[1],
+                url: `/game/scenes/${sceneMatch[1]}.scene.js?t=${Date.now()}`,
+                file: normalized
+            })
+            : JSON.stringify({
+                type: "reload",
+                file: normalized,
+                timestamp: Date.now(),
+            });
 
         wss.clients.forEach((client) => {
             if (client.readyState === 1) {
@@ -39,7 +50,7 @@ watcher.on("change", (filePath) => {
         });
 
         // eslint-disable-next-line no-console
-        console.log("[Hot Reload] Reload triggered");
+        console.log(sceneMatch ? `[Hot Reload] Scene HMR: ${sceneMatch[1]}` : "[Hot Reload] Reload triggered");
         reloadTimeout = null;
     }, DEBOUNCE_MS);
 

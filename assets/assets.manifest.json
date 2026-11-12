@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "folders": {
+    "backgrounds/Noraneko_Background_Pack_1": [
+      "Apartment_Exterior.png",
+      "Futon_Room.png"
+    ],
+    "characters/Akane/Casual": [
+      "Happy.png",
+      "Neutral.png",
+      "Shocked.png"
+    ],
+    "characters/Nanami/Casual": [
+      "Happy.png",
+      "Shocked.png",
+      "Smiling.png"
+    ],
+    "characters/Rin/Casual": [
+      "base_body.png",
+      "expressions_atlas.png",
+      "Rin_Casual_OpenSmile_EyesClosed.png",
+      "Rin_Casual_OpenSmile.png",
+      "Rin_Casual_Smile.png"
+    ]
+  }
+}

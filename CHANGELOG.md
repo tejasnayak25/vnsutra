@@ -1,90 +1,28 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+All notable changes to **VN-Sutra** are documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
----
-
-## [Unreleased]
+## [2.1.0] - 2026-11-12
 
 ### Added
-- ESLint and Prettier configuration for code quality
-- Jest testing framework with initial test suite
-- Environment variable support via dotenv
-- CONTRIBUTING.md for contributor guidelines
-- API documentation
-- Improved package.json metadata
-- Save payload utilities for consistent save/autosave serialization
-- Scene transition utilities for load-event and scene-start dedupe signatures
-- Abort lifecycle utilities for one-shot, idempotent abort handler management
-- Fullscreen utilities for shared fullscreen detection and restore behavior
-- Regression test suites for save, transition, abort, and fullscreen utility contracts
-
-### Changed
-- Replaced synchronous file operations with async (fs.promises)
-- Updated development scripts with concurrently
-- Enhanced error handling in API routes
-- Improved configuration management
-- Refactored game flow scene start paths to use shared guarded start logic
-- Refactored prompt flows (dialog/input/choice) to centralized abort cleanup patterns
-- Refactored autosave shaping to use shared save builders and payload projection
+- **Live Rigged Characters (`.vnsprite` & WebGL2):**
+  - Added `RiggedCharacter`, `RiggedOutfit`, and `WebGLRigRenderer` (`24×32` GPU mesh + Canvas2D fallback) with 2.5D head/iris gaze tracking (`lookAt`, `clearLookAt`), speaker attention, secondary springs (`hop`, `shake`, `wind`, `breathe`), closed-eye blink swaps, and Web Audio / text-cadenced lip-sync.
+  - Added $C^2$ quintic mood crossfading (`evalMorphCurve`), single-pass `uTexPrev`/`uMorphMix` shader mixing for eyebrow/blush/cloth diffs, `10%` eyelid cushion, rapid-interrupt continuity, idle background layer pre-warming, and mood-matched micro-spring impulses.
+- **Zero-Backend Static Export (`assets.manifest.json`):**
+  - Added `scripts/assets-manifest.js` (`npm run assets:manifest`) and updated `Character.loadOutfit` to load directly from `./assets/assets.manifest.json` without `JSZip`, `archiver`, or `/folder`.
+- **Cinematic Stage 2.0:**
+  - Added `CameraController` (`game.camera`: bounded 2D `pan`, `focus`, `reset`, and `setLighting` presets `day`, `sunset`, `night`, `dramatic`, `noir` with stage multiply overlay + `uTint` character grading).
+  - Added procedural wipe transitions (`wipe-left`, `wipe-right`, `wipe-up`, `wipe-down`, `iris`, `blinds`) in `visual-effects-utils.js`.
+  - Added multi-plane procedural `WeatherSystem` (`rain` with ground ripples, `snow` bokeh, 3D-tumbling `cherry_blossoms`, additive `embers`, `off`).
+- **Instant Rollback & Audio Engine 2.0:**
+  - Added `RollbackManager` (`game.rollback`) with step snapshots, mouse-wheel / `PageUp` / `PageDown` bindings, and smooth mood/camera restoration.
+  - Added `crossfadeMusic`, `playAmbient`, `stopAmbient`, `duckMusic`, `restoreMusic`, and rate-throttled `playBlip` in `audio-effects-utils.js`.
+- **Dev Tooling & SDK Packaging:**
+  - Added dev-server-only `?studio=true` overlay (`api/config.js`), in-place `.vn` scene HMR (`dev-server.js` + `init.js`), `build:release` (`scripts/build.js --release` stripping dev studio and `.cache`), `pack:check`, and `.github/workflows/release.yml`.
 
 ### Fixed
-- Fixed remaining fs.existsSync() calls to use async alternatives
-- Enhanced zip file cleanup documentation
-- Fixed autosave/manual-save list contamination during save management operations
-- Fixed overlapping quick-load and duplicate load-game event handling under rapid input
-- Fixed stale input/choice/dialog abort handlers and listener cleanup edge cases
+- **Clean Game Session Isolation:** Added monotonic `gameSessionId` (`runtime-state.js`) and full audio/camera/lighting/weather/rollback teardown on exit and scene start so aborted games can never overlap with new runs.
+- **`.vn` Compiler:** Updated `scripts/story-build.js` to support hyphenated transitions (`wipe-left`, etc.), `music crossfade:`, `ambient play/stop`, and `weather:` shorthands.
 
----
-
-## [2.0.0] - March 29, 2026
-
-### Added
-- Comprehensive error handling in `/folder` endpoint
-- Path traversal vulnerability protection with multi-layer validation
-- Automatic zip file cleanup (TTL + size-based)
-- Storage error handling with graceful fallback
-- XSS protection via HTML escaping
-- DevTools blocking made optional via configuration
-
-### Security
-- **CRITICAL**: Fixed path traversal vulnerability in file path construction
-- **HIGH**: Implemented comprehensive API error handling
-- **HIGH**: Added storage error handling with IndexedDB fallback
-- **HIGH**: Added XSS protection with HTML entity escaping
-- **MEDIUM**: Made DevTools blocking optional and configuration-driven
-
-### Performance
-- Implemented asynchronous file operations for better server throughput
-- Added automatic cleanup of temporary zip files
-
-### Changed
-- DevTools blocking is now opt-in via configuration
-- Error messages no longer expose internal server details
-- File operations now use async/await pattern
-
----
-
-## [1.0.3] - Earlier releases
-
-See git history for previous changes.
-
----
-
-## Versioning
-
-This project follows Semantic Versioning:
-- **MAJOR** version for incompatible API changes
-- **MINOR** version for backwards-compatible new functionality
-- **PATCH** version for backwards-compatible bug fixes
-
----
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to contribute.
-
----
+### Removed
+- Removed `vnsutra_modules/jszip.min.js`, `archiver`, and the `/folder` ZIP endpoint.

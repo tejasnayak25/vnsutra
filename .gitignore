@@ -7,6 +7,9 @@ zipfiles
 .env.*.local
 coverage/
 dist/
+research/
+**/__pycache__/
+*.tgz
 *.log
 lint-output.txt
 lint-report.json

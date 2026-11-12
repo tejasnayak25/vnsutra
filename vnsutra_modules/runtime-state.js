@@ -64,6 +64,8 @@ let openWindow = null;
 let isInputFocused = false;
 /** @type {boolean} */
 let shouldAbortGame = false;
+/** @type {number} */
+let gameSessionId = 0;
 /** @type {() => void} */
 let abortInstruction = () => {};
 /** @type {number} */
@@ -186,7 +188,16 @@ export const setIsInputFocused = (value) => { isInputFocused = value; };
 /** @returns {boolean} */
 export const getShouldAbortGame = () => shouldAbortGame;
 /** @param {boolean} value */
-export const setShouldAbortGame = (value) => { shouldAbortGame = value; };
+export const setShouldAbortGame = (value) => {
+    shouldAbortGame = value;
+    if (value) {
+        gameSessionId += 1;
+    }
+};
+/** @returns {number} */
+export const getGameSessionId = () => gameSessionId;
+/** @returns {number} */
+export const incrementGameSessionId = () => ++gameSessionId;
 /** @returns {() => void} */
 export const getAbortInstruction = () => abortInstruction;
 /** @param {() => void} value */

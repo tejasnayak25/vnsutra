@@ -38,7 +38,8 @@ import {
     getResizeSuppressedUntil,
     getShouldAbortGame,
     setShouldAbortGame,
-    getAbortInstruction
+    getAbortInstruction,
+    incrementGameSessionId
 } from "./runtime-state.js";
 import { openBar, closeBar } from "./ui/utils.js";
 
@@ -162,10 +163,21 @@ function initializeHotReloadClient() {
     const protocol = globalThis.location.protocol === "https:" ? "wss" : "ws";
     const socket = new WebSocket(`${protocol}://localhost:3001`);
 
-    socket.onmessage = (event) => {
+    socket.onmessage = async (event) => {
         try {
             const data = JSON.parse(event.data);
-            if (data.type === "reload") {
+            if (data.type === "scene-hmr" && data.scene && data.url) {
+                const mod = await import(/* webpackIgnore: true */ data.url);
+                const sceneDef = mod?.default || mod?.[data.scene];
+                const activeStory = globalThis.__vnsutraStory;
+                if (sceneDef && typeof activeStory?.setScene === "function") {
+                    activeStory.setScene(data.scene, sceneDef);
+                    // eslint-disable-next-line no-console
+                    console.log(`[Hot Reload] In-place scene swap: ${data.scene}`);
+                    return;
+                }
+            }
+            if (data.type === "reload" || data.type === "scene-hmr") {
                 // eslint-disable-next-line no-console
                 console.log("[Hot Reload] Reloading due to:", data.file);
                 globalThis.location.reload();
@@ -972,6 +984,7 @@ async function loadChapterDefinitions(config) {
 
     const story_module = await import("../game/story.js");
     const story = story_module.story;
+    globalThis.__vnsutraStory = story;
 
     globalThis.dispatchEvent(new CustomEvent(EVENTS.DATA_LOADED));
 
@@ -1612,6 +1625,8 @@ async function loadChapterDefinitions(config) {
         setInstructionCount(0);
         setActiveScene(sceneName);
         setState(state ?? {});
+        incrementGameSessionId();
+        setShouldAbortGame(false);
 
         if (chapterId) {
             chapters.startChapter(chapterId);
@@ -2085,6 +2100,18 @@ async function loadChapterDefinitions(config) {
         });
     });
 
+    const cleanupActiveGameSession = (activeGame) => {
+        if (!activeGame) return;
+        activeGame.stopMusic?.(0)?.catch?.(() => {});
+        activeGame.stopAmbient?.(0)?.catch?.(() => {});
+        activeGame.camera?.reset?.({ duration: 0 })?.catch?.(() => {});
+        activeGame.camera?.clearLighting?.();
+        activeGame.weather?.stop?.();
+        activeGame.rollback?.clear?.();
+        activeGame.rollback?.detach?.();
+        activeGame.reset?.();
+    };
+
     globalThis.addEventListener("game-started", () => {
         setShouldAbortGame(false);
         ensureAutoSave().then((module) => {
@@ -2151,6 +2178,7 @@ async function loadChapterDefinitions(config) {
         setShouldAbortGame(true);
         const abortFn = getAbortInstruction();
         abortFn();
+        cleanupActiveGameSession(getGame());
         setState({});
         setActiveScene(null);
         setInstructionCount(0);

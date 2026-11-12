@@ -1,11 +1,55 @@
-import "../jszip.min.js";
 import { Outfit } from "./outfit.js";
 import { loadImg } from "../ui/utils.js";
 import { getGame, getShouldAbortGame } from "../runtime-state.js";
 import errorTracking from "../error-tracking.js";
 
 const Konva = globalThis.Konva;
-const JSZip = globalThis.JSZip;
+let assetsManifestPromise = null;
+
+/**
+ * Fetch and cache the static AOT asset manifest (`./assets/assets.manifest.json`).
+ * @returns {Promise<{ version?: number, folders?: Record<string, string[]> }>}
+ */
+function getAssetsManifest() {
+    if (!assetsManifestPromise) {
+        assetsManifestPromise = fetch("./assets/assets.manifest.json")
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error(`${response.status} - Asset manifest not found`);
+                }
+                return response.json();
+            })
+            .catch((error) => {
+                assetsManifestPromise = null;
+                throw error;
+            });
+    }
+    return assetsManifestPromise;
+}
+
+/**
+ * Clear the cached asset manifest promise (useful for tests or hot reloads).
+ */
+function clearAssetsManifestCache() {
+    assetsManifestPromise = null;
+}
+
+/**
+ * Normalize a character folder + outfit into a relative POSIX key matching `assets.manifest.json`.
+ * @param {string} folder
+ * @param {string} outfit
+ * @returns {string}
+ */
+function normalizeOutfitFolderPath(folder, outfit) {
+    const raw = `${folder || ""}/${outfit || ""}`
+        .replace(/\\/g, "/")
+        .replace(/\/+/g, "/")
+        .replace(/^(\.\.?\/)+/, "")
+        .replace(/^\/+/, "")
+        .replace(/^assets\/game-assets\//, "")
+        .replace(/\/+$/, "");
+    return raw;
+}
 
 const repositionObjects = new Set(); // Persistent list for repositioning on every game-ui-ready (for fullscreen/resize)
 
@@ -569,30 +613,22 @@ class Character {
      */
     async loadOutfit(outfit) {
         try {
-            if(getShouldAbortGame()) {
+            if (getShouldAbortGame()) {
                 return;
             }
 
-            const response = await fetch(`./folder?path=${encodeURIComponent(`${this.data.folder}/${outfit}`)}`);
-            const res = await response.json();
+            const folderPath = normalizeOutfitFolderPath(this.data.folder, outfit);
+            const manifest = await getAssetsManifest();
+            const files = manifest?.folders?.[folderPath];
 
-            if (res.status !== 200) {
+            if (!Array.isArray(files) || files.length === 0) {
                 throw new Error(`404 - Folder Not Found! - ${this.data.folder}`);
             }
 
-            const zip = new JSZip();
             const outfit_obj = new Outfit(this.img, outfit, this);
-
-            let data = res.data;
-            data = base64ToArrayBuffer(data);
-            const loadedZip = await zip.loadAsync(data);
-
-            const files = Object.values(loadedZip.files);
-            for (const file of files) {
-                const arraybuffer = await file.async("arraybuffer");
-                const blob = new Blob([arraybuffer]);
-                const url = URL.createObjectURL(blob);
-                outfit_obj.moods[file.name] = loadImg(url);
+            for (const fileName of files) {
+                const url = `./assets/game-assets/${folderPath}/${encodeURIComponent(fileName)}`;
+                outfit_obj.moods[fileName] = loadImg(url);
             }
 
             this.outfits[outfit] = outfit_obj;
@@ -1092,15 +1128,5 @@ class IMG {
     }
 }
 
-function base64ToArrayBuffer(base64) {
-    const binaryString = globalThis.atob(base64);
-    const len = binaryString.length;
-    const bytes = new Uint8Array(len);
-    for (let i = 0; i < len; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-    }
-    return bytes.buffer;
-}
-
-export { Character, IMG };
+export { Character, IMG, clearAssetsManifestCache, normalizeOutfitFolderPath };
 

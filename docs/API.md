@@ -394,6 +394,23 @@ app.use(cors({
 
 ---
 
+## Static Assets & Engine v2.x APIs
+
+### AOT Asset Manifest (`GET /assets/assets.manifest.json`)
+- Replaces dynamic `/folder` ZIP streaming and `JSZip`.
+- In development (`NODE_ENV !== "production"`), `api/config.js` dynamically scans `assets/game-assets/`.
+- In production (`npm run build` / `npm run build:release`), `scripts/assets-manifest.js` writes static `dist/assets/assets.manifest.json` for zero-backend hosting (itch.io, GitHub Pages, Tauri).
+
+### Dev-Only Studio (`GET /?studio=true`)
+- Injected exclusively by the Express dev server (`!useDist`); `npm run build:release` strips `studio.js` from `dist/` and `init.js` carries no client loader hook.
+
+### Engine Subsystems
+- **2D Camera & Lighting (`game.camera` — `CameraController`):** `pan({ x, y, zoom, rotation, duration, clampBounds })`, `focus(actor, options)`, `reset(options)`, `setLighting(presetOrColor, strength, actors)`.
+- **Rollback (`game.rollback` — `RollbackManager`):** Captures step snapshots at `dialog` actions; `stepBack()`, `stepForward()`, `applySnapshot()`, plus throttled `wheel` / `PageUp` / `PageDown` listeners.
+- **Audio 2.0 (`vnsutra_modules/audio-effects-utils.js`):** `crossfadeMusic()`, `playAmbient()`, `stopAmbient()`, `duckMusic()`, `restoreMusic()`, `playBlip()`.
+
+---
+
 ## Future Enhancements
 
 - [ ] API rate limiting

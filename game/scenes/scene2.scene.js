@@ -93,7 +93,7 @@ export default [
     },
     {
         "type": "storage.set",
-        "key": "demo-tour-focus",
+        "key": "demo_tour_focus",
         "value": {
             "fromVar": "tourFocus"
         }

@@ -1,6 +1,6 @@
 import "https://unpkg.com/konva@10.0.0-1/konva.min.js";
 import { konvaStage } from "./stage.js";
-import { getIsPortrait, getIsAndroid, getState, getActiveScene, getInstructionCount, setGameKeyboardActions, setShouldAbortGame, scaleFontSize } from "./runtime-state.js";
+import { getIsPortrait, getIsAndroid, getState, getActiveScene, getInstructionCount, setGameKeyboardActions, setShouldAbortGame, getAbortInstruction, scaleFontSize } from "./runtime-state.js";
 import { storage } from "./storage.js";
 import { animateBtn, openBar, closeBar, isBarOpen, animateMenu, loadImg } from "./ui/utils.js";
 import actionBar from "./ui/actionbar.js";
@@ -323,6 +323,7 @@ async function gameUI(config, fonts, navigate) {
 
         proceedBtn.onclick = () => {
             setShouldAbortGame(true);
+            getAbortInstruction()?.();
             stopEndingSequence({ showEnd: false });
             alertWin.close();
             requestAnimationFrame(() => {
@@ -944,9 +945,29 @@ async function gameUI(config, fonts, navigate) {
         });
     });
 
+    const game_camera = new Konva.Group({
+        id: "game-camera-group",
+        width: width,
+        height: gameHeight,
+        offsetX: width / 2,
+        offsetY: gameHeight / 2,
+        x: width / 2,
+        y: gameHeight / 2
+    });
+    const lightingOverlay = new Konva.Rect({
+        id: "game-lighting-overlay",
+        width: width,
+        height: gameHeight,
+        fill: "#ffffff",
+        opacity: 0,
+        listening: false,
+        globalCompositeOperation: "multiply"
+    });
+    game_camera.add(game_bg, game_rect, lightingOverlay);
+
     // Keep background in the full viewport so translucent dialog always has scene content behind it,
     // while gameplay nodes can still shrink via game_rect height when dialog is open.
-    game_container.add(gameClickCatcher, game_bg, game_rect, transitionOverlay, flashOverlay, dialogContainer);
+    game_container.add(gameClickCatcher, game_camera, transitionOverlay, flashOverlay, dialogContainer);
 
     // The End
 
@@ -1495,6 +1516,8 @@ async function gameUI(config, fonts, navigate) {
         promptExitToHome,
         game: {
             container: game_layer.findOne("#game-container"),
+            camera: game_layer.findOne("#game-camera-group"),
+            lightingOverlay: game_layer.findOne("#game-lighting-overlay"),
             viewport: game_layer.findOne("#game-box"),
             bg: game_layer.findOne("#game-bg"),
             transitionOverlay: game_layer.findOne("#game-transition-overlay"),

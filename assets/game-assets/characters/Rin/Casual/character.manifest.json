@@ -1,0 +1,63 @@
+{
+  "character": "Rin",
+  "outfit": "Casual",
+  "version": "3.0",
+  "base": {
+    "file": "base_body.png",
+    "width": 481,
+    "height": 1059
+  },
+  "atlas": {
+    "file": "expressions_atlas.png",
+    "width": 178,
+    "height": 72
+  },
+  "patches": {
+    "eyes_Rin_Casual_OpenSmile_EyesClosed": {
+      "id": "eyes_Rin_Casual_OpenSmile_EyesClosed",
+      "feature": "eyes",
+      "atlas": {
+        "x": 0,
+        "y": 0,
+        "w": 126,
+        "h": 72
+      },
+      "stage": {
+        "x": 249,
+        "y": 154,
+        "w": 126,
+        "h": 72
+      }
+    },
+    "mouth_Rin_Casual_Smile": {
+      "id": "mouth_Rin_Casual_Smile",
+      "feature": "mouth",
+      "atlas": {
+        "x": 130,
+        "y": 0,
+        "w": 44,
+        "h": 34
+      },
+      "stage": {
+        "x": 275,
+        "y": 232,
+        "w": 44,
+        "h": 34
+      }
+    }
+  },
+  "presets": {
+    "Rin_Casual_OpenSmile": {
+      "eyes": "default",
+      "mouth": "default"
+    },
+    "Rin_Casual_OpenSmile_EyesClosed": {
+      "eyes": "eyes_Rin_Casual_OpenSmile_EyesClosed",
+      "mouth": "default"
+    },
+    "Rin_Casual_Smile": {
+      "eyes": "default",
+      "mouth": "mouth_Rin_Casual_Smile"
+    }
+  }
+}

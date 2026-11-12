@@ -25,6 +25,7 @@ const STORAGE_KEYS = {
  */
 const EVENTS = {
     DIALOG: "vnsutra:dialog",
+    DIALOG_END: "vnsutra:dialog-end",
     INPUT: "vnsutra:input",
     CHOICE: "vnsutra:choice",
     GAME_COMPLETED: "vnsutra:game-completed",

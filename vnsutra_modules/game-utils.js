@@ -341,10 +341,12 @@ function dialog(speaker, text = "", wait = true, params = {}) {
 
         data.name.text(speaker?.data?.name ?? "");
     
+        const speakerX = typeof speaker?.data?.x === "number" ? speaker.data.x : null;
         if(gameSettings && gameSettings["text_animation"]) {
             data.message.text("");
             data.message.fire("update");
-            dispatchGameEvent(EVENTS.DIALOG, { speaker: speaker?.data?.name ?? null, text: displayText });
+            const speakerName = speaker?.data?.name ?? null;
+            dispatchGameEvent(EVENTS.DIALOG, { speaker: speakerName, speakerX, text: displayText, animating: true });
             
             return new Promise((resolve, reject) => {
                 let aborted = false;
@@ -353,12 +355,14 @@ function dialog(speaker, text = "", wait = true, params = {}) {
                 const clearAbort = registerAbortHandler(setAbortInstruction, () => {
                     aborted = true;
                     abortCleanup();
+                    dispatchGameEvent(EVENTS.DIALOG_END, { speaker: speakerName });
                     reject(new Error("Dialog aborted"));
                 });
 
                 animateText(displayText, (cleanup) => {
                     abortCleanup = cleanup;
                 }).then((skipped) => {
+                    dispatchGameEvent(EVENTS.DIALOG_END, { speaker: speakerName });
                     if (aborted) {
                         return;
                     }
@@ -387,7 +391,7 @@ function dialog(speaker, text = "", wait = true, params = {}) {
 
             data.message.text(displayText);
             data.message.fire("update");
-            dispatchGameEvent(EVENTS.DIALOG, { speaker: speaker?.data?.name ?? null, text: displayText });
+            dispatchGameEvent(EVENTS.DIALOG, { speaker: speaker?.data?.name ?? null, speakerX, text: displayText });
             if(wait) {
                 return new Promise((resolve, reject) => {
                     // Check skip mode first - if enabled, auto-advance

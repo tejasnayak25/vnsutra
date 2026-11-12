@@ -58,7 +58,7 @@ export default [
     },
     {
         "type": "storage.get",
-        "key": "demo-tour-focus",
+        "key": "demo_tour_focus",
         "var": "tourFocus"
     },
     {

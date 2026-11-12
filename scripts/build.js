@@ -4,6 +4,7 @@ import { minify } from "terser";
 import { fileURLToPath } from "url";
 import { promisify } from "util";
 import { exec } from "child_process";
+import { writeAssetsManifest } from "./assets-manifest.js";
 
 // Get __dirname equivalent in ESM
 const __filename = fileURLToPath(import.meta.url);
@@ -25,7 +26,7 @@ const copyTargets = [
     ".env.example",
 ];
 
-const skipMinifyPatterns = [".min.js", "jszip.min.js"];
+const skipMinifyPatterns = [".min.js"];
 
 function shouldMinifyJs(filePath) {
     const fileName = path.basename(filePath);
@@ -108,12 +109,30 @@ async function copyProjectFiles() {
     }
 }
 
+const preservedDistDirs = new Set([".cache", "sprite-experiment"]);
+const isReleaseBuild = process.argv.includes("--release");
+
+async function cleanDistPreservingCache() {
+    await fs.ensureDir(distDir);
+    const entries = await fs.readdir(distDir, { withFileTypes: true });
+    for (const entry of entries) {
+        if (!isReleaseBuild && preservedDistDirs.has(entry.name)) {
+            continue;
+        }
+        await fs.remove(path.join(distDir, entry.name));
+    }
+}
+
 async function build() {
     // eslint-disable-next-line no-console
     console.log("[Build] Starting production build...");
 
-    await fs.emptyDir(distDir);
+    await cleanDistPreservingCache();
+    await writeAssetsManifest(rootDir);
     await copyProjectFiles();
+    if (isReleaseBuild) {
+        await fs.remove(path.join(distDir, "vnsutra_modules", "studio.js"));
+    }
     await minifyJavaScriptInDist();
     await minifyCss();
 

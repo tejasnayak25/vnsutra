@@ -40,14 +40,112 @@ export default [
         "actor": "mary",
         "method": "slideIn",
         "args": [
-            0.5,
-            1
+            0.18,
+            0.8
+        ]
+    },
+    {
+        "type": "actor.reset",
+        "actor": "nanami",
+        "fields": [
+            "scale"
+        ]
+    },
+    {
+        "type": "sprite.apply",
+        "actor": "nanami",
+        "sprite": "smiling"
+    },
+    {
+        "type": "actor.set",
+        "actor": "nanami",
+        "props": {
+            "x": 1.25,
+            "y": {
+                "portrait": 0.1,
+                "android": 0.1,
+                "default": 0.1
+            }
+        }
+    },
+    {
+        "type": "actor.call",
+        "actor": "nanami",
+        "method": "slideIn",
+        "args": [
+            0.82,
+            0.8
         ]
     },
     {
         "type": "dialog",
         "actor": "mary",
         "text": "@scene1.hello"
+    },
+    {
+        "type": "dialog",
+        "actor": "nanami",
+        "text": "Hi! I'm Nanami, running live from a single .vnsprite binary bundle — watch me blink, breathe, sway in the wind, and lip-sync as I speak! wow"
+    },
+    {
+        "type": "sprite.apply",
+        "actor": "nanami",
+        "sprite": "happy"
+    },
+    {
+        "type": "camera.focus",
+        "actor": "nanami",
+        "zoom": 1.22,
+        "duration": 0.6
+    },
+    {
+        "type": "actor.call",
+        "actor": "nanami",
+        "method": "hop"
+    },
+    {
+        "type": "dialog",
+        "actor": "nanami",
+        "text": "Woohoo! Notice how a single spring hop ripples through my hair and outfit while keeping every seam locked!"
+    },
+    {
+        "type": "sprite.apply",
+        "actor": "nanami",
+        "sprite": "shocked"
+    },
+    {
+        "type": "actor.call",
+        "actor": "nanami",
+        "method": "shake"
+    },
+    {
+        "type": "dialog",
+        "actor": "nanami",
+        "text": "Eek! Shock shake triggers full-body physics too! Now I'll let Mary take it from here!"
+    },
+    {
+        "type": "camera.reset",
+        "duration": 0.5
+    },
+    {
+        "type": "actor.call",
+        "actor": "nanami",
+        "method": "slideOut",
+        "args": [
+            1.35,
+            0.6
+        ]
+    },
+    {
+        "type": "actor.call",
+        "actor": "mary",
+        "method": "to",
+        "args": [
+            {
+                "x": 0.5,
+                "duration": 0.6
+            }
+        ]
     },
     {
         "type": "dialog",

@@ -501,6 +501,45 @@ This is permissive for writing, but a language service should probably warn on i
 
 ---
 
+## 9.5) Cinematic Camera, Lighting, Wipes & Audio 2.0
+
+### 2D Bounded Camera & Ambient Lighting
+
+```text
+@camera.pan x=0.1 y=-0.05 zoom=1.35 duration=0.8
+@camera.focus actor="nanami" zoom=1.25 duration=0.7
+@camera.reset duration=0.6
+@camera.lighting preset="sunset"
+```
+
+- Supported lighting presets: `day`, `sunset`, `night`, `dramatic`, `noir` (applies to both the stage multiply overlay and rigged character `uTint`).
+- `zoom` stays `>= 1.0` and pan offsets clamp inside the 2D background bounds by default.
+
+### Procedural Wipe Transitions
+
+```text
+transition: wipe-left #000000 600
+transition: iris #000000 700
+transition: blinds #000000 600
+```
+
+Supported transition types: `fade`, `wipe-left`, `wipe-right`, `wipe-up`, `wipe-down`, `iris`, `blinds`.
+
+### Audio 2.0 & Weather Particles
+
+```text
+music crossfade: theme_b 1200
+ambient play: rain
+ambient stop
+weather: rain intensity=0.7
+weather: cherry_blossoms
+weather: off
+```
+
+Supported weather presets: `rain`, `snow`, `cherry_blossoms`, `embers`, `off`.
+
+---
+
 ## 10) Complete Example
 
 ```text
@@ -536,7 +575,7 @@ If you are generating completions from this syntax, the highest-value items are:
 3. asset names for `bg:` and `@background`
 4. variable names for `$var` and `storage ... = $var`
 5. action keywords for `@action.type`
-6. enum values such as `fade`, `in`, `out`, `true`, `false`, and comparison operators
+6. enum values such as `fade`, `wipe-left`, `wipe-right`, `wipe-up`, `wipe-down`, `iris`, `blinds`, `day`, `sunset`, `night`, `dramatic`, `noir`, `in`, `out`, `true`, `false`, and comparison operators
 
 ---
 

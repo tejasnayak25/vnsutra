@@ -1,4 +1,4 @@
-import { Background, Character, IMG, Music } from "../vnsutra_modules/assets/index.js";
+import { Background, Character, RiggedCharacter, IMG, Music } from "../vnsutra_modules/assets/index.js";
 import { getIsAndroid, getIsPortrait } from "../vnsutra_modules/runtime-state.js";
 import DynamicSprites from "../vnsutra_modules/dynamic-sprites.js";
 
@@ -11,9 +11,16 @@ const mary = new Character({
     scale: getIsPortrait() ? 1 : (getIsAndroid() ? 1.4 : 1.1),
 });
 
+const nanami = new RiggedCharacter({
+    name: "Nanami",
+    folder: "characters/Nanami",
+    scale: getIsPortrait() ? 1 : (getIsAndroid() ? 1.4 : 1.1),
+});
+
 const music = new Music("../assets/music/bgm.mp3");
 
 mary.loadOutfit("Casual");
+nanami.loadOutfit("Casual");
 
 if (DynamicSprites) {
     mary.sprites = new DynamicSprites(mary);
@@ -26,8 +33,19 @@ if (DynamicSprites) {
     mary.sprites.preloadOutfits().catch((error) => {
         console.warn("[DynamicSprites] Failed to preload outfits:", error);
     });
+
+    nanami.sprites = new DynamicSprites(nanami);
+    nanami.sprites.defineMany({
+        smiling: { outfit: "Casual", mood: "Smiling" },
+        happy: { outfit: "Casual", mood: "Happy" },
+        shocked: { outfit: "Casual", mood: "Shocked" }
+    });
+
+    nanami.sprites.preloadOutfits().catch((error) => {
+        console.warn("[DynamicSprites] Failed to preload Nanami outfits:", error);
+    });
 }
 
 const obj = new IMG({ src: "../assets/images/logo.png", scale: 0.5 });
 
-export { futon_room, apartment_ext, mary, music, obj };
+export { futon_room, apartment_ext, mary, nanami, music, obj };

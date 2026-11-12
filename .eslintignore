@@ -1,6 +1,6 @@
 node_modules/
 coverage/
 dist/
+research/
 vnsutra_modules/konva.js
-vnsutra_modules/jszip.min.js
 game/manifest.json

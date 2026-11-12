@@ -6,9 +6,80 @@
  * - Screen flash, shake, and particles
  */
 
+import { CameraController } from "./camera.js";
+import { WeatherSystem } from "./weather.js";
+
+const WIPE_TYPES = new Set(["wipe-left", "wipe-right", "wipe-up", "wipe-down", "iris", "blinds"]);
+
+/**
+ * Render a procedural wipe/mask frame onto a 2D canvas context.
+ * `progress` = 0 -> transparent, `progress` = 1 -> fully covered by `color`.
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {number} width
+ * @param {number} height
+ * @param {string} type
+ * @param {number} progress
+ * @param {string} [color="#000000"]
+ */
+function renderWipeFrame(ctx, width, height, type, progress, color = "#000000") {
+    if (!ctx || width <= 0 || height <= 0) {
+        return;
+    }
+    const p = Math.min(1, Math.max(0, Number(progress) || 0));
+    ctx.clearRect(0, 0, width, height);
+    if (p <= 0.001) {
+        return;
+    }
+
+    ctx.save();
+    ctx.fillStyle = color;
+
+    if (p >= 0.999) {
+        ctx.fillRect(0, 0, width, height);
+        ctx.restore();
+        return;
+    }
+
+    if (type === "wipe-left") {
+        ctx.fillRect(0, 0, width * p, height);
+    } else if (type === "wipe-right") {
+        const w = width * p;
+        ctx.fillRect(width - w, 0, w, height);
+    } else if (type === "wipe-up") {
+        ctx.fillRect(0, 0, width, height * p);
+    } else if (type === "wipe-down") {
+        const h = height * p;
+        ctx.fillRect(0, height - h, width, h);
+    } else if (type === "blinds") {
+        const slats = 10;
+        const slatH = height / slats;
+        for (let i = 0; i < slats; i++) {
+            ctx.fillRect(0, i * slatH, width, slatH * p + 0.5);
+        }
+    } else if (type === "iris") {
+        const maxR = Math.hypot(width * 0.5, height * 0.5);
+        const openR = maxR * (1 - p);
+        ctx.beginPath();
+        ctx.rect(0, 0, width, height);
+        ctx.arc(width * 0.5, height * 0.5, Math.max(0, openR), 0, Math.PI * 2, true);
+        ctx.fill();
+    } else {
+        ctx.globalAlpha = p;
+        ctx.fillRect(0, 0, width, height);
+    }
+
+    ctx.restore();
+}
+
 function initVisualEffectsSystem(gameInstance) {
     if (!gameInstance || gameInstance._visualEffectsInitialized) {
         return gameInstance;
+    }
+    if (!gameInstance.camera) {
+        gameInstance.camera = new CameraController(gameInstance);
+    }
+    if (!gameInstance.weather) {
+        gameInstance.weather = new WeatherSystem(gameInstance);
     }
 
     /**
@@ -171,6 +242,88 @@ function initVisualEffectsSystem(gameInstance) {
             });
         }
 
+        if (WIPE_TYPES.has(type) && duration > 0) {
+            const overlay = this.ui?.game?.transitionOverlay;
+            const viewport = this.ui?.game?.viewport;
+            const container = this.ui?.game?.container;
+            const sizeSource = viewport || container;
+            const Konva = globalThis.Konva;
+            const doc = globalThis.document;
+            if (!overlay || !sizeSource || !Konva?.Image || !doc?.createElement) {
+                return Promise.resolve();
+            }
+
+            const w = Math.max(1, Math.round(sizeSource.width?.() || 1280));
+            const h = Math.max(1, Math.round(sizeSource.height?.() || 720));
+            const wipeCanvas = doc.createElement("canvas");
+            wipeCanvas.width = w;
+            wipeCanvas.height = h;
+            const wipeCtx = wipeCanvas.getContext("2d");
+            const parent = overlay.getParent?.();
+            const layer = overlay.getLayer?.();
+            if (!wipeCtx || !parent) {
+                return Promise.resolve();
+            }
+
+            const wipeNode = new Konva.Image({
+                image: wipeCanvas,
+                width: w,
+                height: h,
+                listening: false
+            });
+            parent.add(wipeNode);
+
+            const durationMs = Math.max(1, Number(duration) || 500);
+            const safeFadeInRatio = clamp(Number(fadeInRatio) || 0.5, 0.2, 0.8);
+            const safeOverlapRatio = clamp(Number(overlapRatio) || 0.45, 0, 0.9);
+            const safeHoldMs = Math.max(0, Number(holdMs) || 0);
+            const fadeInMs = Math.max(1, Math.round(durationMs * safeFadeInRatio));
+            const fadeOutMs = Math.max(1, durationMs - fadeInMs);
+            const resolveOffsetMs = Math.round(fadeOutMs * (1 - safeOverlapRatio));
+            const totalMs = fadeInMs + safeHoldMs + fadeOutMs;
+            const scheduleFrame = typeof requestAnimationFrame === "function"
+                ? requestAnimationFrame
+                : (cb) => setTimeout(() => cb(Date.now()), 16);
+
+            return new Promise((resolve) => {
+                const startTs = performance.now();
+                let resolved = false;
+                const tick = (now) => {
+                    const elapsed = Math.max(0, now - startTs);
+                    let progress = 0;
+                    if (elapsed < fadeInMs) {
+                        const t = elapsed / fadeInMs;
+                        progress = t * t * (3 - 2 * t);
+                    } else if (elapsed < fadeInMs + safeHoldMs) {
+                        progress = 1;
+                    } else {
+                        const outElapsed = elapsed - fadeInMs - safeHoldMs;
+                        const t = Math.min(1, outElapsed / fadeOutMs);
+                        progress = 1 - t * t * (3 - 2 * t);
+                        if (!resolved && outElapsed >= resolveOffsetMs) {
+                            resolved = true;
+                            resolve();
+                        }
+                    }
+
+                    renderWipeFrame(wipeCtx, w, h, type, progress, color);
+                    layer?.batchDraw?.();
+
+                    if (elapsed < totalMs) {
+                        scheduleFrame(tick);
+                    } else {
+                        wipeNode.destroy?.();
+                        layer?.batchDraw?.();
+                        if (!resolved) {
+                            resolved = true;
+                            resolve();
+                        }
+                    }
+                };
+                scheduleFrame(tick);
+            });
+        }
+
         return Promise.resolve();
     };
 
@@ -203,5 +356,7 @@ function triggerEffect(gameInstance, effectType, options = {}) {
 
 export {
     initVisualEffectsSystem,
-    triggerEffect
+    triggerEffect,
+    renderWipeFrame,
+    WIPE_TYPES
 };

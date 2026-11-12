@@ -200,6 +200,154 @@ function initAudioSystem(gameInstance) {
         }
     };
 
+    /**
+     * Smoothly ramp an HTMLAudioElement volume from `from` to `to` over `durationMs`.
+     */
+    function rampAudioVolume(player, from, to, durationMs, onDone) {
+        if (!player || durationMs <= 0) {
+            if (player) player.volume = Math.min(1, Math.max(0, to));
+            onDone?.();
+            return Promise.resolve();
+        }
+        const startTime = Date.now();
+        return new Promise((resolve) => {
+            const iv = setInterval(() => {
+                const p = Math.min((Date.now() - startTime) / durationMs, 1);
+                player.volume = Math.min(1, Math.max(0, from + (to - from) * p));
+                if (p >= 1) {
+                    clearInterval(iv);
+                    onDone?.();
+                    resolve();
+                }
+            }, 30);
+        });
+    }
+
+    /**
+     * Crossfade smoothly from the active BGM track to a new track.
+     * @param {string} track
+     * @param {{ duration?: number, loop?: boolean, volume?: number }} [options]
+     */
+    gameInstance.crossfadeMusic = async function(track, { duration = 1200, loop = true, volume = 1 } = {}) {
+        const targetVol = Math.min(1, Math.max(0, Number(volume) ?? 1));
+        const dur = Math.max(0, Number(duration) || 0);
+        if (!this._musicPlayer || !track) {
+            return this.playMusic(track, { loop, volume: targetVol, fadeIn: dur });
+        }
+        const outgoing = this._musicPlayer;
+        const outVol = outgoing.volume ?? targetVol;
+        const incoming = new Audio(track);
+        incoming.loop = loop;
+        incoming.volume = 0;
+        this._musicPlayer = incoming;
+        this._musicBaseVolume = targetVol;
+        incoming.play?.()?.catch?.(() => {});
+        await Promise.all([
+            rampAudioVolume(outgoing, outVol, 0, dur, () => outgoing.pause?.()),
+            rampAudioVolume(incoming, 0, targetVol, dur)
+        ]);
+    };
+
+    /**
+     * Play looping ambient background sound (BGS) independently of BGM.
+     * @param {string} track
+     * @param {{ loop?: boolean, volume?: number, fadeIn?: number }} [options]
+     */
+    gameInstance.playAmbient = async function(track, { loop = true, volume = 0.5, fadeIn = 500 } = {}) {
+        if (!track) return;
+        if (!this._ambientPlayer) {
+            this._ambientPlayer = new Audio();
+        }
+        const targetVol = Math.min(1, Math.max(0, Number(volume) ?? 0.5));
+        this._ambientPlayer.src = track;
+        this._ambientPlayer.loop = loop;
+        this._ambientPlayer.volume = fadeIn > 0 ? 0 : targetVol;
+        this._ambientPlayer.play?.()?.catch?.(() => {});
+        if (fadeIn > 0) {
+            await rampAudioVolume(this._ambientPlayer, 0, targetVol, fadeIn);
+        }
+    };
+
+    /**
+     * Stop looping ambient sound channel.
+     * @param {number} [fadeOut=500]
+     */
+    gameInstance.stopAmbient = async function(fadeOut = 500) {
+        if (!this._ambientPlayer) return;
+        const player = this._ambientPlayer;
+        await rampAudioVolume(player, player.volume ?? 0.5, 0, Math.max(0, fadeOut), () => player.pause?.());
+    };
+
+    /**
+     * Temporarily duck BGM volume while voice lines or priority SFX play.
+     * @param {number} [duckRatio=0.35]
+     * @param {number} [duration=200]
+     */
+    gameInstance.duckMusic = async function(duckRatio = 0.35, duration = 200) {
+        if (!this._musicPlayer) return;
+        if (this._musicBaseVolume === undefined) {
+            this._musicBaseVolume = this._musicPlayer.volume ?? 1;
+        }
+        const target = Math.min(1, Math.max(0, this._musicBaseVolume * Math.min(1, Math.max(0, duckRatio))));
+        await rampAudioVolume(this._musicPlayer, this._musicPlayer.volume ?? this._musicBaseVolume, target, duration);
+    };
+
+    /**
+     * Restore BGM volume after voice ducking.
+     * @param {number} [duration=350]
+     */
+    gameInstance.restoreMusic = async function(duration = 350) {
+        if (!this._musicPlayer || this._musicBaseVolume === undefined) return;
+        await rampAudioVolume(this._musicPlayer, this._musicPlayer.volume ?? 0, this._musicBaseVolume, duration);
+    };
+
+    /**
+     * Play a lightweight typewriter speech blip (custom URL or Web Audio synth tone).
+     * Rate-throttled per character index so fast typing stays crisp.
+     * @param {{ sound?: string, pitchHz?: number, pitchVariation?: number, rate?: number, volume?: number, charIndex?: number }} [options]
+     */
+    gameInstance.playBlip = function({ sound = null, pitchHz = 420, pitchVariation = 0.08, rate = 2, volume = 0.25, charIndex = 0 } = {}) {
+        const step = Math.max(1, Math.round(Number(rate) || 1));
+        if (charIndex % step !== 0) {
+            return false;
+        }
+        const safeVol = Math.min(1, Math.max(0, Number(volume) ?? 0.25)) * (this.sfxVolume ?? 1);
+        if (safeVol <= 0.001) {
+            return false;
+        }
+        if (sound && typeof globalThis.Audio === "function") {
+            try {
+                const a = new globalThis.Audio(sound);
+                a.volume = safeVol;
+                a.play?.()?.catch?.(() => {});
+                return true;
+            } catch {
+                return false;
+            }
+        }
+        const AudioCtx = globalThis.AudioContext || globalThis.webkitAudioContext;
+        if (!AudioCtx) {
+            return false;
+        }
+        if (!this._blipAudioCtx) {
+            this._blipAudioCtx = new AudioCtx();
+        }
+        const ctx = this._blipAudioCtx;
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const jitter = 1 + ((Math.random() * 2 - 1) * Math.max(0, Number(pitchVariation) || 0));
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(Math.max(80, (Number(pitchHz) || 420) * jitter), now);
+        gain.gain.setValueAtTime(safeVol * 0.35, now);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.045);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.05);
+        return true;
+    };
+
     gameInstance._audioInitialized = true;
     return gameInstance;
 }

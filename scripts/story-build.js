@@ -22,7 +22,10 @@ const REGEX_DIALOG_NARRATOR = /^"([^"]+)"$/; // "Just narration"
 // Phase 2 Regex Matchers (Game Actions)
 const REGEX_BG = /^bg:\s*([^ ]+)$/i; // bg: futon_room
 const REGEX_MUSIC_PLAY = /^music play:\s*([^ ]+)$/i; // music play: bgm.mp3
+const REGEX_MUSIC_CROSSFADE = /^music crossfade:\s*([^ ]+)(?:\s+([0-9]+))?$/i; // music crossfade: bgm2.mp3 1200
 const REGEX_MUSIC_STOP = /^music stop$/i;
+const REGEX_AMBIENT_PLAY = /^ambient play:\s*([^ ]+)$/i; // ambient play: rain.mp3
+const REGEX_AMBIENT_STOP = /^ambient stop$/i;
 const REGEX_SFX_PLAY = /^sfx:\s*([^ ]+)$/i; // sfx: click
 const REGEX_VAR_SET_STR = /^\$([a-zA-Z0-9_]+)\s*=\s*"([^"]+)"$/; // $name = "Alice"
 const REGEX_VAR_SET_NUM = /^\$([a-zA-Z0-9_]+)\s*=\s*([0-9.]+)$/; // $score = 10
@@ -56,7 +59,8 @@ const REGEX_LOADING_STOP = /^loading\s*stop$/i;
 const REGEX_LOG = /^log\s*(.+)$/i;
 const REGEX_FLASH = /^flash\s*screen(?:\s+([a-zA-Z0-9#]+))?(?:\s+([0-9]+))?$/i; // flash screen #ffffff 500
 const REGEX_SHAKE_SCREEN = /^shake\s*screen(?:\s+([0-9]+))?(?:\s+([0-9]+))?$/i; // shake screen 5 300
-const REGEX_TRANSITION = /^transition:\s*([a-zA-Z0-9_]+)(?:\s+([a-zA-Z0-9#]+))?(?:\s+([0-9]+))?$/i; // transition: fade #000 500
+const REGEX_TRANSITION = /^transition:\s*([a-zA-Z0-9_-]+)(?:\s+([a-zA-Z0-9#]+))?(?:\s+([0-9]+))?$/i; // transition: wipe-left #000 500
+const REGEX_WEATHER = /^weather:\s*([a-zA-Z0-9_-]+)(?:\s+intensity=([0-9.]+))?$/i; // weather: rain intensity=0.7
 
 async function compileFile(filePath) {
     try {
@@ -262,8 +266,40 @@ async function compileFile(filePath) {
                 continue;
             }
 
+            const musicCrossfadeMatch = line.match(REGEX_MUSIC_CROSSFADE);
+            if (musicCrossfadeMatch) {
+                const action = { type: "music.crossfade", track: musicCrossfadeMatch[1] };
+                if (musicCrossfadeMatch[2]) action.duration = Number(musicCrossfadeMatch[2]);
+                targetArray.push(action);
+                continue;
+            }
+
             if (REGEX_MUSIC_STOP.test(line)) {
                 targetArray.push({ type: "music.stop" });
+                continue;
+            }
+
+            const ambientPlayMatch = line.match(REGEX_AMBIENT_PLAY);
+            if (ambientPlayMatch) {
+                targetArray.push({ type: "ambient.play", track: ambientPlayMatch[1] });
+                continue;
+            }
+
+            if (REGEX_AMBIENT_STOP.test(line)) {
+                targetArray.push({ type: "ambient.stop" });
+                continue;
+            }
+
+            const weatherMatch = line.match(REGEX_WEATHER);
+            if (weatherMatch) {
+                const preset = weatherMatch[1].toLowerCase();
+                if (preset === "off" || preset === "none") {
+                    targetArray.push({ type: "weather.stop" });
+                } else {
+                    const action = { type: "weather.set", preset };
+                    if (weatherMatch[2]) action.intensity = Number(weatherMatch[2]);
+                    targetArray.push(action);
+                }
                 continue;
             }
 

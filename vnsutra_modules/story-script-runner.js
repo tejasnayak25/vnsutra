@@ -3,6 +3,8 @@ import { i18n } from "./i18n.js";
 import { initActorAnimation, addGameAnimationMethods } from "./animation-utils.js";
 import { initAudioSystem } from "./audio-effects-utils.js";
 import { initVisualEffectsSystem } from "./visual-effects-utils.js";
+import { RollbackManager } from "./rollback.js";
+import { getShouldAbortGame, getGameSessionId } from "./runtime-state.js";
 
 function resolveResponsive(value, { isPortrait = false, isAndroid = false } = {}) {
     if (!value || typeof value !== "object" || Array.isArray(value)) {
@@ -73,7 +75,13 @@ function findUpcomingJumpTarget(actions = [], startIndex = 0) {
 }
 
 async function executeActions(actions = [], runtime) {
+    const expectedSession = runtime.sessionId ?? getGameSessionId();
+    const isSessionAborted = () => getShouldAbortGame() || expectedSession !== getGameSessionId();
+
     for (let actionIndex = 0; actionIndex < actions.length; actionIndex++) {
+        if (isSessionAborted()) {
+            return { jumped: false, ended: true };
+        }
         const action = actions[actionIndex];
         if (!action || typeof action !== "object") {
             continue;
@@ -165,8 +173,29 @@ async function executeActions(actions = [], runtime) {
             break;
         }
         case "dialog": {
+            const actorSnapshot = {};
+            const actorMap = runtime.getActors?.() ?? runtime.actors ?? {};
+            for (const [id, act] of Object.entries(actorMap)) {
+                if (!act) continue;
+                actorSnapshot[id] = {
+                    x: act.x,
+                    y: act.y,
+                    visible: act.visible,
+                    mood: act.mood
+                };
+            }
+            runtime.rollback?.capture({
+                sceneName: runtime.currentSceneName || "",
+                actionIndex,
+                vars: runtime.vars,
+                actors: actorSnapshot,
+                camera: runtime.getGame?.()?.camera?.state || null
+            });
             const params = resolveDialogParams(action.params, runtime.vars);
             await dialog(actor ?? null, action.text ?? "", action.wait ?? true, params);
+            if (isSessionAborted()) {
+                return { jumped: false, ended: true };
+            }
             break;
         }
         case "input": {
@@ -257,6 +286,34 @@ async function executeActions(actions = [], runtime) {
         }
         case "loading.stop": {
             loading.stop();
+            break;
+        }
+        case "camera.pan": {
+            await runtime.getGame?.()?.camera?.pan?.({
+                x: action.x ?? 0,
+                y: action.y ?? 0,
+                zoom: action.zoom ?? 1,
+                rotation: action.rotation ?? 0,
+                duration: action.duration ?? 0.8,
+                easing: action.easing ?? "EaseInOut"
+            });
+            break;
+        }
+        case "camera.focus": {
+            await runtime.getGame?.()?.camera?.focus?.(actor, {
+                zoom: action.zoom ?? 1.25,
+                duration: action.duration ?? 0.7,
+                yOffset: action.yOffset ?? -0.05
+            });
+            break;
+        }
+        case "camera.reset": {
+            await runtime.getGame?.()?.camera?.reset?.({ duration: action.duration ?? 0.6 });
+            break;
+        }
+        case "camera.lighting": {
+            const actorList = runtime.getActors?.() ?? Object.values(runtime.actors || {});
+            runtime.getGame?.()?.camera?.setLighting?.(action.preset ?? action.color ?? "day", action.strength, actorList);
             break;
         }
         case "if": {
@@ -512,6 +569,39 @@ async function executeActions(actions = [], runtime) {
             }
             break;
         }
+        case "music.crossfade": {
+            const gameInstance = runtime.getGame?.();
+            await gameInstance?.crossfadeMusic?.(action.track, {
+                duration: action.duration ?? 1200,
+                loop: action.loop !== false,
+                volume: action.volume ?? 1
+            });
+            break;
+        }
+        case "ambient.play": {
+            const gameInstance = runtime.getGame?.();
+            await gameInstance?.playAmbient?.(action.track, {
+                loop: action.loop !== false,
+                volume: action.volume ?? 0.5,
+                fadeIn: action.fadeIn ?? 500
+            });
+            break;
+        }
+        case "ambient.stop": {
+            const gameInstance = runtime.getGame?.();
+            await gameInstance?.stopAmbient?.(action.fadeOut ?? 500);
+            break;
+        }
+        case "weather.set": {
+            const gameInstance = runtime.getGame?.();
+            gameInstance?.weather?.start?.(action.preset, { intensity: action.intensity ?? 0.7 });
+            break;
+        }
+        case "weather.stop": {
+            const gameInstance = runtime.getGame?.();
+            gameInstance?.weather?.stop?.();
+            break;
+        }
         case "music.stop": {
             const gameInstance = runtime.getGame?.();
             if (gameInstance) {
@@ -731,12 +821,20 @@ function createStoryFromScript({
             initVisualEffectsSystem(gameInstance);
         }
 
+        if (gameInstance && actors && typeof actors === "object") {
+            gameInstance.actors = actors;
+        }
         const runtime = {
             vars: sharedVars ? persistentVars : {},
             scenes,
             story,
+            sessionId: getGameSessionId(),
+            currentSceneName: sceneName,
+            actors,
+            rollback: gameInstance ? (gameInstance.rollback || (gameInstance.rollback = new RollbackManager())) : null,
             prefetchScene: resolveScene,
             getActor: resolveActor,
+            getActors: () => actors,
             getAsset: resolveAsset,
             achievements,
             getGame: () => gameInstance,
