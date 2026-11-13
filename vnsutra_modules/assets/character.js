@@ -623,6 +623,34 @@ class Character {
     }
 
     /**
+     * Trigger vertical spring hop impulse.
+     * @param {number} [strength=20]
+     */
+    hop(strength = 20) {
+        if (!this.img || typeof this.img.to !== "function") return;
+        const curY = this.img.y();
+        const str = Math.abs(Number(strength) || 20);
+        this.img.to({
+            y: curY - str,
+            duration: 0.12,
+            onFinish: () => {
+                this.img.to({
+                    y: curY,
+                    duration: 0.14
+                });
+            }
+        });
+    }
+
+    setFx(list = [], options = {}) {
+        this._fx = { list: Array.isArray(list) ? list : (list ? [list] : []), ...options };
+    }
+
+    clearFx() {
+        this.setFx([]);
+    }
+
+    /**
      * @param {Outfit} value - Outfit
      */
     set outfit(value) {
@@ -1199,6 +1227,34 @@ class IMG {
 
     clearTint(duration = 0) {
         this.setTint("#ffffff", 0, duration);
+    }
+
+    /**
+     * Trigger vertical spring hop impulse.
+     * @param {number} [strength=20]
+     */
+    hop(strength = 20) {
+        if (!this.img || typeof this.img.to !== "function") return;
+        const curY = this.img.y();
+        const str = Math.abs(Number(strength) || 20);
+        this.img.to({
+            y: curY - str,
+            duration: 0.12,
+            onFinish: () => {
+                this.img.to({
+                    y: curY,
+                    duration: 0.14
+                });
+            }
+        });
+    }
+
+    setFx(list = [], options = {}) {
+        this._fx = { list: Array.isArray(list) ? list : (list ? [list] : []), ...options };
+    }
+
+    clearFx() {
+        this.setFx([]);
     }
 }
 

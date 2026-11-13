@@ -213,6 +213,32 @@ class CameraController {
     }
 
     /**
+     * Subtle or dramatic camera trauma/screen shake.
+     * @param {{ intensity?: number, duration?: number, count?: number }} [options]
+     * @returns {Promise<void>}
+     */
+    async shake({ intensity = 10, duration = 0.35, count = 5 } = {}) {
+        if (this._isReducedMotion()) return;
+        const node = this._getCameraNode();
+        if (!node) return;
+        const origX = this.state.x;
+        const origY = this.state.y;
+        const stepDur = Math.max(0.02, duration / (count * 2));
+        for (let i = 0; i < count; i++) {
+            const decay = (count - i) / count;
+            const dx = (Math.random() - 0.5) * 2 * intensity * decay;
+            const dy = (Math.random() - 0.5) * 2 * intensity * decay;
+            node.x(origX + dx);
+            node.y(origY + dy);
+            node.getLayer?.()?.batchDraw?.();
+            await new Promise((r) => setTimeout(r, stepDur * 1000));
+        }
+        node.x(origX);
+        node.y(origY);
+        node.getLayer?.()?.batchDraw?.();
+    }
+
+    /**
      * Apply an ambient lighting preset ("day", "sunset", "night", "dramatic", "noir") or hex color
      * to a list of actors.
      * @param {string} presetOrColor

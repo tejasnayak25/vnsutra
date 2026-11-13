@@ -1,3 +1,23 @@
+function setupPositionalPan(audioElement, panValue) {
+    if (typeof panValue !== "number" || isNaN(panValue)) return null;
+    const AudioCtx = globalThis.AudioContext || globalThis.webkitAudioContext;
+    if (!AudioCtx || typeof audioElement?.addEventListener !== "function") return null;
+    try {
+        const audioCtx = new AudioCtx();
+        if (typeof audioCtx.createStereoPanner !== "function" || typeof audioCtx.createMediaElementSource !== "function") {
+            return null;
+        }
+        const source = audioCtx.createMediaElementSource(audioElement);
+        const panner = audioCtx.createStereoPanner();
+        panner.pan.setValueAtTime(Math.max(-1, Math.min(1, panValue)), audioCtx.currentTime);
+        source.connect(panner);
+        panner.connect(audioCtx.destination);
+        return { audioCtx, panner, source };
+    } catch {
+        return null;
+    }
+}
+
 /**
  * Audio Utilities
  * 
@@ -140,10 +160,10 @@ function initAudioSystem(gameInstance) {
     };
 
     /**
-     * Play sound effect
+     * Play sound effect with optional positional stereo panning and BGM auto-ducking.
      * @param {string} track - SFX track name or path
      * @param {number} volume - Volume level (0-1)
-     * @param {{ wait?: boolean|number }} [options] - Playback options
+     * @param {{ wait?: boolean|number, pan?: number, actor?: any, x?: number, duck?: boolean, duckRatio?: number }} [options] - Playback options
      */
     gameInstance.playSFX = async function(track, volume = 1, options = {}) {
         const waitOption = options?.wait;
@@ -152,19 +172,46 @@ function initAudioSystem(gameInstance) {
             ? Number(waitOption)
             : null;
 
+        let pan = typeof options?.pan === "number" ? options.pan : null;
+        if (pan === null && typeof options?.actor?.data?.x === "number") {
+            pan = Math.max(-1, Math.min(1, options.actor.data.x / 640));
+        } else if (pan === null && typeof options?.x === "number") {
+            pan = Math.max(-1, Math.min(1, options.x / 640));
+        }
+
+        const shouldDuck = Boolean(options?.duck);
+        if (shouldDuck) {
+            this.duckMusic?.(options.duckRatio ?? 0.35, 150);
+        }
+
         if (typeof this.audio?.playSFX === "function") {
-            const result = this.audio.playSFX(track, volume, options);
+            const result = this.audio.playSFX(track, volume, { ...options, pan });
+            if (shouldDuck) {
+                this.restoreMusic?.(250);
+            }
             return Promise.resolve(result);
         }
 
         // Fallback: create audio element for SFX
         try {
             const sfx = new Audio(track);
-            sfx.volume = Math.min(volume * this.sfxVolume, 1);
+            sfx.volume = Math.min(volume * (this.sfxVolume ?? 1), 1);
+            setupPositionalPan(sfx, pan);
             const playPromise = sfx.play();
 
+            const cleanup = () => {
+                if (shouldDuck) {
+                    this.restoreMusic?.(250);
+                }
+            };
+
             if (!shouldWait) {
-                return Promise.resolve(playPromise).catch(() => Promise.resolve());
+                sfx.addEventListener("ended", cleanup, { once: true });
+                sfx.addEventListener("error", cleanup, { once: true });
+                return Promise.resolve(playPromise).catch(() => {
+                    cleanup();
+                    return Promise.resolve();
+                });
             }
 
             return new Promise((resolve) => {
@@ -180,6 +227,7 @@ function initAudioSystem(gameInstance) {
                     if (timeoutId) {
                         clearTimeout(timeoutId);
                     }
+                    cleanup();
                     sfx.removeEventListener("ended", resolveOnce);
                     sfx.removeEventListener("error", resolveOnce);
                     resolve();
@@ -195,7 +243,77 @@ function initAudioSystem(gameInstance) {
                 Promise.resolve(playPromise).catch(resolveOnce);
             });
         } catch (e) {
+            if (shouldDuck) {
+                this.restoreMusic?.(250);
+            }
             console.warn("Failed to play SFX:", track, e);
+            return Promise.resolve();
+        }
+    };
+
+    /**
+     * Play a voice line with optional positional panning, speech lip-sync, and auto-BGM ducking.
+     * @param {string} track
+     * @param {{ volume?: number, actor?: any, pan?: number, duck?: boolean, duckRatio?: number, wait?: boolean }} [options]
+     * @returns {Promise<void>}
+     */
+    gameInstance.playVoice = async function(track, options = {}) {
+        if (!track) return Promise.resolve();
+        const {
+            volume = 1,
+            actor = null,
+            duck = true,
+            duckRatio = 0.35,
+            wait = false
+        } = options;
+
+        let pan = typeof options.pan === "number" ? options.pan : null;
+        if (pan === null && typeof actor?.data?.x === "number") {
+            pan = Math.max(-1, Math.min(1, actor.data.x / 640));
+        }
+
+        if (duck) {
+            this.duckMusic?.(duckRatio, 150);
+        }
+
+        try {
+            const voice = new Audio(track);
+            voice.volume = Math.min(1, Math.max(0, volume * (this.sfxVolume ?? 1)));
+            setupPositionalPan(voice, pan);
+
+            if (actor && typeof actor.attachVoice === "function") {
+                actor.attachVoice(voice).catch?.(() => {});
+            }
+
+            const playPromise = voice.play();
+
+            const cleanup = () => {
+                if (duck) {
+                    this.restoreMusic?.(250);
+                }
+                if (actor && typeof actor.detachVoice === "function") {
+                    actor.detachVoice();
+                }
+            };
+
+            voice.addEventListener("ended", cleanup, { once: true });
+            voice.addEventListener("error", cleanup, { once: true });
+
+            if (wait) {
+                return new Promise((resolve) => {
+                    const done = () => {
+                        cleanup();
+                        resolve();
+                    };
+                    voice.addEventListener("ended", done, { once: true });
+                    voice.addEventListener("error", done, { once: true });
+                    Promise.resolve(playPromise).catch(done);
+                });
+            }
+
+            return Promise.resolve(playPromise).catch(() => Promise.resolve());
+        } catch (e) {
+            if (duck) this.restoreMusic?.(250);
             return Promise.resolve();
         }
     };

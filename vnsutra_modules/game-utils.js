@@ -141,6 +141,21 @@ function dialog(speaker, text = "", wait = true, params = {}) {
         data.message.fire("update");
     }
 
+    const applyPendingKineticActions = (fromIdx = 0) => {
+        if (!kinetic?.actions) return;
+        for (const [idx, actionList] of kinetic.actions.entries()) {
+            if (idx >= fromIdx) {
+                for (const act of actionList) {
+                    if (act.type === "fx") {
+                        speaker?.setFx?.(act.fxList);
+                    } else if (act.type === "mood") {
+                        if (speaker) speaker.mood = act.mood;
+                    }
+                }
+            }
+        }
+    };
+
     /**
      * Animates dialog text character-by-character.
      * @param {string} text
@@ -177,7 +192,20 @@ function dialog(speaker, text = "", wait = true, params = {}) {
                     time++;
                     if (time <= text.length) {
                         data.message.text(text.substring(0, time));
-                        const { isShaking } = evalKineticAt(kinetic, time - 1);
+                        const { isShaking, actions } = evalKineticAt(kinetic, time - 1);
+                        if (actions && actions.length > 0) {
+                            for (const act of actions) {
+                                if (act.type === "hop") {
+                                    speaker?.hop?.(act.strength);
+                                } else if (act.type === "fx") {
+                                    speaker?.setFx?.(act.fxList);
+                                } else if (act.type === "mood") {
+                                    if (speaker) speaker.mood = act.mood;
+                                } else if (act.type === "screenShake") {
+                                    gameInstance?.camera?.shake?.({ intensity: act.intensity, duration: act.duration });
+                                }
+                            }
+                        }
                         if (typeof data.message.offsetX === "function") {
                             if (isShaking) {
                                 data.message.offsetX((Math.random() - 0.5) * 4);
@@ -223,6 +251,7 @@ function dialog(speaker, text = "", wait = true, params = {}) {
                     e.stopPropagation();
                     userSkipped = true;
                     clearStepTimer();
+                    applyPendingKineticActions(time);
                     data.message.text(text);
                     cleanup();
                     resolve(userSkipped);
@@ -248,6 +277,7 @@ function dialog(speaker, text = "", wait = true, params = {}) {
                 completed = true;
                 userSkipped = true;
                 clearStepTimer();
+                applyPendingKineticActions(time);
                 data.message.text(text);
                 cleanup();
                 resolve(userSkipped);
@@ -420,6 +450,7 @@ function dialog(speaker, text = "", wait = true, params = {}) {
                 return;
             }
 
+            applyPendingKineticActions(0);
             data.message.text(displayText);
             data.message.fire("update");
             dispatchGameEvent(EVENTS.DIALOG, { speaker: speaker?.data?.name ?? null, speakerX, text: displayText });

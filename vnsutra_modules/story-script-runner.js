@@ -672,9 +672,31 @@ async function executeActions(actions = [], runtime) {
             const gameInstance = runtime.getGame?.();
             if (gameInstance) {
                 const volume = action.volume ?? 1;
+                const targetActor = action.actor ? runtime.actors?.[action.actor] : null;
                 if (typeof gameInstance.playSFX === "function") {
                     await gameInstance.playSFX(action.track, volume, {
-                        wait: action.wait
+                        wait: action.wait,
+                        pan: action.pan,
+                        actor: targetActor,
+                        x: action.x,
+                        duck: action.duck
+                    });
+                }
+            }
+            break;
+        }
+        case "voice.play": {
+            const gameInstance = runtime.getGame?.();
+            if (gameInstance) {
+                const targetActor = action.actor ? runtime.actors?.[action.actor] : null;
+                if (typeof gameInstance.playVoice === "function") {
+                    await gameInstance.playVoice(action.track, {
+                        volume: action.volume ?? 1,
+                        actor: targetActor,
+                        pan: action.pan,
+                        duck: action.duck !== false,
+                        duckRatio: action.duckRatio ?? 0.35,
+                        wait: action.wait ?? false
                     });
                 }
             }

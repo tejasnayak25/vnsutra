@@ -113,6 +113,7 @@ class StudioOverlay {
             "<input type=\"range\" data-cam=\"y\" min=\"-0.25\" max=\"0.25\" step=\"0.02\" value=\"0\" style=\"width:100%;\">",
             "<div style=\"display:flex;gap:6px;margin-top:4px;\">",
             "<button type=\"button\" data-act=\"cam-reset\" style=\"flex:1;background:#1e293b;color:#e2e8f0;border:1px solid #334155;border-radius:5px;padding:4px;cursor:pointer;\">Reset</button>",
+            "<button type=\"button\" data-act=\"cam-shake\" style=\"flex:1;background:#1e293b;color:#facc15;border:1px solid #334155;border-radius:5px;padding:4px;cursor:pointer;\">Shake</button>",
             "<button type=\"button\" data-act=\"cam-copy\" style=\"flex:1;background:#0369a1;color:#fff;border:0;border-radius:5px;padding:4px;cursor:pointer;\">Copy .vn</button>",
             "</div></div>",
             "<div style=\"margin-bottom:8px;\">",
@@ -129,14 +130,18 @@ class StudioOverlay {
             "</div>",
             "<div style=\"margin-top:8px;\">",
             "<div style=\"color:#94a3b8;font-weight:600;margin-bottom:4px;\">Speaker Spotlight</div>",
-            "<div style=\"display:flex;flex-wrap:wrap;gap:4px;\">",
+            "<label style=\"display:flex;justify-content:space-between;\">Dim Strength <span data-dimval>32%</span></label>",
+            "<input type=\"range\" data-spot=\"dim\" min=\"0\" max=\"0.75\" step=\"0.05\" value=\"0.32\" style=\"width:100%;\">",
+            "<div style=\"display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;\">",
             "<button type=\"button\" data-act=\"spot-toggle\" style=\"background:#1e293b;color:#e2e8f0;border:1px solid #334155;border-radius:5px;padding:3px 7px;cursor:pointer;\">Toggle On/Off</button>",
             "<button type=\"button\" data-act=\"spot-clear\" style=\"background:#1e293b;color:#e2e8f0;border:1px solid #334155;border-radius:5px;padding:3px 7px;cursor:pointer;\">Clear</button>",
+            "<button type=\"button\" data-act=\"spot-copy\" style=\"background:#0369a1;color:#fff;border:0;border-radius:5px;padding:3px 7px;cursor:pointer;\">Copy .vn</button>",
             "</div></div>",
             "<div style=\"margin-top:8px;\">",
             "<div style=\"color:#94a3b8;font-weight:600;margin-bottom:4px;\">Expression FX & Mood Studio</div>",
             "<div style=\"display:flex;gap:4px;margin-bottom:6px;\">",
             "<select data-actor-select style=\"flex:1;background:#1e293b;color:#e2e8f0;border:1px solid #334155;border-radius:5px;padding:3px 6px;font-size:11px;\"></select>",
+            "<button type=\"button\" data-act=\"actor-hop\" style=\"background:#1e293b;color:#38bdf8;border:1px solid #334155;border-radius:5px;padding:3px 8px;cursor:pointer;\">Hop</button>",
             "</div>",
             "<div style=\"color:#64748b;font-size:10px;margin-bottom:2px;\">MOODS</div>",
             "<div style=\"display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px;\" data-moods></div>",
@@ -199,6 +204,11 @@ class StudioOverlay {
 
         root.addEventListener("input", (e) => {
             if (e.target?.dataset?.cam) applyCamSliders();
+            if (e.target?.dataset?.spot === "dim") {
+                const dim = Number(e.target.value) || 0;
+                root.querySelector("[data-dimval]").textContent = `${Math.round(dim * 100)}%`;
+                getGame()?.spotlight?.configure?.({ dimStrength: dim });
+            }
         });
 
         const getSelectedActor = () => {
@@ -253,6 +263,9 @@ class StudioOverlay {
                 root.querySelector("[data-cam=\"y\"]").value = "0";
                 applyCamSliders();
                 game?.camera?.reset?.({ duration: 0.35 });
+            } else if (act === "cam-shake") {
+                game?.camera?.shake?.({ intensity: 10, duration: 0.35 });
+                this.setStatus("Camera shake triggered (@camera.shake)");
             } else if (act === "cam-copy") {
                 const cmd = formatCameraCommand(game?.camera?.state);
                 globalThis.navigator?.clipboard?.writeText?.(cmd)?.catch?.(() => {});
@@ -286,6 +299,15 @@ class StudioOverlay {
             } else if (act === "spot-clear") {
                 game?.spotlight?.clear?.();
                 this.setStatus("Spotlight cleared");
+            } else if (act === "spot-copy") {
+                const dim = root.querySelector("[data-spot=\"dim\"]")?.value ?? "0.32";
+                const cmd = `@spotlight.config dimStrength=${dim}`;
+                globalThis.navigator?.clipboard?.writeText?.(cmd)?.catch?.(() => {});
+                this.setStatus(`Copied: ${cmd}`);
+            } else if (act === "actor-hop") {
+                const { name: actorName, actor } = getSelectedActor();
+                actor?.hop?.(210);
+                this.setStatus(`Hop triggered on ${actorName || "actor"}`);
             } else if (mood) {
                 const { name: actorName, actor } = getSelectedActor();
                 if (actor?.to) actor.to(mood);

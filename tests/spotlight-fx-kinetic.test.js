@@ -194,8 +194,49 @@ describe("SpeakerSpotlight, Expression FX & Kinetic Dialogue", () => {
         const parsed = parseKineticDialogue("Wait...{w=0.4} {speed=2}hurry!{/speed} {shake}WHAT?!{/shake}");
         expect(parsed.plainText).toBe("Wait... hurry! WHAT?!");
         expect(parsed.pauses.get(7)).toBe(400);
-        expect(evalKineticAt(parsed, 9)).toEqual({ speedMult: 2, isShaking: false });
-        expect(evalKineticAt(parsed, 16)).toEqual({ speedMult: 1, isShaking: true });
+        expect(evalKineticAt(parsed, 9)).toEqual({ speedMult: 2, isShaking: false, actions: [] });
+        expect(evalKineticAt(parsed, 16)).toEqual({ speedMult: 1, isShaking: true, actions: [] });
+    });
+
+    test("parseKineticDialogue parses hop, fx, mood, and screen shake action triggers", () => {
+        const parsed = parseKineticDialogue("Hello! {hop=150}{fx=blush}{mood=happy}Surprise! {shake=screen}BOOM!");
+        expect(parsed.plainText).toBe("Hello! Surprise! BOOM!");
+        const actionsAt7 = parsed.actions.get(7);
+        expect(actionsAt7).toEqual([
+            { type: "hop", strength: 150 },
+            { type: "fx", fxList: ["blush"] },
+            { type: "mood", mood: "happy" }
+        ]);
+        const actionsAt17 = parsed.actions.get(17);
+        expect(actionsAt17).toEqual([
+            { type: "screenShake", intensity: 10, duration: 0.35 }
+        ]);
+    });
+
+    test("CameraController shake executes cleanly and respects reduced motion", async () => {
+        const batchDrawMock = jest.fn();
+        let nodeX = 0;
+        let nodeY = 0;
+        const fakeNode = {
+            x(val) { if (typeof val === "number") nodeX = val; return nodeX; },
+            y(val) { if (typeof val === "number") nodeY = val; return nodeY; },
+            getLayer: () => ({ batchDraw: batchDrawMock })
+        };
+        const game = {
+            ui: {
+                game: {
+                    camera: fakeNode,
+                    viewport: { width: () => 1280, height: () => 720 }
+                }
+            }
+        };
+
+        const { CameraController } = await import("../vnsutra_modules/camera.js");
+        const cam = new CameraController(game);
+        await cam.shake({ intensity: 6, duration: 0.05, count: 2 });
+        expect(fakeNode.x()).toBe(0);
+        expect(fakeNode.y()).toBe(0);
+        expect(batchDrawMock).toHaveBeenCalled();
     });
 });
 

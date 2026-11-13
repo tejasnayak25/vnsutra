@@ -98,6 +98,16 @@ describe("RollbackManager & Audio Engine 2.0", () => {
         await game.stopAmbient(0);
         expect(createdAudios[2].pause).toHaveBeenCalled();
 
+        // Voice playback ducks BGM, connects speech lip-sync, and restores BGM
+        const mockActor = {
+            data: { x: -320 },
+            attachVoice: jest.fn(async () => {}),
+            detachVoice: jest.fn()
+        };
+        await game.playVoice("voice_line1.mp3", { actor: mockActor, duck: true, duckRatio: 0.4 });
+        expect(mockActor.attachVoice).toHaveBeenCalled();
+        expect(createdAudios[createdAudios.length - 1].src).toBe("voice_line1.mp3");
+
         // Rate=2 plays only on even character indices
         expect(game.playBlip({ pitchHz: 400, rate: 2, charIndex: 0 })).toBe(true);
         expect(game.playBlip({ pitchHz: 400, rate: 2, charIndex: 1 })).toBe(false);
