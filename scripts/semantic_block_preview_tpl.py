@@ -102,6 +102,17 @@ def build_semantic_block_preview_html(char_name, manifest, atlas_b64):
       <button id="btn-hop">Stage Hop</button>
       <button id="btn-shake">Shock Shake</button>
     </div>
+    <div style="margin-top:8px;font-size:0.72rem;color:#94a3b8;font-weight:600;">Expression FX</div>
+    <div class="row" style="gap:8px;"><label>FX Intensity</label><input type="range" id="rng-fx-int" min="0.2" max="1.2" step="0.05" value="0.85"><span class="sv" id="fx-int-val">85%</span></div>
+    <div class="grid2" id="fx-toggles" style="margin-top:4px;">
+      <button data-fx="blush">Blush</button>
+      <button data-fx="sweat">Sweat</button>
+      <button data-fx="sparkles">Sparkles</button>
+      <button data-fx="anger_vein">Anger Vein</button>
+      <button data-fx="gloom_lines">Gloom Lines</button>
+      <button data-fx="heart_pop">Heart Pop</button>
+      <button data-fx="shock_burst">Shock Burst</button>
+    </div>
   </div>
 
   <div class="sec">
@@ -409,6 +420,190 @@ let windPhase = 0;
 let lastTs = null;
 let moodMorph = null;
 const layerDiffCache = new Map();
+const activeFx = new Set();
+const fxAlphas = {{}};
+const fxCanvasSkin = document.createElement("canvas");
+const fxCanvasTop = document.createElement("canvas");
+
+function renderPreviewFx(W, H, fd, eyeSrc, tSec, pass = "all") {{
+  const keys = new Set([...activeFx, ...Object.keys(fxAlphas)]);
+  if (!keys.size) return null;
+  const wantsSkin = pass === "all" || pass === "skin";
+  const wantsTop = pass === "all" || pass === "top";
+  if (wantsSkin && pass === "skin" && !keys.has("blush") && !keys.has("gloom_lines")) return null;
+  if (wantsTop && pass === "top" && ![...keys].some(k => k !== "blush" && k !== "gloom_lines")) return null;
+  const targetC = pass === "top" ? fxCanvasTop : fxCanvasSkin;
+  if (targetC.width !== W || targetC.height !== H) {{
+    targetC.width = W; targetC.height = H;
+  }}
+  const fctx = targetC.getContext("2d");
+  fctx.clearRect(0, 0, W, H);
+  const le = eyeSrc && eyeSrc.left_eye ? eyeSrc.left_eye.stage : null;
+  const re = eyeSrc && eyeSrc.right_eye ? eyeSrc.right_eye.stage : null;
+  const fallbackSpan = Math.max(48, W * 0.14);
+  const hp = (fd.pivots && fd.pivots.head) || [W * 0.5, H * 0.25];
+  const L = le || {{ cx: hp[0] - fallbackSpan * 0.5, cy: hp[1] + fallbackSpan * 0.35 }};
+  const R = re || {{ cx: hp[0] + fallbackSpan * 0.5, cy: hp[1] + fallbackSpan * 0.35 }};
+  const eyeSpan = Math.max(40, Math.hypot(R.cx - L.cx, R.cy - L.cy));
+  const u = eyeSpan * 0.42;
+  const ang = ((fd.eyeAngleDeg || 0) * Math.PI) / 180;
+  const midX = (L.cx + R.cx) * 0.5, midY = (L.cy + R.cy) * 0.5;
+  const intEl = document.getElementById("rng-fx-int");
+  const baseScale = intEl ? parseFloat(intEl.value || "0.85") : 0.85;
+  const aOf = (k) => (typeof fxAlphas[k] === "number" ? fxAlphas[k] : (activeFx.has(k) ? 1 : 0)) * baseScale;
+
+  const blushA = wantsSkin ? aOf("blush") : 0;
+  if (blushA > 0.01) {{
+    const pulse = 0.94 + 0.06 * Math.sin(tSec * 2.2);
+    for (const eye of [L, R]) {{
+      const rx = u * 0.62, ry = u * 0.30;
+      fctx.save();
+      fctx.translate(eye.cx, eye.cy + u * 0.64);
+      fctx.rotate(ang);
+      fctx.globalAlpha = Math.min(1, blushA * 0.54 * pulse);
+      const g = fctx.createRadialGradient(0, 0, 1, 0, 0, rx);
+      g.addColorStop(0, "rgba(255,110,140,0.88)");
+      g.addColorStop(0.55, "rgba(255,138,165,0.44)");
+      g.addColorStop(1, "rgba(255,138,165,0)");
+      fctx.fillStyle = g;
+      fctx.save(); fctx.scale(1, ry / rx); fctx.beginPath(); fctx.arc(0, 0, rx, 0, Math.PI * 2); fctx.fill(); fctx.restore();
+      fctx.strokeStyle = "rgba(235,75,110,0.45)";
+      fctx.lineWidth = Math.max(1.2, u * 0.032); fctx.lineCap = "round";
+      for (let k = -1.5; k <= 1.5; k += 1) {{
+        const ox = k * rx * 0.28;
+        fctx.beginPath(); fctx.moveTo(ox - rx * 0.10, ry * 0.44); fctx.lineTo(ox + rx * 0.12, -ry * 0.44); fctx.stroke();
+      }}
+      fctx.restore();
+    }}
+  }}
+  const gloomA = wantsSkin ? aOf("gloom_lines") : 0;
+  if (gloomA > 0.01) {{
+    const lines = 11, spanW = u * 3.2, lineH = u * 3.1;
+    fctx.save();
+    fctx.globalAlpha = Math.min(1, gloomA * 0.88);
+    fctx.translate(midX, midY - u * 2.55); fctx.rotate(ang);
+    const wash = fctx.createLinearGradient(0, 0, 0, lineH * 0.85);
+    wash.addColorStop(0, "rgba(30,27,75,0.58)"); wash.addColorStop(0.65, "rgba(30,27,75,0.28)"); wash.addColorStop(1, "rgba(30,27,75,0)");
+    fctx.fillStyle = wash; fctx.fillRect(-spanW * 0.55, 0, spanW * 1.1, lineH * 0.85);
+    fctx.lineCap = "round";
+    for (let i = 0; i < lines; i++) {{
+      const lx = (i / (lines - 1) - 0.5) * spanW;
+      const bob = Math.sin(tSec * 2.6 + i * 0.9) * u * 0.08;
+      const lg = fctx.createLinearGradient(lx, 0, lx, lineH);
+      lg.addColorStop(0, "rgba(15,23,42,0.95)"); lg.addColorStop(0.55, "rgba(49,46,129,0.65)"); lg.addColorStop(1, "rgba(49,46,129,0)");
+      fctx.strokeStyle = lg; fctx.lineWidth = Math.max(2.2, u * (i % 2 === 0 ? 0.095 : 0.06));
+      fctx.beginPath(); fctx.moveTo(lx, bob); fctx.lineTo(lx, lineH + bob); fctx.stroke();
+    }}
+    fctx.restore();
+  }}
+  const sweatA = wantsTop ? aOf("sweat") : 0;
+  if (sweatA > 0.01) {{
+    for (const d of [{{ ph: 0, s: 1.0, dx: 0 }}, {{ ph: 0.34, s: 0.55, dx: u * 0.24 }}]) {{
+      const cyc = (tSec * 0.58 + d.ph) % 1;
+      const hDrop = Math.max(11, u * 0.44 * d.s), wDrop = hDrop * 0.60, stretchY = 0.85 + 0.30 * cyc;
+      fctx.save();
+      fctx.globalAlpha = Math.min(1, Math.max(0.1, sweatA * Math.sin(cyc * Math.PI)));
+      fctx.translate(R.cx + u * 1.12 + d.dx, R.cy - u * 0.72 + cyc * u * 0.86);
+      fctx.scale(1 / Math.sqrt(stretchY), stretchY);
+      const dg = fctx.createLinearGradient(0, -hDrop * 0.55, 0, hDrop * 0.55);
+      dg.addColorStop(0, "#e0f2fe"); dg.addColorStop(0.55, "#38bdf8"); dg.addColorStop(1, "#0284c7");
+      fctx.fillStyle = dg; fctx.strokeStyle = "rgba(15,45,80,0.8)"; fctx.lineWidth = Math.max(1.2, u * 0.03);
+      fctx.beginPath();
+      fctx.moveTo(0, -hDrop * 0.55); fctx.bezierCurveTo(wDrop * 0.85, 0, wDrop * 0.75, hDrop * 0.55, 0, hDrop * 0.55);
+      fctx.bezierCurveTo(-wDrop * 0.75, hDrop * 0.55, -wDrop * 0.85, 0, 0, -hDrop * 0.55);
+      fctx.closePath(); fctx.fill(); fctx.stroke();
+      fctx.fillStyle = "rgba(255,255,255,0.92)";
+      fctx.beginPath(); fctx.ellipse(-wDrop * 0.22, hDrop * 0.10, wDrop * 0.14, hDrop * 0.13, -0.4, 0, Math.PI * 2); fctx.fill();
+      fctx.restore();
+    }}
+  }}
+  const veinA = wantsTop ? aOf("anger_vein") : 0;
+  if (veinA > 0.01) {{
+    const r = Math.max(10, u * 0.25) * (1 + 0.08 * Math.sin(tSec * 8.5));
+    fctx.save();
+    fctx.globalAlpha = Math.min(1, veinA);
+    fctx.translate(L.cx - u * 0.85, L.cy - u * 0.98);
+    fctx.rotate(ang - 0.18);
+    fctx.lineCap = "round";
+    for (const [col, lw] of [["rgba(254,202,202,0.6)", r * 0.34], ["#dc2626", r * 0.18]]) {{
+      fctx.strokeStyle = col; fctx.lineWidth = Math.max(1.5, lw);
+      for (let q = 0; q < 4; q++) {{
+        fctx.save(); fctx.rotate((q * Math.PI) / 2);
+        fctx.beginPath(); fctx.moveTo(r * 0.20, -r * 0.88);
+        fctx.quadraticCurveTo(r * 0.22, -r * 0.22, r * 0.88, -r * 0.20); fctx.stroke();
+        fctx.restore();
+      }}
+    }}
+    fctx.restore();
+  }}
+  const sparkA = wantsTop ? aOf("sparkles") : 0;
+  if (sparkA > 0.01) {{
+    const spots = [
+      {{ x: L.cx - u * 1.15, y: L.cy - u * 0.78, s: u * 0.32, ph: 0 }},
+      {{ x: R.cx + u * 1.12, y: R.cy - u * 0.65, s: u * 0.26, ph: 1.7 }},
+      {{ x: midX, y: Math.min(L.cy, R.cy) - u * 1.35, s: u * 0.22, ph: 3.1 }}
+    ];
+    for (const sp of spots) {{
+      const tw = 0.4 + 0.6 * Math.abs(Math.sin(tSec * 3.2 + sp.ph));
+      const r = sp.s * (0.72 + 0.38 * tw);
+      fctx.save(); fctx.globalAlpha = Math.min(1, sparkA * tw); fctx.translate(sp.x, sp.y);
+      const sg = fctx.createRadialGradient(0, 0, 0.5, 0, 0, r * 1.15);
+      sg.addColorStop(0, "rgba(254,249,195,0.92)"); sg.addColorStop(0.5, "rgba(251,191,36,0.38)"); sg.addColorStop(1, "rgba(251,191,36,0)");
+      fctx.fillStyle = sg; fctx.beginPath(); fctx.arc(0, 0, r * 1.15, 0, Math.PI * 2); fctx.fill();
+      fctx.fillStyle = "#fffbeb"; fctx.strokeStyle = "rgba(217,119,6,0.85)"; fctx.lineWidth = Math.max(1.1, r * 0.08);
+      fctx.beginPath();
+      for (let k = 0; k < 4; k++) {{
+        const a0 = (k * Math.PI) / 2, a1 = a0 + Math.PI / 4;
+        if (k === 0) fctx.moveTo(Math.cos(a0) * r, Math.sin(a0) * r);
+        else fctx.lineTo(Math.cos(a0) * r, Math.sin(a0) * r);
+        fctx.lineTo(Math.cos(a1) * r * 0.15, Math.sin(a1) * r * 0.15);
+      }}
+      fctx.closePath(); fctx.fill(); fctx.stroke(); fctx.restore();
+    }}
+  }}
+  const heartA = wantsTop ? aOf("heart_pop") : 0;
+  if (heartA > 0.01) {{
+    for (const ht of [{{ x: R.cx + u * 1.25, y: R.cy - u * 0.55, s: u * 0.52, ph: 0 }}, {{ x: L.cx - u * 1.18, y: L.cy - u * 0.78, s: u * 0.36, ph: 0.45 }}]) {{
+      const cyc = (tSec * 0.5 + ht.ph) % 1, s = ht.s;
+      fctx.save();
+      fctx.globalAlpha = Math.min(1, heartA * Math.sin(cyc * Math.PI));
+      fctx.translate(ht.x + Math.sin(tSec * 3.0 + ht.ph * 6) * u * 0.10, ht.y - cyc * u * 0.85);
+      fctx.rotate(ang + Math.sin(tSec * 2.4 + ht.ph) * 0.14);
+      const hg = fctx.createLinearGradient(0, -s, 0, s);
+      hg.addColorStop(0, "#fda4af"); hg.addColorStop(1, "#e11d48");
+      fctx.fillStyle = hg; fctx.strokeStyle = "rgba(159,18,57,0.85)"; fctx.lineWidth = Math.max(1.4, s * 0.09);
+      fctx.beginPath();
+      fctx.moveTo(0, s * 0.48);
+      fctx.bezierCurveTo(-s * 1.15, -s * 0.2, -s * 0.58, -s * 1.08, 0, -s * 0.38);
+      fctx.bezierCurveTo(s * 0.58, -s * 1.08, s * 1.15, -s * 0.2, 0, s * 0.48);
+      fctx.closePath(); fctx.fill(); fctx.stroke();
+      fctx.fillStyle = "rgba(255,255,255,0.85)";
+      fctx.beginPath(); fctx.ellipse(-s * 0.34, -s * 0.34, s * 0.16, s * 0.10, -0.5, 0, Math.PI * 2); fctx.fill();
+      fctx.restore();
+    }}
+  }}
+  const shockA = wantsTop ? aOf("shock_burst") : 0;
+  if (shockA > 0.01) {{
+    const pulse = 0.95 + 0.07 * Math.sin(tSec * 14);
+    const clusters = [{{ cx: L.cx - u * 1.45, cy: L.cy - u * 0.55, dir: -1 }}, {{ cx: R.cx + u * 1.45, cy: R.cy - u * 0.55, dir: 1 }}];
+    const angles = [-0.65, -0.22, 0.20, 0.62];
+    fctx.save(); fctx.globalAlpha = Math.min(1, shockA * 0.95); fctx.lineCap = "round";
+    for (const cl of clusters) {{
+      for (let k = 0; k < angles.length; k++) {{
+        const a = (cl.dir > 0 ? angles[k] : Math.PI - angles[k]) + ang;
+        const r0 = u * 0.25 * pulse, r1 = u * (k % 2 === 0 ? 0.95 : 0.68) * pulse;
+        const x0 = cl.cx + Math.cos(a) * r0, y0 = cl.cy + Math.sin(a) * r0;
+        const x1 = cl.cx + Math.cos(a) * r1, y1 = cl.cy + Math.sin(a) * r1;
+        fctx.strokeStyle = "rgba(15,23,42,0.85)"; fctx.lineWidth = Math.max(3.5, u * 0.11);
+        fctx.beginPath(); fctx.moveTo(x0, y0); fctx.lineTo(x1, y1); fctx.stroke();
+        fctx.strokeStyle = "#fef08a"; fctx.lineWidth = Math.max(1.8, u * 0.055);
+        fctx.beginPath(); fctx.moveTo(x0, y0); fctx.lineTo(x1, y1); fctx.stroke();
+      }}
+    }}
+    fctx.restore();
+  }}
+  return targetC;
+}}
 
 function layersDiffer(moodA, moodB, lid) {{
   if (!moodA || !moodB || moodA === moodB) return false;
@@ -443,6 +638,15 @@ function evalMorph(m) {{
 }}
 
 function stepPhysics(tSec, dt) {{
+  const fxStep = Math.min(1, Math.max(0.01, (dt || 0.016) / 0.25));
+  for (const f of activeFx) fxAlphas[f] = Math.min(1, (fxAlphas[f] || 0) + fxStep);
+  for (const k of Object.keys(fxAlphas)) {{
+    if (!activeFx.has(k)) {{
+      const na = fxAlphas[k] - fxStep;
+      if (na <= 0.005) delete fxAlphas[k];
+      else fxAlphas[k] = na;
+    }}
+  }}
   if (moodMorph) {{
     if (!moodMorph.started) {{
       moodMorph.started = true;
@@ -619,6 +823,8 @@ function composeFrame(targetCtx, mood, useGrad, tSec) {{
     drawOrgan(targetCtx, mouthState.spec, 1.0, mouthState.sy, fd.eyeAngleDeg, msTarget);
     targetCtx.restore();
   }}
+  const fxSkin = renderPreviewFx(W, H, fd, eyeSrc, tSec, "skin");
+  if (fxSkin) targetCtx.drawImage(fxSkin, 0, 0);
   targetCtx.restore();
 
   // 4) Upper clothes (chest heave spring anchored at waist pivot)
@@ -641,6 +847,15 @@ function composeFrame(targetCtx, mood, useGrad, tSec) {{
     targetCtx.rotate(fRot);
     targetCtx.translate(-hx, -hy);
     drawLayerBlended("front_hair");
+    targetCtx.restore();
+  }}
+  const fxTop = renderPreviewFx(W, H, fd, eyeSrc, tSec, "top");
+  if (fxTop) {{
+    targetCtx.save();
+    targetCtx.translate(nx, ny);
+    targetCtx.rotate(hRot);
+    targetCtx.translate(-nx, -ny + hDy);
+    targetCtx.drawImage(fxTop, 0, 0);
     targetCtx.restore();
   }}
   targetCtx.restore();
@@ -788,6 +1003,8 @@ void main() {{
   ["uMode","uCanvasSize","uUvRect","uStageRect","uBodyDelta","uWaist","uNeck","uHead","uRigParams","uHairSpan","uGaze","uTex","uTexPrev","uLashMode","uLashColor","uAlpha","uMorphMix"].forEach(k => loc[k] = gl.getUniformLocation(prog, k));
   const texMap = new Map();
   let atlasTex = null;
+  let fxTex = null;
+  let fxTopTex = null;
   const uploadTex = (src) => {{
     const t = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, t);
@@ -896,8 +1113,29 @@ void main() {{
         const ms = mouthState.spec.stage, rs = fd.organs.mouth ? fd.organs.mouth.stage : ms;
         drawOrg(mouthState.spec, {{ cx: rs.cx, cy: rs.cy, w: ms.w, h: ms.h }}, mouthState.sy, 1.0, 1.0, 0, false, mm.nAlpha, ang);
       }}
+      const drawHeadFx = (fxDrawn, isTop) => {{
+        if (!fxDrawn) return;
+        let t = isTop ? fxTopTex : fxTex;
+        if (!t) {{
+          t = uploadTex(fxDrawn);
+          if (isTop) fxTopTex = t;
+          else fxTex = t;
+        }} else {{
+          gl.bindTexture(gl.TEXTURE_2D, t);
+          gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+          gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, fxDrawn);
+        }}
+        gl.bindVertexArray(meshVao);
+        gl.uniform1i(loc.uMode, 4); gl.uniform1i(loc.uLashMode, 0);
+        gl.uniform1f(loc.uAlpha, 1.0); gl.uniform1f(loc.uMorphMix, -1.0);
+        gl.uniform4f(loc.uUvRect, 0, 0, 1, 1); gl.uniform4f(loc.uGaze, gX, gY, 0, 1);
+        gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, t);
+        gl.drawElements(gl.TRIANGLES, idx.length, gl.UNSIGNED_SHORT, 0);
+      }};
+      drawHeadFx(renderPreviewFx(W, H, fd, eyeSrc, tSec, "skin"), false);
       drawLayer(3, "upper_clothes");
       drawLayer(5, "front_hair");
+      drawHeadFx(renderPreviewFx(W, H, fd, eyeSrc, tSec, "top"), true);
       gl.bindVertexArray(null);
     }}
   }};
@@ -1219,6 +1457,17 @@ async function init() {{
     springs.fHair.impulse(-0.055);
     springs.bHair.impulse(-0.085);
   }};
+  document.getElementById("rng-fx-int").oninput = (e) => {{
+    document.getElementById("fx-int-val").textContent = Math.round(parseFloat(e.target.value) * 100) + "%";
+  }};
+  document.querySelectorAll("#fx-toggles button").forEach(b => {{
+    b.onclick = () => {{
+      const k = b.dataset.fx;
+      if (activeFx.has(k)) activeFx.delete(k);
+      else activeFx.add(k);
+      b.classList.toggle("active", activeFx.has(k));
+    }};
+  }});
 
   buildVisemeBank();
   const initMood = moods.find(m => m.toLowerCase().includes("neutral")) || moods[0];

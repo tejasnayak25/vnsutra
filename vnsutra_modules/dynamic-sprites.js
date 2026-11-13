@@ -53,7 +53,9 @@ class DynamicSprites {
             if (!this.character.outfits[selected.outfit]) {
                 await this.character.loadOutfit(selected.outfit);
             }
-            this.character.outfit = this.character.outfits[selected.outfit];
+            if (this.character.outfit !== this.character.outfits[selected.outfit]) {
+                this.character.outfit = this.character.outfits[selected.outfit];
+            }
         }
 
         if (selected.mood) {

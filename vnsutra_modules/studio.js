@@ -8,6 +8,7 @@ import {
 
 const LIGHTING_NAMES = ["day", "sunset", "night", "dramatic", "noir"];
 const WEATHER_NAMES = ["rain", "snow", "cherry_blossoms", "embers", "off"];
+const FX_NAMES = ["blush", "sweat", "sparkles", "anger_vein", "gloom_lines", "heart_pop", "shock_burst", "clear"];
 
 function isLocalDevHost(hostname = globalThis.location?.hostname || "") {
     if (!hostname) return true; // file:// or headless unit tests
@@ -126,6 +127,22 @@ class StudioOverlay {
             "<div style=\"color:#94a3b8;font-weight:600;margin-bottom:4px;\">Weather Particles</div>",
             "<div style=\"display:flex;flex-wrap:wrap;gap:4px;\" data-weather></div>",
             "</div>",
+            "<div style=\"margin-top:8px;\">",
+            "<div style=\"color:#94a3b8;font-weight:600;margin-bottom:4px;\">Speaker Spotlight</div>",
+            "<div style=\"display:flex;flex-wrap:wrap;gap:4px;\">",
+            "<button type=\"button\" data-act=\"spot-toggle\" style=\"background:#1e293b;color:#e2e8f0;border:1px solid #334155;border-radius:5px;padding:3px 7px;cursor:pointer;\">Toggle On/Off</button>",
+            "<button type=\"button\" data-act=\"spot-clear\" style=\"background:#1e293b;color:#e2e8f0;border:1px solid #334155;border-radius:5px;padding:3px 7px;cursor:pointer;\">Clear</button>",
+            "</div></div>",
+            "<div style=\"margin-top:8px;\">",
+            "<div style=\"color:#94a3b8;font-weight:600;margin-bottom:4px;\">Expression FX & Mood Studio</div>",
+            "<div style=\"display:flex;gap:4px;margin-bottom:6px;\">",
+            "<select data-actor-select style=\"flex:1;background:#1e293b;color:#e2e8f0;border:1px solid #334155;border-radius:5px;padding:3px 6px;font-size:11px;\"></select>",
+            "</div>",
+            "<div style=\"color:#64748b;font-size:10px;margin-bottom:2px;\">MOODS</div>",
+            "<div style=\"display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px;\" data-moods></div>",
+            "<div style=\"color:#64748b;font-size:10px;margin-bottom:2px;\">PROCEDURAL FX</div>",
+            "<div style=\"display:flex;flex-wrap:wrap;gap:4px;\" data-fx></div>",
+            "</div>",
             "<div data-status style=\"margin-top:8px;color:#38bdf8;font-size:11px;min-height:14px;\"></div>",
             "</div>"
         ].join("");
@@ -160,6 +177,16 @@ class StudioOverlay {
             weatherBox.appendChild(b);
         }
 
+        const fxBox = root.querySelector("[data-fx]");
+        for (const fx of FX_NAMES) {
+            const b = doc.createElement("button");
+            b.type = "button";
+            b.textContent = fx;
+            b.dataset.fx = fx;
+            b.setAttribute("style", "background:#1e293b;color:#e2e8f0;border:1px solid #334155;border-radius:5px;padding:3px 7px;cursor:pointer;");
+            fxBox.appendChild(b);
+        }
+
         const applyCamSliders = () => {
             const zoom = Number(root.querySelector("[data-cam=\"zoom\"]").value);
             const x = Number(root.querySelector("[data-cam=\"x\"]").value);
@@ -174,11 +201,46 @@ class StudioOverlay {
             if (e.target?.dataset?.cam) applyCamSliders();
         });
 
+        const getSelectedActor = () => {
+            const sel = root.querySelector("[data-actor-select]");
+            const name = sel?.value || "";
+            const game = getGame();
+            const actors = game?.actors || this.actors || {};
+            return { name, actor: actors[name] || Object.values(actors)[0] || null };
+        };
+
+        const updateMoodButtons = () => {
+            const moodsBox = root.querySelector("[data-moods]");
+            if (!moodsBox) return;
+            const { actor } = getSelectedActor();
+            moodsBox.innerHTML = "";
+            const availableMoods = actor?.getAvailableMoods?.() || (actor?.manifest?.frames ? Object.keys(actor.manifest.frames) : ["neutral", "happy", "smiling", "shocked"]);
+            const curMood = actor?.currentMood || "neutral";
+            for (const m of availableMoods) {
+                const b = doc.createElement("button");
+                b.type = "button";
+                b.textContent = m;
+                b.dataset.mood = m;
+                const active = m === curMood;
+                b.setAttribute("style", `background:${active ? "#0284c7" : "#1e293b"};color:#e2e8f0;border:1px solid ${active ? "#38bdf8" : "#334155"};border-radius:5px;padding:2px 6px;cursor:pointer;font-size:11px;`);
+                moodsBox.appendChild(b);
+            }
+        };
+
+        const actorSelect = root.querySelector("[data-actor-select]");
+        if (actorSelect) {
+            actorSelect.addEventListener("change", () => {
+                updateMoodButtons();
+            });
+        }
+
         root.addEventListener("click", (e) => {
             const act = e.target?.dataset?.act;
             const light = e.target?.dataset?.light;
             const wipe = e.target?.dataset?.wipe;
             const weather = e.target?.dataset?.weather;
+            const fx = e.target?.dataset?.fx;
+            const mood = e.target?.dataset?.mood;
             const game = getGame();
             if (act === "close") {
                 this.dispose();
@@ -214,6 +276,34 @@ class StudioOverlay {
                 const cmd = weather === "off" ? "weather: off" : `weather: ${weather} intensity=0.7`;
                 globalThis.navigator?.clipboard?.writeText?.(cmd)?.catch?.(() => {});
                 this.setStatus(`Weather: ${weather} (copied .vn)`);
+            } else if (act === "spot-toggle") {
+                const sp = game?.spotlight;
+                if (sp) {
+                    const next = !sp.config.enabled;
+                    sp.setEnabled(next);
+                    this.setStatus(`Spotlight: ${next ? "ON" : "OFF"}`);
+                }
+            } else if (act === "spot-clear") {
+                game?.spotlight?.clear?.();
+                this.setStatus("Spotlight cleared");
+            } else if (mood) {
+                const { name: actorName, actor } = getSelectedActor();
+                if (actor?.to) actor.to(mood);
+                else if (actor?.setMood) actor.setMood(mood);
+                updateMoodButtons();
+                const cmd = `@actor.mood actor="${actorName || "actor"}" mood="${mood}"`;
+                globalThis.navigator?.clipboard?.writeText?.(cmd)?.catch?.(() => {});
+                this.setStatus(`Mood: ${mood} (copied .vn)`);
+            } else if (fx) {
+                const { name: actorName, actor } = getSelectedActor();
+                const targetList = actor ? [actor] : Object.values(game?.actors || this.actors || {});
+                for (const a of targetList) {
+                    if (fx === "clear") a?.clearFx?.();
+                    else a?.setFx?.([fx], { intensity: 0.85 });
+                }
+                const cmd = fx === "clear" ? `@actor.fx actor="${actorName || "actor"}" fx=[]` : `@actor.fx actor="${actorName || "actor"}" fx=["${fx}"]`;
+                globalThis.navigator?.clipboard?.writeText?.(cmd)?.catch?.(() => {});
+                this.setStatus(`FX: ${fx} on ${actorName || "actors"} (copied .vn)`);
             }
         });
 
@@ -237,6 +327,25 @@ class StudioOverlay {
         const rb = game?.rollback;
         const varsCount = Object.keys(getState() || {}).length;
         meta.textContent = `scene=${getActiveScene() || "-"} | instr=${getInstructionCount()} | sess=${getGameSessionId()} | vars=${varsCount} | rb=${rb ? `${rb.cursor + 1}/${rb.history.length}` : "-"}`;
+
+        const sel = this.root?.querySelector?.("[data-actor-select]");
+        if (sel) {
+            const actors = game?.actors || this.actors || {};
+            const names = Object.keys(actors);
+            const curVal = sel.value;
+            const optCount = sel.options?.length ?? sel.children?.length ?? 0;
+            if (optCount !== names.length || !names.includes(curVal)) {
+                sel.innerHTML = "";
+                for (const name of names) {
+                    const opt = document.createElement("option");
+                    opt.value = name;
+                    opt.textContent = name;
+                    sel.appendChild(opt);
+                }
+                if (curVal && names.includes(curVal)) sel.value = curVal;
+                else if (names[0]) sel.value = names[0];
+            }
+        }
     }
 
     dispose() {

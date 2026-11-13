@@ -1341,12 +1341,11 @@ async function gameUI(config, fonts, navigate) {
         });
     };
 
-    const teardown = () => {
+    const resetSession = ({ skipDraw = true } = {}) => {
         if (isGameUiDisposed) {
             return;
         }
 
-        isGameUiDisposed = true;
         if (topbarSyncFrameId !== null) {
             cancelAnimationFrame(topbarSyncFrameId);
             topbarSyncFrameId = null;
@@ -1355,6 +1354,7 @@ async function gameUI(config, fonts, navigate) {
         stopEndingSequence({ showEnd: false, skipDraw: true });
         hideChapterEndPrompt({ skipDraw: true });
         stopTopbarTweens();
+
         if (typeof load_win?.__scrollCleanup === "function") {
             load_win.__scrollCleanup();
         }
@@ -1365,10 +1365,27 @@ async function gameUI(config, fonts, navigate) {
             }
             load_win.actionrect.visible(false);
         }
-        document.removeEventListener("fullscreenchange", syncExpandBtnVisibility);
-        document.removeEventListener("webkitfullscreenchange", syncExpandBtnVisibility);
-        document.removeEventListener("keydown", handleFullscreenEscape);
-        game_container.off("click touchstart");
+
+        // Reset dialog visibility and content
+        name_text?.text?.("");
+        dialog_text?.text?.("");
+        dialogContainer?.visible?.(false);
+
+        // Reset transition and flash overlays
+        transitionOverlay?.stop?.();
+        transitionOverlay?.opacity?.(0);
+        flashOverlay?.stop?.();
+        flashOverlay?.opacity?.(0);
+
+        // Stop in-flight node tweens on game_layer
+        const animatedNodes = game_layer?.find?.("*") ?? [];
+        for (const node of animatedNodes) {
+            try {
+                node?.stop?.();
+            } catch {
+                // ignore
+            }
+        }
 
         const runningAnimations = Konva?.Animation?.animations;
         if (Array.isArray(runningAnimations) && game_layer) {
@@ -1380,6 +1397,24 @@ async function gameUI(config, fonts, navigate) {
                 }
             }
         }
+
+        if (!skipDraw) {
+            safeEndingBatchDraw();
+        }
+    };
+
+    const teardown = () => {
+        if (isGameUiDisposed) {
+            return;
+        }
+
+        resetSession({ skipDraw: true });
+        isGameUiDisposed = true;
+
+        document.removeEventListener("fullscreenchange", syncExpandBtnVisibility);
+        document.removeEventListener("webkitfullscreenchange", syncExpandBtnVisibility);
+        document.removeEventListener("keydown", handleFullscreenEscape);
+        game_container.off("click touchstart");
 
         game_layer.destroyChildren();
     };
@@ -1514,6 +1549,8 @@ async function gameUI(config, fonts, navigate) {
         layer: game_layer,
         actionbar: load_win,
         promptExitToHome,
+        resetSession,
+        teardown,
         game: {
             container: game_layer.findOne("#game-container"),
             camera: game_layer.findOne("#game-camera-group"),
@@ -1529,6 +1566,7 @@ async function gameUI(config, fonts, navigate) {
             stopEndingSequence,
             showChapterEndPrompt,
             hideChapterEndPrompt,
+            resetSession,
             teardown,
             loading: game_layer.findOne("#loading-group")
         },

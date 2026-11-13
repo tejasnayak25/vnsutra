@@ -45,6 +45,7 @@ class RiggedCharacter {
      * @param {{ name?: string, folder?: string, x?: number, y?: number, scale?: number }} [options]
      */
     constructor({ name = "", folder = "", x = 0, y = 0, scale = 1 } = {}) {
+        this._defaultScale = scale;
         this.data = {
             name,
             folder,
@@ -463,6 +464,7 @@ class RiggedCharacter {
      * @param {RiggedOutfit} val
      */
     set outfit(val) {
+        const isSameOutfit = this._outfit === val;
         this._outfit = val;
         if (val) {
             val.reduceMotion = this._isReduceMotion();
@@ -473,9 +475,14 @@ class RiggedCharacter {
             if (this._rigProps.tint) {
                 val.setTint(this._rigProps.tint.color, this._rigProps.tint.strength);
             }
+            if (this._rigProps.fx) {
+                val.setFx(this._rigProps.fx.list, this._rigProps.fx);
+            }
             if (val.canvas && this.img) {
                 this.img.image(val.canvas);
-                val.applyInitialLayout(val.canvas);
+                if (!isSameOutfit || !this.img.getAttr?.("origScale")) {
+                    val.applyInitialLayout(val.canvas);
+                }
             }
             if (this.img?.getParent?.() && !val.reduceMotion) {
                 this._startLoop();
@@ -487,18 +494,90 @@ class RiggedCharacter {
      * Apply an ambient lighting tint to the rigged character.
      * @param {string} [color="#ffffff"]
      * @param {number} [strength=0.35]
+     * @param {number} [duration=0]
      */
-    setTint(color = "#ffffff", strength = 0.35) {
+    setTint(color = "#ffffff", strength = 0.35, duration = 0) {
+        const s = Math.min(1, Math.max(0, Number(strength) || 0));
         const next = {
             color: color || "#ffffff",
-            strength: Math.min(1, Math.max(0, Number(strength) || 0))
+            strength: s
         };
         this._rigProps.tint = next;
-        this._outfit?.setTint?.(next.color, next.strength);
+        const baseOpacity = typeof this.data.opacity === "number" ? this.data.opacity : 1;
+        const targetOpacity = s > 0 ? Math.max(0.35, baseOpacity * (1 - s * 0.75)) : baseOpacity;
+        const dur = Number(duration) || 0;
+
+        if (dur > 0 && typeof this.img?.to === "function" && this.img?.getParent?.()) {
+            this.img.to({
+                opacity: targetOpacity,
+                duration: dur,
+                onFinish: () => {
+                    this._refreshKonvaNode();
+                }
+            });
+            this._startTintTransition(next.color, s, dur);
+        } else {
+            if (this._tintRaf && typeof globalThis.cancelAnimationFrame === "function") {
+                globalThis.cancelAnimationFrame(this._tintRaf);
+                this._tintRaf = null;
+            }
+            this._outfit?.setTint?.(next.color, next.strength);
+            this.img?.opacity?.(targetOpacity);
+            this._refreshKonvaNode();
+        }
     }
 
-    clearTint() {
-        this.setTint("#ffffff", 0);
+    clearTint(duration = 0) {
+        this.setTint("#ffffff", 0, duration);
+    }
+
+    _startTintTransition(targetColor, targetStrength, duration) {
+        if (!this._outfit) return;
+        if (this._tintRaf && typeof globalThis.cancelAnimationFrame === "function") {
+            globalThis.cancelAnimationFrame(this._tintRaf);
+            this._tintRaf = null;
+        }
+        if (typeof globalThis.requestAnimationFrame !== "function") {
+            this._outfit.setTint(targetColor, targetStrength);
+            return;
+        }
+
+        const startStrength = this._outfit.tint?.strength ?? 0;
+        const startTime = (typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now();
+        const durationMs = duration * 1000;
+
+        const step = (now) => {
+            if (this._disposed || !this._outfit) {
+                this._tintRaf = null;
+                return;
+            }
+            const currentNow = now || ((typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now());
+            const elapsed = currentNow - startTime;
+            const progress = Math.min(1, Math.max(0, elapsed / durationMs));
+            const currentStrength = startStrength + (targetStrength - startStrength) * progress;
+            this._outfit.setTint(targetColor, currentStrength);
+            if (progress < 1) {
+                this._tintRaf = globalThis.requestAnimationFrame(step);
+            } else {
+                this._tintRaf = null;
+            }
+        };
+        this._tintRaf = globalThis.requestAnimationFrame(step);
+    }
+
+    /**
+     * Enable procedural expression overlays (`blush`, `sweat`, `sparkles`, `anger_vein`).
+     * @param {string[] | string} fxList
+     * @param {{ intensity?: number, speed?: number }} [options]
+     */
+    setFx(fxList = [], options = {}) {
+        const list = Array.isArray(fxList) ? fxList : (fxList ? [fxList] : []);
+        this._rigProps.fx = { list, ...options };
+        this._outfit?.setFx?.(list, options);
+    }
+
+    clearFx() {
+        this.setFx([]);
     }
 
     /**
@@ -1027,9 +1106,11 @@ class RiggedCharacter {
         if (!except.includes("x")) { attrs.x = 0; this.data.x = 0; }
         if (!except.includes("y")) { attrs.y = 0; this.data.y = 0; }
         if (!except.includes("scale")) {
-            attrs.scaleX = 1;
-            attrs.scaleY = 1;
-            this.data.scale = 1;
+            this.data.scale = this._defaultScale;
+            const origScale = this.img?.getAttr?.("origScale") || 1;
+            const effectiveScale = this.data.scale * origScale;
+            attrs.scaleX = effectiveScale;
+            attrs.scaleY = effectiveScale;
         }
         if (!except.includes("opacity")) { attrs.opacity = 1; this.data.opacity = 1; }
         if (!except.includes("blurRadius")) { attrs.blurRadius = 0; this.data.blurRadius = 0; }
@@ -1144,6 +1225,10 @@ class RiggedCharacter {
         if (this._talkTimer) {
             clearTimeout(this._talkTimer);
             this._talkTimer = null;
+        }
+        if (this._tintRaf && typeof globalThis.cancelAnimationFrame === "function") {
+            globalThis.cancelAnimationFrame(this._tintRaf);
+            this._tintRaf = null;
         }
         if (typeof globalThis.removeEventListener === "function") {
             globalThis.removeEventListener("game-ui-ready", this._repositionCallback);

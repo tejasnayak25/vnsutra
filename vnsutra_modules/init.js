@@ -1878,6 +1878,7 @@ async function loadChapterDefinitions(config) {
                     pages.home.ui.layer.destroy();
                 }
                 if (pages.game?.ui?.layer) {
+                    pages.game?.ui?.teardown?.();
                     pages.game.ui.layer.removeChildren();
                     pages.game.ui.layer.destroy();
                 }
@@ -2106,10 +2107,59 @@ async function loadChapterDefinitions(config) {
         activeGame.stopAmbient?.(0)?.catch?.(() => {});
         activeGame.camera?.reset?.({ duration: 0 })?.catch?.(() => {});
         activeGame.camera?.clearLighting?.();
+        activeGame.spotlight?.detach?.();
+        activeGame.spotlight?.clear?.();
+        activeGame.spotlight = null;
         activeGame.weather?.stop?.();
         activeGame.rollback?.clear?.();
         activeGame.rollback?.detach?.();
-        activeGame.reset?.();
+        activeGame.rollback = null;
+        activeGame.background?.reset?.();
+
+        if (activeGame.actors && typeof activeGame.actors === "object") {
+            const actorList = Object.values(activeGame.actors);
+            for (const actor of actorList) {
+                try {
+                    actor?.stopTalking?.();
+                    actor?._stopLoop?.();
+                    actor?.img?.remove?.();
+                    actor?.reset?.();
+                } catch {
+                    // Ignore actor cleanup errors
+                }
+            }
+        }
+
+        if (activeGame.ui?.game) {
+            const gameUi = activeGame.ui.game;
+            gameUi.stopEndingSequence?.({ showEnd: false, skipDraw: true });
+            gameUi.hideChapterEndPrompt?.({ skipDraw: true });
+            if (gameUi.transitionOverlay) {
+                gameUi.transitionOverlay.stop?.();
+                gameUi.transitionOverlay.opacity?.(0);
+            }
+            if (gameUi.flashOverlay) {
+                gameUi.flashOverlay.stop?.();
+                gameUi.flashOverlay.opacity?.(0);
+            }
+        }
+
+        if (activeGame._transitionHoldTimer) {
+            clearTimeout(activeGame._transitionHoldTimer);
+            activeGame._transitionHoldTimer = null;
+        }
+        if (activeGame._transitionResolveTimer) {
+            clearTimeout(activeGame._transitionResolveTimer);
+            activeGame._transitionResolveTimer = null;
+        }
+        activeGame._transitionFadeInTween?.destroy?.();
+        activeGame._transitionFadeOutTween?.destroy?.();
+        activeGame._transitionFadeInTween = null;
+        activeGame._transitionFadeOutTween = null;
+        if (typeof activeGame._pendingTransitionResolve === "function") {
+            activeGame._pendingTransitionResolve();
+            activeGame._pendingTransitionResolve = null;
+        }
     };
 
     globalThis.addEventListener("game-started", () => {
@@ -2182,6 +2232,8 @@ async function loadChapterDefinitions(config) {
         setState({});
         setActiveScene(null);
         setInstructionCount(0);
+        lastSceneStartSignature = null;
+        lastSceneStartAt = 0;
         const autoSaveModule = await ensureAutoSave();
         autoSaveModule.stop();
 
@@ -2211,7 +2263,8 @@ async function loadChapterDefinitions(config) {
 
             if (isLeavingGame) {
                 pages.game?.ui?.game?.stopEndingSequence?.({ showEnd: false, skipDraw: true });
-                pages.game?.ui?.teardown?.();
+                pages.game?.ui?.resetSession?.({ skipDraw: true });
+                pages.game?.ui?.game?.resetSession?.({ skipDraw: true });
                 pages.game?.ui?.animations?.loading?.stop?.();
             }
 
@@ -2238,7 +2291,7 @@ async function loadChapterDefinitions(config) {
             // Immediately render the layer to avoid black screen
             requestStageBatchDraw({ immediate: true });
 
-            const funcResult = pages[name].func(data);
+            pages[name].func(data);
             setActiveLayer(name);
 
             if (canUseAndroidHistory() && previousLayer !== name && !skipAndroidHistoryPush) {
@@ -2248,20 +2301,7 @@ async function loadChapterDefinitions(config) {
             }
 
             if (name === "game") {
-                // Wait for async function to set isNewGame before dispatching event
-                if (funcResult instanceof Promise) {
-                    funcResult.then(() => {
-                        const gameInstance = getGame();
-                        gameInstance?.ui?.dialog?.message?.text?.("");
-                        gameInstance?.ui?.dialog?.message?.fire?.("update");
-                        globalThis.dispatchEvent(new CustomEvent("game-started"));
-                    });
-                } else {
-                    const gameInstance = getGame();
-                    gameInstance?.ui?.dialog?.message?.text?.("");
-                    gameInstance?.ui?.dialog?.message?.fire?.("update");
-                    globalThis.dispatchEvent(new CustomEvent("game-started"));
-                }
+                globalThis.dispatchEvent(new CustomEvent("game-started"));
             }
         }
     }

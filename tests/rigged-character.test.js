@@ -575,5 +575,54 @@ describe("RiggedOutfit & RiggedCharacter (.vnsprite runtime)", () => {
             globalThis.removeEventListener = origRemove;
         }
     });
+
+    test("applyInitialLayout and reset preserve baseScale in origScale and restore default scale cleanly", async () => {
+        const manifest = createSampleManifest();
+        const buf = buildSyntheticVnSprite(manifest);
+        globalThis.fetch = jest.fn(() => Promise.resolve({
+            ok: true,
+            status: 200,
+            arrayBuffer: () => Promise.resolve(buf)
+        }));
+
+        const { RiggedCharacter } = await import("../vnsutra_modules/assets/rigged-character.js");
+        const { default: DynamicSprites } = await import("../vnsutra_modules/dynamic-sprites.js");
+
+        const containerHeight = 720;
+
+        // Character configured with scale 1.1
+        const actor = new RiggedCharacter({ name: "Nanami", folder: "characters/Nanami", scale: 1.1 });
+        await actor.loadOutfit("Casual");
+
+        actor._mountToContainer();
+        const baseScale = containerHeight / 1200; // 720 / 1200 = 0.6
+        expect(actor.img.getAttr("origScale")).toBeCloseTo(baseScale, 4);
+        expect(actor.img.scale().x).toBeCloseTo(baseScale * 1.1, 4);
+
+        // getValue("scale") should not double-scale
+        const evaluatedScale = actor.getValue("scale", actor.data.scale);
+        expect(evaluatedScale).toBeCloseTo(baseScale * 1.1, 4);
+
+        // DynamicSprites apply on the same outfit does not drop or jump scale
+        actor.sprites = new DynamicSprites(actor);
+        actor.sprites.defineMany({
+            smiling: { outfit: "Casual", mood: "Nanami_Casual_Neutral" },
+            happy: { outfit: "Casual", mood: "Nanami_Casual_Smiling_EyesClosed" }
+        });
+        await actor.sprites.apply("happy");
+        expect(actor.img.scale().x).toBeCloseTo(baseScale * 1.1, 4);
+
+        // Calling actor.reset() (e.g. on exit to home) restores defaultScale = 1.1
+        actor.reset();
+        expect(actor.data.scale).toBe(1.1);
+        expect(actor.img.scale().x).toBeCloseTo(baseScale * 1.1, 4);
+
+        // Calling actor.reset(["scale"]) (start.vn line 11) preserves scale 1.1
+        actor.reset(["scale"]);
+        expect(actor.data.scale).toBe(1.1);
+        expect(actor.img.scale().x).toBeCloseTo(baseScale * 1.1, 4);
+
+        actor.dispose();
+    });
 });
 

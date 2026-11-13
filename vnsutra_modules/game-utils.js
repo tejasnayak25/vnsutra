@@ -33,6 +33,7 @@ import {
 import { i18n } from "./i18n.js";
 import playback from "./playback-controls.js";
 import AlertWindow from "./alert-window.js";
+import { parseKineticDialogue, evalKineticAt } from "./dialogue-fx.js";
 import { ChoiceMenu } from "./ui/utils.js";
 import { EVENTS } from "./constants.js";
 import chapters from "./chapters.js";
@@ -111,11 +112,13 @@ function dialog(speaker, text = "", wait = true, params = {}) {
         wait = true;
     }
 
-    // Translate text if it's a translation key
+    // Translate text if it's a translation key, then strip kinetic tags into plainText
     let displayText = text;
     if (i18n && i18n.isTranslationKey(text)) {
         displayText = i18n.process(text, params);
     }
+    const kinetic = parseKineticDialogue(displayText);
+    displayText = kinetic.plainText;
 
     const data = gameInstance.ui.dialog;
 
@@ -149,30 +152,54 @@ function dialog(speaker, text = "", wait = true, params = {}) {
             let userSkipped = false;
             let time = 0;
             let completed = false;
-            const interval = setInterval(() => {
-                if (completed) {
-                    clearInterval(interval);
-                    return;
+            let stepTimer = null;
+            const clearStepTimer = () => {
+                if (stepTimer) {
+                    clearTimeout(stepTimer);
+                    stepTimer = null;
                 }
+            };
 
-                if (!isDialogMounted()) {
-                    completed = true;
-                    clearInterval(interval);
-                    cleanup();
-                    resolve(true);
-                    return;
-                }
-
-                time++;
-                if(time <= text.length) {
-                    data.message.text(text.substring(0, time));
-                } else {
-                    completed = true;
-                    clearInterval(interval);
-                    cleanup();
-                    resolve(userSkipped);
-                }
-            }, 50);
+            const scheduleNext = () => {
+                if (completed) return;
+                const pauseMs = kinetic.pauses.get(time) || 0;
+                const { speedMult } = evalKineticAt(kinetic, time);
+                const charDelay = Math.max(10, Math.round(50 / speedMult));
+                stepTimer = setTimeout(() => {
+                    if (completed) return;
+                    if (!isDialogMounted()) {
+                        completed = true;
+                        clearStepTimer();
+                        cleanup();
+                        resolve(true);
+                        return;
+                    }
+                    time++;
+                    if (time <= text.length) {
+                        data.message.text(text.substring(0, time));
+                        const { isShaking } = evalKineticAt(kinetic, time - 1);
+                        if (typeof data.message.offsetX === "function") {
+                            if (isShaking) {
+                                data.message.offsetX((Math.random() - 0.5) * 4);
+                                data.message.offsetY?.((Math.random() - 0.5) * 4);
+                            } else {
+                                data.message.offsetX(0);
+                                data.message.offsetY?.(0);
+                            }
+                        }
+                        if (speaker?.blip) {
+                            gameInstance.playBlip?.({ ...speaker.blip, charIndex: time - 1 });
+                        }
+                        scheduleNext();
+                    } else {
+                        completed = true;
+                        clearStepTimer();
+                        cleanup();
+                        resolve(userSkipped);
+                    }
+                }, pauseMs + charDelay);
+            };
+            scheduleNext();
 
             const keyHandler = (e) => {
                 if (shouldIgnoreAdvanceInteraction()) {
@@ -184,7 +211,7 @@ function dialog(speaker, text = "", wait = true, params = {}) {
 
                 if (!isDialogMounted()) {
                     completed = true;
-                    clearInterval(interval);
+                    clearStepTimer();
                     cleanup();
                     resolve(true);
                     return;
@@ -195,7 +222,7 @@ function dialog(speaker, text = "", wait = true, params = {}) {
                     e.preventDefault();
                     e.stopPropagation();
                     userSkipped = true;
-                    clearInterval(interval);
+                    clearStepTimer();
                     data.message.text(text);
                     cleanup();
                     resolve(userSkipped);
@@ -212,7 +239,7 @@ function dialog(speaker, text = "", wait = true, params = {}) {
 
                 if (!isDialogMounted()) {
                     completed = true;
-                    clearInterval(interval);
+                    clearStepTimer();
                     cleanup();
                     resolve(true);
                     return;
@@ -220,13 +247,16 @@ function dialog(speaker, text = "", wait = true, params = {}) {
 
                 completed = true;
                 userSkipped = true;
-                clearInterval(interval);
+                clearStepTimer();
                 data.message.text(text);
                 cleanup();
                 resolve(userSkipped);
             };
 
             function cleanup() {
+                clearStepTimer();
+                data.message.offsetX?.(0);
+                data.message.offsetY?.(0);
                 document.body.removeEventListener("keydown", keyHandler);
                 getAdvanceInteractionTarget(gameInstance)?.off("click touchstart", clickHandler);
             }
@@ -237,7 +267,7 @@ function dialog(speaker, text = "", wait = true, params = {}) {
                         return;
                     }
                     completed = true;
-                    clearInterval(interval);
+                    clearStepTimer();
                     cleanup();
                     resolve(true);
                 });
@@ -313,6 +343,7 @@ function dialog(speaker, text = "", wait = true, params = {}) {
                     }
                     completed = true;
                     cleanup();
+                    resolve();
                 });
             }
 

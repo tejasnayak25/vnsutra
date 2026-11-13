@@ -65,6 +65,7 @@ class Character {
      * @param {{ name?: string, folder?: string, x?: number, y?: number, scale?: number }} options
      */
     constructor({ name = "", folder = "", x = 0, y = 0, scale = 1 }) {
+        this._defaultScale = scale;
         this.data = {
             name, folder, x, y, scale
         };
@@ -371,8 +372,11 @@ class Character {
         if(!except.includes("x")) attrs.x = 0;
         if(!except.includes("y")) attrs.y = 0;
         if(!except.includes("scale")) {
-            attrs.scaleX = 1;
-            attrs.scaleY = 1;
+            this.data.scale = this._defaultScale;
+            const origScale = this.img?.getAttr?.("origScale") || 1;
+            const effectiveScale = this.data.scale * origScale;
+            attrs.scaleX = effectiveScale;
+            attrs.scaleY = effectiveScale;
         }
         if(!except.includes("opacity")) attrs.opacity = 1;
         if(!except.includes("blurRadius")) attrs.blurRadius = 0;
@@ -455,6 +459,10 @@ class Character {
             const y = this.getValue("y", value);
             this.img.y(y);
         }
+    }
+
+    get scale() {
+        return this.data.scale;
     }
 
     /**
@@ -581,6 +589,37 @@ class Character {
 
         this.img.filters(filters);
         this.img.cache({pixelRatio: 1, imageSmoothingEnabled: true});
+    }
+
+    /**
+     * Apply ambient lighting or spotlight dimming tint.
+     * @param {string} [color="#ffffff"]
+     * @param {number} [strength=0.35]
+     * @param {number} [duration=0]
+     */
+    setTint(color = "#ffffff", strength = 0.35, duration = 0) {
+        const s = Math.min(1, Math.max(0, Number(strength) || 0));
+        this._tint = { color: color || "#ffffff", strength: s };
+        const baseOpacity = typeof this.data.opacity === "number" ? this.data.opacity : 1;
+        const targetOpacity = s > 0 ? Math.max(0.35, baseOpacity * (1 - s * 0.75)) : baseOpacity;
+        const dur = Number(duration) || 0;
+
+        if (dur > 0 && typeof this.img?.to === "function" && this.img?.getParent?.()) {
+            this.img.to({
+                opacity: targetOpacity,
+                duration: dur,
+                onFinish: () => {
+                    this.img.getLayer()?.batchDraw?.();
+                }
+            });
+        } else {
+            this.img.opacity(targetOpacity);
+            this.img.getLayer()?.batchDraw?.();
+        }
+    }
+
+    clearTint(duration = 0) {
+        this.setTint("#ffffff", 0, duration);
     }
 
     /**
@@ -1001,6 +1040,10 @@ class IMG {
         }
     }
 
+    get scale() {
+        return this.data.scale;
+    }
+
     /**
      * @param {number} value 
      */
@@ -1125,6 +1168,37 @@ class IMG {
 
         this.img.filters(filters);
         this.img.cache({pixelRatio: 1, imageSmoothingEnabled: true});
+    }
+
+    /**
+     * Apply ambient lighting or spotlight dimming tint.
+     * @param {string} [color="#ffffff"]
+     * @param {number} [strength=0.35]
+     * @param {number} [duration=0]
+     */
+    setTint(color = "#ffffff", strength = 0.35, duration = 0) {
+        const s = Math.min(1, Math.max(0, Number(strength) || 0));
+        this._tint = { color: color || "#ffffff", strength: s };
+        const baseOpacity = typeof this.data.opacity === "number" ? this.data.opacity : 1;
+        const targetOpacity = s > 0 ? Math.max(0.35, baseOpacity * (1 - s * 0.75)) : baseOpacity;
+        const dur = Number(duration) || 0;
+
+        if (dur > 0 && typeof this.img?.to === "function" && this.img?.getParent?.()) {
+            this.img.to({
+                opacity: targetOpacity,
+                duration: dur,
+                onFinish: () => {
+                    this.img.getLayer()?.batchDraw?.();
+                }
+            });
+        } else {
+            this.img.opacity(targetOpacity);
+            this.img.getLayer()?.batchDraw?.();
+        }
+    }
+
+    clearTint(duration = 0) {
+        this.setTint("#ffffff", 0, duration);
     }
 }
 

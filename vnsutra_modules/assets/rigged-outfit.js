@@ -1,6 +1,7 @@
 import { getGame, getIsPortrait } from "../runtime-state.js";
 import errorTracking from "../error-tracking.js";
 import { WebGLRigRenderer, evalMorphCurve } from "./webgl-rig.js";
+import { renderExpressionFx } from "./expression-fx.js";
 
 const VNSPRITE_MAGIC = [0x56, 0x4e, 0x53, 0x52]; // "VNSR"
 const VNSPRITE_HEADER_BYTES = 12;
@@ -334,6 +335,14 @@ class RiggedOutfit {
         this.lookTarget = { x: 0, y: 0 };
         this.audioMetrics = null;
         this.tint = { color: "#ffffff", strength: 0 };
+        this.fx = { list: [], intensity: 0.85, speed: 1 };
+        this._fxAlphas = {};
+        this._fxCanvas = null;
+        this._fxCtx = null;
+        this._fxTopCanvas = null;
+        this._fxTopCtx = null;
+        this._fxTopCanvas = null;
+        this._fxTopCtx = null;
 
         this.springs = {
             bodyX: new Spring1D(160, 14),
@@ -350,6 +359,10 @@ class RiggedOutfit {
         this._disposed = false;
         this._canvas = null;
         this._ctx = null;
+        this._fxCanvas = null;
+        this._fxCtx = null;
+        this._fxTopCanvas = null;
+        this._fxTopCtx = null;
         this._gl = null;
         this._windPhase = 0;
         this._morph = null;
@@ -564,19 +577,22 @@ class RiggedOutfit {
         const imgAspect = targetImg.width / targetImg.height;
         const portrait = getIsPortrait();
 
-        let scale = 1;
+        let baseScale = 1;
         if (portrait) {
             if (aspect < imgAspect) {
-                scale = (cw / targetImg.width) * (this.character?.data?.scale ?? 1);
+                baseScale = cw / targetImg.width;
             } else {
-                scale = (ch / targetImg.height) * (this.character?.data?.scale ?? 1);
+                baseScale = ch / targetImg.height;
             }
         } else {
-            scale = (ch / targetImg.height) * (this.character?.data?.scale ?? 1);
+            baseScale = ch / targetImg.height;
         }
 
-        this.img.scale({ x: scale, y: scale });
-        this.img.setAttr("origScale", scale);
+        const characterScale = this.character?.data?.scale ?? 1;
+        const effectiveScale = baseScale * characterScale;
+
+        this.img.setAttr("origScale", baseScale);
+        this.img.scale({ x: effectiveScale, y: effectiveScale });
 
         const prevX = this.img.x();
         const prevY = this.img.y();
@@ -584,13 +600,13 @@ class RiggedOutfit {
 
         let x = 0;
         let y = 0;
-        if (prevX !== undefined && prevX !== 0) {
+        if (typeof prevX === "number" && !Number.isNaN(prevX)) {
             x = prevX;
         } else {
             const movableWidth = cw - (targetImg.width * currentScale.x);
             x = (this.character?.data?.x ?? 0) * movableWidth;
         }
-        if (prevY !== undefined && prevY !== 0) {
+        if (typeof prevY === "number" && !Number.isNaN(prevY)) {
             y = prevY;
         } else {
             y = (this.character?.data?.y ?? 0) * ch;
@@ -615,6 +631,24 @@ class RiggedOutfit {
             color: color || "#ffffff",
             strength: Math.min(1, Math.max(0, Number(strength) || 0))
         };
+    }
+
+    /**
+     * Enable procedural expression overlays (`blush`, `sweat`, `sparkles`, `anger_vein`).
+     * @param {string[] | string} fxList
+     * @param {{ intensity?: number, speed?: number }} [options]
+     */
+    setFx(fxList = [], { intensity = 0.85, speed = 1 } = {}) {
+        const arr = Array.isArray(fxList) ? fxList : (fxList ? [fxList] : []);
+        this.fx = {
+            list: arr.map((f) => String(f || "").toLowerCase()).filter(Boolean),
+            intensity: Math.min(1, Math.max(0.05, Number(intensity) || 0.85)),
+            speed: Math.max(0.1, Number(speed) || 1)
+        };
+    }
+
+    clearFx() {
+        this.fx = { list: [], intensity: 0.85, speed: 1 };
     }
 
     _applyMoodImpulse(mood) {
@@ -724,10 +758,26 @@ class RiggedOutfit {
             }
         }
         if (this.reduceMotion) {
+            this._fxAlphas = {};
+            for (const f of this.fx?.list || []) {
+                this._fxAlphas[f] = 1;
+            }
             for (const s of Object.values(this.springs)) {
                 s.reset();
             }
             return;
+        }
+        const fxStep = Math.min(1, Math.max(0.01, (dt || 0.016) / 0.25));
+        const wanted = new Set(this.fx?.list || []);
+        for (const f of wanted) {
+            this._fxAlphas[f] = Math.min(1, (this._fxAlphas[f] || 0) + fxStep);
+        }
+        for (const k of Object.keys(this._fxAlphas)) {
+            if (!wanted.has(k)) {
+                const nextA = this._fxAlphas[k] - fxStep;
+                if (nextA <= 0.005) delete this._fxAlphas[k];
+                else this._fxAlphas[k] = nextA;
+            }
         }
 
         const brTarget = this.breathe ? Math.sin(tSec * 1.9) : 0;
@@ -973,6 +1023,45 @@ class RiggedOutfit {
             }
         }
 
+        let fxLayer = null;
+        let fxTopLayer = null;
+        const fxKeys = new Set([...(this.fx?.list || []), ...Object.keys(this._fxAlphas || {})]);
+        if (fxKeys.size > 0) {
+            const buildFxPass = (cProp, ctxProp, pass) => {
+                if (!this[cProp]) {
+                    this[cProp] = createCanvas(W, H);
+                    this[ctxProp] = this[cProp]?.getContext?.("2d") || null;
+                }
+                if (!this[cProp] || !this[ctxProp]) return null;
+                if (this[cProp].width !== W || this[cProp].height !== H) {
+                    this[cProp].width = W;
+                    this[cProp].height = H;
+                }
+                renderExpressionFx(this[ctxProp], {
+                    width: W,
+                    height: H,
+                    leftEye: eyeSrc?.left_eye?.stage || null,
+                    rightEye: eyeSrc?.right_eye?.stage || null,
+                    headPivot: pivots.head,
+                    eyeAngleDeg: fd.eyeAngleDeg || 0,
+                    fxList: this.fx.list,
+                    fxAlphas: this._fxAlphas,
+                    intensity: this.fx.intensity,
+                    speed: this.fx.speed,
+                    tSec,
+                    reduceMotion: this.reduceMotion,
+                    pass
+                });
+                return this[cProp];
+            };
+            if (fxKeys.has("blush") || fxKeys.has("gloom_lines")) {
+                fxLayer = buildFxPass("_fxCanvas", "_fxCtx", "skin");
+            }
+            if ([...fxKeys].some((f) => f !== "blush" && f !== "gloom_lines")) {
+                fxTopLayer = buildFxPass("_fxTopCanvas", "_fxTopCtx", "top");
+            }
+        }
+
         if (this._gl) {
             this._gl.render({
                 W,
@@ -993,7 +1082,9 @@ class RiggedOutfit {
                 windAmp: this.reduceMotion ? 0 : Math.max(0, this.wind),
                 gazeShift: { x: gX, y: gY, eyeIrisX },
                 morph: morphData,
-                tint: this.tint
+                tint: this.tint,
+                fxLayer,
+                fxTopLayer
             });
             return;
         }
@@ -1104,6 +1195,9 @@ class RiggedOutfit {
                 ctx.drawImage(this.atlas, a.x, a.y, a.w, a.h, -s.w / 2, -s.h / 2, s.w, s.h);
                 ctx.restore();
             }
+            if (fxLayer) {
+                ctx.drawImage(fxLayer, 0, 0);
+            }
         };
 
         ctx.save();
@@ -1133,6 +1227,15 @@ class RiggedOutfit {
             ctx.rotate(fRot);
             ctx.translate(-hx, -hy);
             drawLayerBlended("front_hair");
+            ctx.restore();
+        }
+
+        if (fxTopLayer) {
+            ctx.save();
+            ctx.translate(nx, ny + hDy);
+            ctx.rotate(hRot);
+            ctx.translate(-nx, -ny);
+            ctx.drawImage(fxTopLayer, 0, 0);
             ctx.restore();
         }
 

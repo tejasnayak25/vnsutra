@@ -94,6 +94,18 @@ describe("Cinematic Stage 2.0 (Camera, Ambient Lighting & Wipe Masks)", () => {
         await camera.pan({ x: 0.5, y: 0.5, zoom: 1.5, duration: 0 });
         expect(camera.state.x).toBeCloseTo(1280 / 6, 2);
         expect(camera.state.y).toBeCloseTo(720 / 6, 2);
+
+        // Depth parallax test
+        const bgAttrs = { x: 0, y: 0 };
+        fakeGame.ui.game.bg = {
+            x: (v) => (v !== undefined ? (bgAttrs.x = v) : bgAttrs.x),
+            y: (v) => (v !== undefined ? (bgAttrs.y = v) : bgAttrs.y)
+        };
+        camera.setParallax({ enabled: true, bgMultiplier: 0.4 });
+        await camera.pan({ x: 0.2, y: 0.1, zoom: 1.4, duration: 0 });
+        // Background shifts at (1 - 0.4) * pan = 0.6 * pan to simulate distant scenic plane
+        expect(bgAttrs.x).toBeCloseTo(camera.state.x * 0.6, 2);
+        expect(bgAttrs.y).toBeCloseTo(camera.state.y * 0.6, 2);
     });
 
     test("renderWipeFrame draws directional, iris, and blinds wipe masks", () => {

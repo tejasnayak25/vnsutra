@@ -299,6 +299,8 @@ class WebGLRigRenderer {
         this.geom = buildMeshGeometry(gl, aPosLoc);
         this.textures = new Map();
         this.atlasTex = null;
+        this.fxTex = null;
+        this.fxTopTex = null;
         this._disposed = false;
 
         this.loc = {
@@ -418,7 +420,9 @@ class WebGLRigRenderer {
             windAmp,
             gazeShift,
             morph = null,
-            tint = null
+            tint = null,
+            fxLayer = null,
+            fxTopLayer = null
         } = params;
 
         gl.viewport(0, 0, W, H);
@@ -526,8 +530,34 @@ class WebGLRigRenderer {
             drawQuadOrgan(mouthState.spec, { cx: rs.cx, cy: rs.cy, w: s.w, h: s.h }, mouthState.sy, 1.0, 1.0, 0, false, mm.nextAlpha, angleRad);
         }
 
+        const drawHeadOverlay = (canvas, texProp) => {
+            if (!canvas) return;
+            if (!this[texProp]) {
+                this[texProp] = this.createTexture(canvas);
+            } else {
+                gl.bindTexture(gl.TEXTURE_2D, this[texProp]);
+                gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, canvas);
+            }
+            if (this[texProp]) {
+                gl.bindVertexArray(this.geom.meshVao);
+                gl.uniform1i(this.loc.uMode, 4);
+                gl.uniform1i(this.loc.uLashMode, 0);
+                gl.uniform1f(this.loc.uAlpha, 1.0);
+                gl.uniform1f(this.loc.uMorphMix, -1.0);
+                gl.uniform4f(this.loc.uUvRect, 0, 0, 1, 1);
+                gl.uniform4f(this.loc.uGaze, gazeShift.x, gazeShift.y, 0, 1);
+                gl.activeTexture(gl.TEXTURE0);
+                gl.bindTexture(gl.TEXTURE_2D, this[texProp]);
+                gl.drawElements(gl.TRIANGLES, this.geom.meshIndexCount, gl.UNSIGNED_SHORT, 0);
+            }
+        };
+
+        drawHeadOverlay(fxLayer, "fxTex");
+
         drawMeshLayer(3, "upper_clothes", layers.upper_clothes, 1.0);
         drawMeshLayer(5, "front_hair", layers.front_hair, 1.0);
+        drawHeadOverlay(fxTopLayer, "fxTopTex");
         gl.bindVertexArray(null);
     }
 
@@ -546,6 +576,14 @@ class WebGLRigRenderer {
         if (this.atlasTex) {
             this.gl.deleteTexture(this.atlasTex);
             this.atlasTex = null;
+        }
+        if (this.fxTex) {
+            this.gl.deleteTexture(this.fxTex);
+            this.fxTex = null;
+        }
+        if (this.fxTopTex) {
+            this.gl.deleteTexture(this.fxTopTex);
+            this.fxTopTex = null;
         }
         if (this.geom) {
             this.gl.deleteBuffer(this.geom.vbo);

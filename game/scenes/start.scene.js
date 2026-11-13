@@ -85,7 +85,7 @@ export default [
     {
         "type": "dialog",
         "actor": "nanami",
-        "text": "Hi! I'm Nanami, running live from a single .vnsprite binary bundle — watch me blink, breathe, sway in the wind, and lip-sync as I speak! wow"
+        "text": "Hi! I'm Nanami, running live from a single .vnsprite binary bundle — watch me blink, breathe, sway in the wind, and lip-sync as I speak!"
     },
     {
         "type": "sprite.apply",

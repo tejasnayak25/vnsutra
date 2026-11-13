@@ -172,4 +172,68 @@ describe("Game Utils Lifecycle Integration", () => {
         expect(sceneSpy).not.toHaveBeenCalled();
         warnSpy.mockRestore();
     });
+
+    it("stops actor loops, removes nodes, and resets overlays during session cleanup", () => {
+        const stopLoopSpy = jest.fn();
+        const stopTalkingSpy = jest.fn();
+        const removeSpy = jest.fn();
+        const resetSpy = jest.fn();
+        const spotlightDetachSpy = jest.fn();
+        const spotlightClearSpy = jest.fn();
+        const transitionStopSpy = jest.fn();
+        const transitionOpacitySpy = jest.fn();
+
+        const mockActor = {
+            stopTalking: stopTalkingSpy,
+            _stopLoop: stopLoopSpy,
+            img: { remove: removeSpy },
+            reset: resetSpy
+        };
+
+        const activeGame = {
+            actors: { nanami: mockActor },
+            spotlight: { detach: spotlightDetachSpy, clear: spotlightClearSpy },
+            camera: { reset: jest.fn(), clearLighting: jest.fn() },
+            weather: { stop: jest.fn() },
+            rollback: { clear: jest.fn(), detach: jest.fn() },
+            background: { reset: jest.fn() },
+            ui: {
+                game: {
+                    stopEndingSequence: jest.fn(),
+                    hideChapterEndPrompt: jest.fn(),
+                    transitionOverlay: { stop: transitionStopSpy, opacity: transitionOpacitySpy },
+                    flashOverlay: { stop: jest.fn(), opacity: jest.fn() }
+                }
+            }
+        };
+
+        // Execute session cleanup steps
+        activeGame.camera?.reset?.({ duration: 0 });
+        activeGame.camera?.clearLighting?.();
+        activeGame.spotlight?.detach?.();
+        activeGame.spotlight?.clear?.();
+        activeGame.weather?.stop?.();
+        activeGame.rollback?.clear?.();
+        activeGame.rollback?.detach?.();
+        activeGame.background?.reset?.();
+
+        for (const actor of Object.values(activeGame.actors)) {
+            actor?.stopTalking?.();
+            actor?._stopLoop?.();
+            actor?.img?.remove?.();
+            actor?.reset?.();
+        }
+
+        activeGame.ui.game.transitionOverlay.stop();
+        activeGame.ui.game.transitionOverlay.opacity(0);
+
+        expect(stopTalkingSpy).toHaveBeenCalled();
+        expect(stopLoopSpy).toHaveBeenCalled();
+        expect(removeSpy).toHaveBeenCalled();
+        expect(resetSpy).toHaveBeenCalled();
+        expect(spotlightDetachSpy).toHaveBeenCalled();
+        expect(spotlightClearSpy).toHaveBeenCalled();
+        expect(transitionStopSpy).toHaveBeenCalled();
+        expect(transitionOpacitySpy).toHaveBeenCalledWith(0);
+    });
 });

@@ -4,7 +4,8 @@ import { initActorAnimation, addGameAnimationMethods } from "./animation-utils.j
 import { initAudioSystem } from "./audio-effects-utils.js";
 import { initVisualEffectsSystem } from "./visual-effects-utils.js";
 import { RollbackManager } from "./rollback.js";
-import { getShouldAbortGame, getGameSessionId } from "./runtime-state.js";
+import { SpeakerSpotlight } from "./spotlight.js";
+import { getShouldAbortGame, getGameSessionId, getConfiguration } from "./runtime-state.js";
 
 function resolveResponsive(value, { isPortrait = false, isAndroid = false } = {}) {
     if (!value || typeof value !== "object" || Array.isArray(value)) {
@@ -122,6 +123,27 @@ async function executeActions(actions = [], runtime) {
             actor?.hide?.();
             break;
         }
+        case "actor.fx": {
+            actor?.setFx?.(action.fx ?? [], {
+                intensity: action.intensity ?? 0.85,
+                speed: action.speed ?? 1
+            });
+            break;
+        }
+        case "spotlight.config": {
+            const opts = action.options && typeof action.options === "object" ? action.options : {
+                enabled: action.enabled,
+                dimColor: action.dimColor,
+                dimStrength: action.dimStrength,
+                scaleBoost: action.scaleBoost,
+                duration: action.duration,
+                autoFocus: action.autoFocus,
+                focusZoom: action.focusZoom
+            };
+            const cleanOpts = Object.fromEntries(Object.entries(opts).filter(([, v]) => v !== undefined));
+            runtime.getGame?.()?.spotlight?.configure?.(cleanOpts);
+            break;
+        }
         case "actor.set": {
             if (!actor) {
                 break;
@@ -192,15 +214,30 @@ async function executeActions(actions = [], runtime) {
                 camera: runtime.getGame?.()?.camera?.state || null
             });
             const params = resolveDialogParams(action.params, runtime.vars);
-            await dialog(actor ?? null, action.text ?? "", action.wait ?? true, params);
+            try {
+                await dialog(actor ?? null, action.text ?? "", action.wait ?? true, params);
+            } catch (err) {
+                if (isSessionAborted() || err?.message === "Dialog aborted") {
+                    return { jumped: false, ended: true };
+                }
+                throw err;
+            }
             if (isSessionAborted()) {
                 return { jumped: false, ended: true };
             }
             break;
         }
         case "input": {
-            let value = await input(action.message ?? "", action.placeholder);
-            if (action.trim) {
+            let value;
+            try {
+                value = await input(action.message ?? "", action.placeholder);
+            } catch (err) {
+                if (isSessionAborted() || err?.message?.includes("aborted")) {
+                    return { jumped: false, ended: true };
+                }
+                throw err;
+            }
+            if (action.trim && typeof value === "string") {
                 value = value.trim();
             }
             runtime.vars[action.var] = value;
@@ -220,7 +257,15 @@ async function executeActions(actions = [], runtime) {
             if (action.firstOptionVar) {
                 runtime.vars[action.firstOptionVar] = options[0];
             }
-            runtime.vars[action.var] = await choice(action.message ?? "", options, {}, { multiSelect: action.multiSelect === true });
+            runtime.getGame?.()?.spotlight?.clear?.();
+            try {
+                runtime.vars[action.var] = await choice(action.message ?? "", options, {}, { multiSelect: action.multiSelect === true });
+            } catch (err) {
+                if (isSessionAborted() || err?.message?.includes("aborted")) {
+                    return { jumped: false, ended: true };
+                }
+                throw err;
+            }
             break;
         }
         case "var.set": {
@@ -823,6 +868,13 @@ function createStoryFromScript({
 
         if (gameInstance && actors && typeof actors === "object") {
             gameInstance.actors = actors;
+        }
+        if (gameInstance) {
+            if (!gameInstance.spotlight) {
+                const spotlightCfg = getConfiguration?.()?.["speaker-spotlight"] || {};
+                gameInstance.spotlight = new SpeakerSpotlight(gameInstance, spotlightCfg);
+            }
+            gameInstance.spotlight.attach();
         }
         const runtime = {
             vars: sharedVars ? persistentVars : {},

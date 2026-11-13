@@ -23,8 +23,26 @@ class CameraController {
     constructor(gameInstance) {
         this.game = gameInstance;
         this._tween = null;
+        this._bgTween = null;
         this.state = { x: 0, y: 0, zoom: 1, rotation: 0 };
         this.lighting = { ...LIGHTING_PRESETS.day };
+        this.parallax = { enabled: true, bgMultiplier: 0.35 };
+    }
+
+    /**
+     * Configure depth parallax settings.
+     * @param {{ enabled?: boolean, bgMultiplier?: number }} [options]
+     */
+    setParallax({ enabled = true, bgMultiplier = 0.35 } = {}) {
+        this.parallax = {
+            enabled: Boolean(enabled),
+            bgMultiplier: clamp(Number(bgMultiplier) || 0.35, 0, 1)
+        };
+        return this.parallax;
+    }
+
+    _getBgNode() {
+        return this.game?.ui?.game?.bg || null;
     }
 
     _getCameraNode() {
@@ -49,8 +67,9 @@ class CameraController {
      * @param {{ x?: number, y?: number, zoom?: number, rotation?: number, duration?: number, easing?: string, clampBounds?: boolean }} [options]
      * @returns {Promise<void>}
      */
-    async pan({ x = 0, y = 0, zoom = 1, rotation = 0, duration = 0.8, easing = "EaseInOut", clampBounds = true } = {}) {
+    async pan({ x = 0, y = 0, zoom = 1, rotation = 0, duration = 0.8, easing = "EaseInOut", clampBounds = true, parallax = true } = {}) {
         const node = this._getCameraNode();
+        const bgNode = this._getBgNode();
         const { w, h } = this._getStageSize();
         const targetRot = Number(rotation) || 0;
         let minZoom = 0.5;
@@ -80,6 +99,10 @@ class CameraController {
             this._tween.destroy?.();
             this._tween = null;
         }
+        if (this._bgTween) {
+            this._bgTween.destroy?.();
+            this._bgTween = null;
+        }
 
         const baseX = w * 0.5;
         const baseY = h * 0.5;
@@ -93,34 +116,67 @@ class CameraController {
         const actualDur = this._isReducedMotion() ? 0 : Math.max(0, Number(duration) || 0);
         const Konva = globalThis.Konva;
 
+        // Depth Parallax: Background shifts at a slower rate than camera to simulate distance
+        const useParallax = parallax && this.parallax.enabled && !this._isReducedMotion() && bgNode;
+        const bgMul = typeof parallax === "number" ? clamp(parallax, 0, 1) : this.parallax.bgMultiplier;
+        const bgShiftX = useParallax ? px * (1 - bgMul) : 0;
+        const bgShiftY = useParallax ? py * (1 - bgMul) : 0;
+
         if (actualDur <= 0 || !Konva?.Tween) {
             node.x(destX);
             node.y(destY);
             node.scaleX(targetZoom);
             node.scaleY(targetZoom);
             node.rotation?.(targetRot);
+            if (bgNode) {
+                bgNode.x?.(bgShiftX);
+                bgNode.y?.(bgShiftY);
+            }
             node.getLayer?.()?.batchDraw?.();
             return;
         }
 
         const easingFn = Konva.Easings?.[easing] || Konva.Easings?.EaseInOut;
-        await new Promise((resolve) => {
-            this._tween = new Konva.Tween({
-                node,
-                duration: actualDur,
-                x: destX,
-                y: destY,
-                scaleX: targetZoom,
-                scaleY: targetZoom,
-                rotation: targetRot,
-                easing: easingFn,
-                onFinish: () => {
-                    this._tween = null;
-                    resolve();
-                }
-            });
-            this._tween.play();
-        });
+        const promises = [
+            new Promise((resolve) => {
+                this._tween = new Konva.Tween({
+                    node,
+                    duration: actualDur,
+                    x: destX,
+                    y: destY,
+                    scaleX: targetZoom,
+                    scaleY: targetZoom,
+                    rotation: targetRot,
+                    easing: easingFn,
+                    onFinish: () => {
+                        this._tween = null;
+                        resolve();
+                    }
+                });
+                this._tween.play();
+            })
+        ];
+
+        if (bgNode && (bgNode.x?.() !== bgShiftX || bgNode.y?.() !== bgShiftY)) {
+            promises.push(
+                new Promise((resolve) => {
+                    this._bgTween = new Konva.Tween({
+                        node: bgNode,
+                        duration: actualDur,
+                        x: bgShiftX,
+                        y: bgShiftY,
+                        easing: easingFn,
+                        onFinish: () => {
+                            this._bgTween = null;
+                            resolve();
+                        }
+                    });
+                    this._bgTween.play();
+                })
+            );
+        }
+
+        await Promise.all(promises);
     }
 
     /**
@@ -196,6 +252,10 @@ class CameraController {
         if (this._tween) {
             this._tween.destroy?.();
             this._tween = null;
+        }
+        if (this._bgTween) {
+            this._bgTween.destroy?.();
+            this._bgTween = null;
         }
     }
 }
