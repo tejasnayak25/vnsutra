@@ -49,31 +49,95 @@
     <audio id="music" src="" loop crossorigin="anonymous" aria-label="Background music"></audio>
     <audio id="sfx" src="" crossorigin="anonymous" aria-label="Sound effects"></audio>
 
-    <section id="alert-win" class=" absolute top-0 w-full h-full hidden justify-center items-center p-3 bg-slate-950/70" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Game dialog">
-        <div id="alert-card" class=" max-w-xs w-full border-t-2 p-5 rounded-md bg-slate-900/70 flex  flex-col justify-between min-h-40 gap-5" style="border-color: orange;">
-            <p id="alert-message" class=" w-full">Lorem ipsum dolor sit amet consectetur adipisicing elit. Consequatur aperiam velit quae reprehenderit vero placeat eveniet molestias corporis modi iure tempora amet, explicabo eaque soluta maiores ducimus exercitationem optio id!</p>
-            <div id="alert-opts" class=" hidden w-full"></div>
-            <div id="alert-input" class="w-full hidden">
-                <input type="text" class=" w-full input rounded-full input-bordered">
-            </div>
-            <div id="alert-btns" class="flex justify-between">
-                <button class="btn btn-outline">Cancel</button>
-                <button class="btn bg-orange-400 hover:bg-orange-600 border-0 text-slate-900">Proceed</button>
+    <section id="alert-win" class="fixed inset-0 z-50 hidden justify-center items-center p-4 sm:p-6 bg-[#080612]/75 backdrop-blur-md opacity-0 transition-opacity duration-200" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Game dialog">
+        <div id="alert-card" class="relative w-full max-w-md rounded-2xl bg-[#141126]/95 border border-white/10 shadow-[0_24px_64px_rgba(0,0,0,0.85),0_4px_20px_rgba(184,138,239,0.15)] flex flex-col justify-between overflow-hidden transition-all duration-200 transform scale-95 opacity-0" role="document" tabindex="-1">
+            <!-- Top luminous accent line -->
+            <div id="alert-accent-line" class="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#B88AEF] to-transparent opacity-85 pointer-events-none"></div>
+
+            <div class="p-5 sm:p-6 flex flex-col gap-4">
+                <!-- Header with Icon, Category & Close Button -->
+                <div id="alert-header" class="flex items-start justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                        <div id="alert-icon-wrap" class="w-10 h-10 rounded-xl flex items-center justify-center bg-white/[0.06] border border-white/10 text-[#B88AEF] shadow-inner shrink-0">
+                            <span id="alert-icon" class="flex items-center justify-center"></span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span id="alert-badge" class="text-[10px] uppercase font-bold tracking-wider text-[#B88AEF] opacity-90">Notice</span>
+                            <h3 id="alert-title" class="text-base sm:text-lg font-semibold text-white tracking-wide">Confirmation</h3>
+                        </div>
+                    </div>
+                    <button id="alert-close-x" type="button" class="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-colors cursor-pointer" aria-label="Close dialog">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Highlighted Query / Message Box -->
+                <div id="alert-message-wrap" class="w-full max-h-[50vh] overflow-y-auto pr-1">
+                    <div id="alert-query-box" class="w-full px-4 py-3 sm:px-5 sm:py-3.5 rounded-xl bg-white/[0.05] border border-white/10 border-l-4 border-l-[#B88AEF] shadow-inner transition-all duration-200">
+                        <p id="alert-message" class="text-base sm:text-lg font-semibold text-white leading-relaxed whitespace-pre-line tracking-wide"></p>
+                    </div>
+                </div>
+
+                <!-- Choice Options (for story choices) -->
+                <div id="alert-opts" class="hidden w-full max-h-[48vh] overflow-y-auto"></div>
+
+                <!-- Input Field (for user input prompts) -->
+                <div id="alert-input" class="w-full hidden">
+                    <input type="text" class="w-full px-4 py-2.5 rounded-xl bg-white/[0.06] border border-white/15 focus:border-[#B88AEF] focus:ring-2 focus:ring-[#B88AEF]/25 text-white placeholder-white/40 text-sm sm:text-base outline-none transition-all duration-200">
+                </div>
+
+                <!-- Action Buttons -->
+                <div id="alert-btns" class="flex justify-end items-center gap-3 pt-3 mt-1 border-t border-white/[0.08]">
+                    <button class="btn btn-outline">Cancel</button>
+                    <button class="btn bg-orange-400 hover:bg-orange-600 border-0 text-slate-900">Proceed</button>
+                </div>
             </div>
         </div>
     </section>
 
-    <div id="disclaimer-modal" class="absolute top-0 w-full h-full hidden justify-center items-center p-3" role="presentation">
-        <div id="disclaimer-card" class="w-full border-t-2 p-5 rounded-md flex flex-col justify-between gap-5" role="dialog" aria-modal="true" aria-label="Disclaimer">
-            <div>
-                <h2 id="disclaimer-title" class="text-xl font-bold m-0 mb-4">Disclaimer</h2>
-                <div id="disclaimer-body" class="max-h-64 overflow-y-auto text-sm leading-relaxed"></div>
-            </div>
-            <div class="flex justify-end">
-                <button id="disclaimer-btn" class="btn btn-primary">I Understand</button>
+    <!-- Disclaimer Modal -->
+    <section id="disclaimer-modal" class="fixed inset-0 z-50 hidden justify-center items-center p-4 sm:p-6 bg-[#080612]/80 backdrop-blur-md opacity-0 transition-opacity duration-200" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Disclaimer">
+        <div id="disclaimer-card" class="relative w-full max-w-lg rounded-2xl bg-[#141126]/95 border border-white/10 shadow-[0_24px_64px_rgba(0,0,0,0.85),0_4px_20px_rgba(184,138,239,0.15)] flex flex-col justify-between overflow-hidden transition-all duration-200 transform scale-95 opacity-0" role="document" tabindex="-1">
+            <!-- Top luminous accent line -->
+            <div id="disclaimer-accent-line" class="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#B88AEF] to-transparent opacity-85 pointer-events-none"></div>
+
+            <div class="p-5 sm:p-6 flex flex-col gap-4">
+                <!-- Header with Icon, Category & Close Button -->
+                <div id="disclaimer-header" class="flex items-start justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                        <div id="disclaimer-icon-wrap" class="w-10 h-10 rounded-xl flex items-center justify-center bg-white/[0.06] border border-white/10 text-[#B88AEF] shadow-inner shrink-0">
+                            <span id="disclaimer-icon" class="flex items-center justify-center">
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+                                </svg>
+                            </span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span id="disclaimer-badge" class="text-[10px] uppercase font-bold tracking-wider text-[#B88AEF] opacity-90">Content Advisory</span>
+                            <h3 id="disclaimer-title" class="text-base sm:text-lg font-semibold text-white tracking-wide">Disclaimer & Guidelines</h3>
+                        </div>
+                    </div>
+                    <button id="disclaimer-close-x" type="button" class="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-colors cursor-pointer" aria-label="Close disclaimer">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Body Content with Styled Card Wrapper -->
+                <div id="disclaimer-body-wrap" class="w-full max-h-[50vh] sm:max-h-[56vh] overflow-y-auto pr-1">
+                    <div id="disclaimer-body" class="w-full px-4 py-3 sm:px-5 sm:py-3.5 rounded-xl bg-white/[0.04] border border-white/10 shadow-inner text-sm leading-relaxed text-[#F8F2FF]/85"></div>
+                </div>
+
+                <!-- Action Footer -->
+                <div class="flex justify-end items-center gap-3 pt-3 mt-1 border-t border-white/[0.08]">
+                    <button id="disclaimer-btn" class="px-6 py-2.5 rounded-xl font-semibold text-sm tracking-wide bg-gradient-to-r from-[#B88AEF] to-[#A470E0] hover:from-[#C79CFF] hover:to-[#B380EE] text-[#141126] shadow-[0_4px_16px_rgba(184,138,239,0.3)] transition-all duration-200 active:scale-95 cursor-pointer">I Understand</button>
+                </div>
             </div>
         </div>
-    </div>
+    </section>
 
     <section id="loadwin" class="absolute top-0 w-full h-full overflow-hidden bg-slate-900" role="status" aria-live="polite" aria-label="Loading screen">
         <img id="loadimg" src="" class=" w-full h-full object-cover absolute opacity-70" alt="Poster">

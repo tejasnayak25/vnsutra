@@ -168,28 +168,10 @@ class StorageManager {
             
             // Provide no-op fallback to prevent crashes
             const noOpStore = {
-                setItem: async () => { 
-                    errorTracking?.captureError("Storage not available - setItem skipped", {
-                        type: "warning",
-                        message: "[Storage] Not available - operation skipped",
-                        context: { scope: "storage", action: "setItem" }
-                    });
-                },
+                setItem: async () => {},
                 getItem: async () => null,
-                removeItem: async () => { 
-                    errorTracking?.captureError("Storage not available - removeItem skipped", {
-                        type: "warning",
-                        message: "[Storage] Not available - operation skipped",
-                        context: { scope: "storage", action: "removeItem" }
-                    });
-                },
-                clear: async () => { 
-                    errorTracking?.captureError("Storage not available - clear skipped", {
-                        type: "warning",
-                        message: "[Storage] Not available - operation skipped",
-                        context: { scope: "storage", action: "clear" }
-                    });
-                },
+                removeItem: async () => {},
+                clear: async () => {},
                 key: async () => null,
                 length: 0
             };

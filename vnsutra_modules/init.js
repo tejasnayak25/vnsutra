@@ -714,8 +714,11 @@ async function loadChapterDefinitions(config) {
         loadstatus.innerText = "Click To Start";
         loadspin.classList.add("hidden");
         loadstatus.classList.remove("hidden");
+        if (loadwin) {
+            loadwin.style.cursor = "pointer";
+        }
 
-        document.onclick = (e) => {
+        document.onclick = async (e) => {
             // if inside the install prompt, ignore the click to start the game
             if (e.target && (e.target.closest("#install-app-utility") || e.target.id === "install-app-utility")) {
                 return;
@@ -727,29 +730,112 @@ async function loadChapterDefinitions(config) {
             }
 
             hasStarted = true;
+            document.onclick = () => { };
+            if (loadwin) {
+                loadwin.style.cursor = "default";
+            }
 
-            // Hide splash immediately before any async operations
-            loadwin.classList.add("hidden");
+            // Start BGM immediately on user's "Click To Start" gesture if music is enabled
+            const currentSettings = getGameSettings();
+            if (currentSettings && currentSettings["settings-music"] !== false && CONFIG?.bgm) {
+                const bgmElem = document.getElementById("music");
+                if (bgmElem) {
+                    if (!bgmElem.src || !bgmElem.src.includes(CONFIG.bgm)) {
+                        bgmElem.src = CONFIG.bgm;
+                    }
+                    const bgmFn = getBgm();
+                    if (typeof bgmFn === "function") {
+                        bgmFn();
+                    } else {
+                        bgmElem.play()?.catch?.(() => {});
+                    }
+                }
+            }
 
-            // Show home page immediately (don't wait for GAME_RESIZE)
+            // 1. Immediate visual feedback on click
+            if (loadstatus) {
+                loadstatus.style.willChange = "opacity, transform";
+                loadstatus.style.transition = "opacity 0.2s ease-out, transform 0.2s ease-out";
+                loadstatus.style.opacity = "0";
+                loadstatus.style.transform = "scale(0.92)";
+            }
+
+            // 2. Request fullscreen while the loading overlay still covers the stage.
+            // This absorbs the OS window expansion/jump behind the opaque loading screen.
+            const enterFullscreenPromise = (async () => {
+                try {
+                    if (!document.fullscreenElement && typeof document.documentElement.requestFullscreen === "function") {
+                        await document.documentElement.requestFullscreen();
+                    }
+                } catch {
+                    // Fullscreen request rejected or unsupported
+                }
+            })();
+
+            await Promise.race([enterFullscreenPromise, new Promise((r) => setTimeout(r, 260))]);
+            await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+            const gameSettings = getGameSettings();
+            const reduceMotion = Boolean(gameSettings && gameSettings[STORAGE_KEYS.ACCESSIBILITY_REDUCE_MOTION]);
+
+            // 3. Ensure stage dimensions and home layout match the settled viewport BEFORE revealing
+            const { docWidth, docHeight, stageWidth, stageHeight } = getRoundedStageAndDocSize();
+            const dimensionsChanged = Math.abs(docWidth - stageWidth) > RESIZE_EPSILON_PX
+                || Math.abs(docHeight - stageHeight) > RESIZE_EPSILON_PX;
+
+            if (dimensionsChanged) {
+                globalThis.__vnsutraSkipNextFullscreenForcedResize = true;
+                globalThis.dispatchEvent(new CustomEvent(EVENTS.GAME_RESIZE, { detail: { force: true } }));
+                await new Promise((r) => setTimeout(r, 160));
+            }
+
+            // 4. Mount Home directly at the finalized dimensions
             if (pages.home) {
                 navigate("home", {});
+                if (!reduceMotion && typeof pages.home.ui?.playIntroTransition === "function") {
+                    pages.home.ui.playIntroTransition();
+                }
             } else {
-                // Fallback: if prewarm is still in progress, force a resize build now.
                 globalThis.dispatchEvent(new CustomEvent(EVENTS.GAME_RESIZE));
             }
 
-            // Request fullscreen (async, doesn't block UI)
-            document.documentElement.requestFullscreen().catch(() => {
-                // Fullscreen request might fail on some browsers
-            });
+            if (reduceMotion) {
+                loadwin.classList.add("hidden");
+                return;
+            }
 
-            // Dispatch resize after fullscreen processes
+            // 5. Smooth cinematic cross-fade from loading overlay to Home UI
+            if (loadtitle) {
+                loadtitle.style.willChange = "opacity, transform";
+                loadtitle.style.transition = "opacity 0.38s cubic-bezier(0.22, 1, 0.36, 1), transform 0.38s cubic-bezier(0.22, 1, 0.36, 1)";
+                loadtitle.style.opacity = "0";
+                loadtitle.style.transform = "translateY(-14px) scale(0.98)";
+            }
+
+            loadwin.style.willChange = "opacity";
+            loadwin.style.transition = "opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1)";
+            loadwin.style.pointerEvents = "none";
+            loadwin.style.opacity = "0";
+
             setTimeout(() => {
-                globalThis.dispatchEvent(new CustomEvent(EVENTS.GAME_RESIZE));
-            }, 250);
-
-            document.onclick = () => { };
+                loadwin.classList.add("hidden");
+                loadwin.style.opacity = "";
+                loadwin.style.pointerEvents = "";
+                loadwin.style.transition = "";
+                loadwin.style.willChange = "";
+                if (loadstatus) {
+                    loadstatus.style.opacity = "";
+                    loadstatus.style.transform = "";
+                    loadstatus.style.transition = "";
+                    loadstatus.style.willChange = "";
+                }
+                if (loadtitle) {
+                    loadtitle.style.opacity = "";
+                    loadtitle.style.transform = "";
+                    loadtitle.style.transition = "";
+                    loadtitle.style.willChange = "";
+                }
+            }, 550);
         };
     }
 
@@ -932,6 +1018,23 @@ async function loadChapterDefinitions(config) {
         });
     }
 
+    // Load persisted music and sound effect preferences
+    try {
+        const gameSettings = getGameSettings();
+        if (gameSettings) {
+            const savedMusic = await storage.getItem("settings-music");
+            if (savedMusic !== null) {
+                gameSettings["settings-music"] = Boolean(savedMusic);
+            }
+            const savedSfx = await storage.getItem("settings-sfx");
+            if (savedSfx !== null) {
+                gameSettings["settings-sfx"] = Boolean(savedSfx);
+            }
+        }
+    } catch {
+        // Storage lookup fallback to defaults
+    }
+
     loadimg.src = CONFIG.poster;
 
     loadtitle.innerText = CONFIG.title;
@@ -1029,6 +1132,9 @@ async function loadChapterDefinitions(config) {
         scheduledLayerDraws.add(layer);
         requestAnimationFrame(() => {
             scheduledLayerDraws.delete(layer);
+            if (!layer.getStage()) {
+                return;
+            }
             try {
                 layer.batchDraw();
             } catch (error) {
@@ -1786,6 +1892,26 @@ async function loadChapterDefinitions(config) {
         }
     });
 
+    globalThis.addEventListener("focus", () => {
+        try {
+            if (globalThis.Konva?.DD?.isDragging) {
+                globalThis.Konva.DD._endDragBefore?.();
+            }
+        } catch {
+            // non-fatal
+        }
+    });
+
+    globalThis.addEventListener("blur", () => {
+        try {
+            if (globalThis.Konva?.DD?.isDragging) {
+                globalThis.Konva.DD._endDragBefore?.();
+            }
+        } catch {
+            // non-fatal
+        }
+    });
+
     globalThis.addEventListener(EVENTS.GAME_RESIZE, async (event) => {
         const forceRefresh = event?.detail?.force === true;
         const resizeStartTs = performance.now();
@@ -1927,17 +2053,22 @@ async function loadChapterDefinitions(config) {
                 pages = {
                     home: {
                         ui: await home(CONFIG, fonts, navigate), func: () => {
-                            music.pause();
-                            document.getElementById("sfx").pause();
+                            document.getElementById("sfx")?.pause();
                             const gameSettings = getGameSettings();
-                            if (gameSettings && gameSettings["settings-music"] === true) {
-                                music.src = CONFIG.bgm;
-                                music.onloadedmetadata = () => {
+                            if (gameSettings && gameSettings["settings-music"] !== false && CONFIG?.bgm) {
+                                if (!music.src || !music.src.includes(CONFIG.bgm)) {
+                                    music.src = CONFIG.bgm;
+                                }
+                                if (music.paused) {
                                     const bgmFn = getBgm();
                                     if (typeof bgmFn === "function") {
                                         bgmFn();
+                                    } else {
+                                        music.play()?.catch?.(() => {});
                                     }
-                                };
+                                }
+                            } else {
+                                music.pause();
                             }
                         }
                     },
@@ -2269,6 +2400,9 @@ async function loadChapterDefinitions(config) {
             }
 
             if (previousLayer !== name) {
+                if (previousLayer === "home") {
+                    pages.home?.ui?.stopTweens?.();
+                }
                 setOpenWindow(null);
             }
 

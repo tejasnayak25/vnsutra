@@ -1,4 +1,5 @@
-import { futon_room, apartment_ext, mary, nanami } from "./assets.js";
+import * as assets from "./assets.js";
+import { mary, sakura } from "./assets.js";
 import achievements from "../vnsutra_modules/achievements.js";
 import { getGame, getIsAndroid, getIsPortrait } from "../vnsutra_modules/runtime-state.js";
 import { createStoryFromScript } from "../vnsutra_modules/story-script-runner.js";
@@ -52,8 +53,8 @@ const getScene = async (sceneName) => {
 export const story = createStoryFromScript({
     scenes: localScenes,
     getScene,
-    actors: { mary, nanami },
-    assets: { futon_room, apartment_ext },
+    actors: { mary, sakura },
+    assets,
     achievements,
     getGame,
     getIsPortrait,

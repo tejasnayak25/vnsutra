@@ -445,6 +445,8 @@ describe("RiggedOutfit & RiggedCharacter (.vnsprite runtime)", () => {
                 eyeAngleDeg: 0,
                 lashColor: "#3a2220",
                 pivots: fd.pivots,
+                fxLayer: { width: 800, height: 1200 },
+                fxTopLayer: { width: 800, height: 1200 },
                 springs: {
                     bodyX: { x: 0 }, bodyY: { x: 0 }, chest: { x: 0 },
                     headRot: { x: 0 }, headY: { x: 0 }, fHair: { x: 0 }
@@ -462,7 +464,8 @@ describe("RiggedOutfit & RiggedCharacter (.vnsprite runtime)", () => {
                     prevEyeAngleDeg: 0
                 }
             });
-            expect(drawElements).toHaveBeenCalledTimes(5);
+            // 5 mesh layers + 2 fx overlay layers = 7
+            expect(drawElements).toHaveBeenCalledTimes(7);
             // 3 previous organs + 3 target organs
             expect(drawArrays).toHaveBeenCalledTimes(6);
             renderer.dispose();

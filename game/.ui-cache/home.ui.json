@@ -1,7 +1,7 @@
 {
     "engineVersion": "0.1.0",
     "screen": "home",
-    "hash": "sha256:f73532350138e240fdd9dbd659658dd20f70e1512166eb3a4dab807090552937",
+    "hash": "sha256:c4fa586e73c2916c9f024b6375ae5ea651d36627b727c8cb914b59ceaa5a1928",
     "nodeCount": 15,
     "nodes": [
         {
@@ -34,9 +34,9 @@
                 "sidebar-root"
             ],
             "attrs": {
-                "x": 0,
+                "x": 50,
                 "y": 0,
-                "width": 250
+                "width": 280
             },
             "dynamic": {
                 "height": {
@@ -44,6 +44,9 @@
                     "value": 100,
                     "base": "parentHeight"
                 }
+            },
+            "portraitAttrs": {
+                "x": 0
             },
             "portraitDynamic": {
                 "width": {
@@ -67,8 +70,14 @@
             "attrs": {
                 "x": 0,
                 "y": 0,
-                "opacity": 0.8,
-                "fill": "#020617"
+                "opacity": 0.88,
+                "fill": "#141126",
+                "cornerRadius": 0,
+                "stroke": "#B88AEF",
+                "strokeWidth": 1.5,
+                "shadowColor": "#080612",
+                "shadowBlur": 24,
+                "shadowOpacity": 0.65
             },
             "dynamic": {
                 "width": {
@@ -97,8 +106,10 @@
             "attrs": {
                 "x": 0,
                 "y": 0,
-                "height": 6,
-                "fill": "cornflowerblue"
+                "height": 3,
+                "cornerRadius": 0,
+                "fill": "#F2A9D5",
+                "opacity": 0.9
             },
             "dynamic": {
                 "width": {
@@ -117,15 +128,20 @@
                 "sidebar-title"
             ],
             "attrs": {
-                "text": "Menu",
+                "text": "🌸 Visual Novel",
                 "x": 0,
                 "y": 0,
-                "height": 95,
-                "fontSize": 30,
-                "fontFamily": "YanoneKaffeesatz",
+                "height": 105,
+                "fontSize": 26,
+                "fontFamily": "Cinzel",
+                "fontStyle": "bold",
                 "align": "center",
                 "verticalAlign": "middle",
-                "fill": "white"
+                "fill": "#F8F2FF",
+                "shadowColor": "#05030A",
+                "shadowBlur": 10,
+                "shadowOpacity": 0.7,
+                "shadowOffsetY": 2
             },
             "dynamic": {
                 "width": {
@@ -151,10 +167,11 @@
                 "sidebar-title-border"
             ],
             "attrs": {
-                "x": 30,
-                "y": 85,
-                "height": 2,
-                "fill": "grey"
+                "x": 20,
+                "y": 96,
+                "height": 1,
+                "fill": "#B88AEF",
+                "opacity": 0.35
             },
             "dynamic": {
                 "width": {
@@ -167,7 +184,7 @@
                     },
                     "right": {
                         "kind": "static",
-                        "value": 60
+                        "value": 40
                     }
                 }
             },
@@ -221,7 +238,8 @@
             "attrs": {
                 "y": 0,
                 "width": 1,
-                "fill": "cornflowerblue"
+                "fill": "#B88AEF",
+                "opacity": 0.25
             },
             "dynamic": {
                 "x": {
@@ -308,7 +326,7 @@
             ],
             "attrs": {
                 "x": 0,
-                "y": 97
+                "y": 105
             },
             "dynamic": {
                 "width": {
@@ -355,7 +373,7 @@
                 "main-root"
             ],
             "attrs": {
-                "x": 250,
+                "x": 350,
                 "y": 0
             },
             "dynamic": {
@@ -369,7 +387,7 @@
                     },
                     "right": {
                         "kind": "static",
-                        "value": 250
+                        "value": 350
                     }
                 },
                 "height": {
@@ -469,12 +487,20 @@
                 "text": "VN-Sutra",
                 "x": 0,
                 "y": 0,
-                "fontSize": 90,
-                "fontFamily": "LavishlyYours",
+                "fontSize": 78,
+                "fontFamily": "Cinzel",
+                "fontStyle": "bold",
                 "align": "right",
                 "padding": 60,
                 "wrap": "word",
-                "fill": "white"
+                "fill": "#FFFFFF",
+                "stroke": "#0A0614",
+                "strokeWidth": 2,
+                "perfectDrawEnabled": "false",
+                "shadowColor": "#05030A",
+                "shadowBlur": 20,
+                "shadowOpacity": 0.95,
+                "shadowOffsetY": 4
             },
             "dynamic": {
                 "width": {
@@ -488,7 +514,7 @@
                 "scaleX": 1.5,
                 "scaleY": 1.5,
                 "padding": 0,
-                "fontSize": 50,
+                "fontSize": 44,
                 "align": "center"
             },
             "portraitDynamic": {
@@ -499,7 +525,7 @@
                 }
             },
             "androidLandscapeAttrs": {
-                "fontSize": 50,
+                "fontSize": 44,
                 "padding": 30
             },
             "events": {}
@@ -514,12 +540,20 @@
             "attrs": {
                 "text": "",
                 "x": 0,
-                "fontSize": 30,
-                "fontFamily": "YanoneKaffeesatz",
+                "fontSize": 22,
+                "fontFamily": "Inter",
+                "fontStyle": "normal",
                 "align": "right",
                 "padding": 60,
                 "wrap": "word",
-                "fill": "white"
+                "fill": "#F2A9D5",
+                "stroke": "#0A0614",
+                "strokeWidth": 1,
+                "perfectDrawEnabled": "false",
+                "shadowColor": "#05030A",
+                "shadowBlur": 14,
+                "shadowOpacity": 0.9,
+                "shadowOffsetY": 2
             },
             "dynamic": {
                 "y": {
@@ -527,7 +561,7 @@
                     "op": "+",
                     "left": {
                         "kind": "static",
-                        "value": 74
+                        "value": 70
                     },
                     "right": {
                         "kind": "viewport",
@@ -544,11 +578,11 @@
             "portraitAttrs": {
                 "y": 40,
                 "padding": 60,
-                "fontSize": 30,
+                "fontSize": 20,
                 "align": "center"
             },
             "androidLandscapeAttrs": {
-                "fontSize": 25,
+                "fontSize": 18,
                 "padding": 30
             },
             "events": {}

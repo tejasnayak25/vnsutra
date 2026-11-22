@@ -4,53 +4,166 @@
 @source "../node_modules/flowbite";
 
 @layer components {
+  /* Disclaimer Modal Glassmorphism & Aesthetics */
   #disclaimer-modal {
-    @apply bg-slate-950/70;
+    --disclaimer-color: #B88AEF;
   }
 
   #disclaimer-modal.hidden {
-    @apply hidden;
+    display: none !important;
   }
 
-  #disclaimer-card {
-    @apply max-w-md;
+  #disclaimer-body-wrap {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(184, 138, 239, 0.4) transparent;
   }
 
-  #disclaimer-body {
-    @apply w-full text-sm leading-relaxed;
+  #disclaimer-body-wrap::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  #disclaimer-body-wrap::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  #disclaimer-body-wrap::-webkit-scrollbar-thumb {
+    background-color: rgba(184, 138, 239, 0.4);
+    border-radius: 9999px;
   }
 
   #disclaimer-body h2,
   #disclaimer-body h4 {
-    @apply text-lg font-bold mt-4 mb-2;
+    color: #B88AEF;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    margin-top: 0.85rem;
+    margin-bottom: 0.35rem;
+  }
+
+  #disclaimer-body h2:first-child,
+  #disclaimer-body h4:first-child {
+    margin-top: 0;
   }
 
   #disclaimer-body h3 {
-    @apply text-base font-semibold mt-3 mb-1;
+    color: #F2A9D5;
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-top: 0.65rem;
+    margin-bottom: 0.25rem;
   }
 
   #disclaimer-body p {
-    @apply mb-3;
+    color: rgba(248, 242, 255, 0.85);
+    margin-bottom: 0.6rem;
+    line-height: 1.6;
   }
 
   #disclaimer-body ul,
   #disclaimer-body ol {
-    @apply ml-5 mb-3;
+    margin-left: 0.25rem;
+    margin-bottom: 0.6rem;
+    list-style-type: none;
+    padding-left: 0;
   }
 
   #disclaimer-body li {
-    @apply mb-1;
+    position: relative;
+    padding-left: 1.25rem;
+    margin-bottom: 0.35rem;
+    color: rgba(248, 242, 255, 0.80);
+    line-height: 1.5;
+  }
+
+  #disclaimer-body li::before {
+    content: "✦";
+    position: absolute;
+    left: 0;
+    color: #B88AEF;
+    font-size: 0.75rem;
+    top: 0.15rem;
   }
 
   #disclaimer-body a {
-    @apply underline hover:opacity-80 transition-opacity;
+    color: #F2A9D5;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    transition: color 0.15s ease, opacity 0.15s ease;
+  }
+
+  #disclaimer-body a:hover {
+    color: #FFFFFF;
+    opacity: 0.95;
   }
 
   #disclaimer-body strong {
-    @apply font-semibold;
+    color: #FFFFFF;
+    font-weight: 600;
   }
 
   #disclaimer-body em {
-    @apply italic;
+    color: #F2A9D5;
+    font-style: italic;
+  }
+
+  /* Alert Window Glassmorphism & Aesthetics */
+  #alert-win {
+    --alert-color: #B88AEF;
+    --alert-glow: rgba(184, 138, 239, 0.25);
+  }
+
+  #alert-win.hidden {
+    display: none !important;
+  }
+
+  #alert-message-wrap::-webkit-scrollbar,
+  #alert-opts::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  #alert-message-wrap::-webkit-scrollbar-track,
+  #alert-opts::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 9999px;
+  }
+
+  #alert-message-wrap::-webkit-scrollbar-thumb,
+  #alert-opts::-webkit-scrollbar-thumb {
+    background: rgba(184, 138, 239, 0.35);
+    border-radius: 9999px;
+  }
+
+  #alert-message-wrap::-webkit-scrollbar-thumb:hover,
+  #alert-opts::-webkit-scrollbar-thumb:hover {
+    background: rgba(184, 138, 239, 0.65);
+  }
+
+  #alert-btns button {
+    border-radius: 0.75rem;
+    padding: 0.55rem 1.25rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    letter-spacing: 0.015em;
+    transition: all 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    cursor: pointer;
+  }
+
+  #alert-btns button:active {
+    transform: scale(0.96);
+  }
+
+  #alert-btns button.btn-outline {
+    background-color: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #F8F2FF;
+  }
+
+  #alert-btns button.btn-outline:hover {
+    background-color: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.4);
+    color: #FFFFFF;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
   }
 }

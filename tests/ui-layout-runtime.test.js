@@ -204,7 +204,8 @@ describe("ui-layout runtime", () => {
             Group: MockNode,
             Rect: MockNode,
             Text: MockNode,
-            Image: MockImageNode
+            Image: MockImageNode,
+            Shape: MockNode
         };
 
         const originalImage = globalThis.Image;
@@ -257,6 +258,72 @@ describe("ui-layout runtime", () => {
             expect(hero.attrs.src).toBeUndefined();
             expect(hero.boundImage).toBeDefined();
             expect(hero.boundImage.src).toBe("./assets/images/hero.png");
+        } finally {
+            globalThis.Image = originalImage;
+        }
+    });
+
+    test("instantiates nine-slice nodes with Shape and loads bound image", () => {
+        class MockNode {
+            constructor(attrs = {}) {
+                this.attrs = { ...attrs };
+            }
+            getAttr(key) { return this.attrs[key]; }
+            setAttr(key, val) { this.attrs[key] = val; }
+            setAttrs(next) { Object.assign(this.attrs, next); }
+            width() { return this.attrs.width || 0; }
+            height() { return this.attrs.height || 0; }
+            on() {}
+        }
+
+        const Konva = {
+            Group: MockNode,
+            Rect: MockNode,
+            Text: MockNode,
+            Image: MockNode,
+            Shape: MockNode
+        };
+
+        const originalImage = globalThis.Image;
+        class FakeImage {
+            set src(val) {
+                this._src = val;
+                if (typeof this.onload === "function") this.onload();
+            }
+            get src() { return this._src; }
+        }
+        globalThis.Image = FakeImage;
+
+        try {
+            const plan = {
+                nodes: [
+                    {
+                        id: "frame",
+                        type: "nine-slice",
+                        parentId: null,
+                        attrs: {
+                            src: "./assets/images/frame.png",
+                            slice: [20, 20, 20, 20],
+                            width: 500,
+                            height: 180
+                        },
+                        dynamic: {},
+                        events: {}
+                    }
+                ]
+            };
+
+            const { nodesById } = createKonvaNodesFromPlan({
+                Konva,
+                plan,
+                context: { stageWidth: 1000, stageHeight: 600, parentWidth: 1000, parentHeight: 600 }
+            });
+
+            const frame = nodesById.get("frame").node;
+            expect(frame).toBeDefined();
+            expect(frame.boundImage).toBeDefined();
+            expect(frame.boundImage.src).toBe("./assets/images/frame.png");
+            expect(frame._nineSliceBorders).toEqual([20, 20, 20, 20]);
         } finally {
             globalThis.Image = originalImage;
         }

@@ -21,9 +21,9 @@ class Sfx {
         const id = currentInstructionCount + 1;
         if ((state.instruction_count ?? 0) > id) return;
 
-        if (gameSettings["settings-sfx"] === true) {
+        if (gameSettings["settings-sfx"] !== false) {
             this.elem.src = this.src;
-            this.elem.play();
+            this.elem.play()?.catch?.(() => {});
         }
     }
 

@@ -507,7 +507,7 @@ This is permissive for writing, but a language service should probably warn on i
 
 ```text
 @camera.pan x=0.1 y=-0.05 zoom=1.35 duration=0.8
-@camera.focus actor="nanami" zoom=1.25 duration=0.7
+@camera.focus actor="sakura" zoom=1.25 duration=0.7
 @camera.reset duration=0.6
 @camera.lighting preset="sunset"
 ```

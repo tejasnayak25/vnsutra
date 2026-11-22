@@ -11,6 +11,8 @@ let game = null;
 /** @type {{ text_animation: boolean, [key: string]: any }} */
 let gameSettings = {
     text_animation: true,
+    "settings-music": true,
+    "settings-sfx": true,
     [STORAGE_KEYS.ACCESSIBILITY_HIGH_CONTRAST]: false,
     [STORAGE_KEYS.ACCESSIBILITY_REDUCE_MOTION]: false,
     [STORAGE_KEYS.ACCESSIBILITY_FONT_SCALE]: 1
@@ -29,7 +31,25 @@ let exitApp = () => {
 };
 /** @type {() => void} */
 let bgm = () => {
-    document.getElementById("music")?.play();
+    const elem = document.getElementById("music");
+    if (!elem) return;
+    try {
+        const playPromise = elem.play();
+        if (playPromise && typeof playPromise.catch === "function") {
+            playPromise.catch(() => {
+                // If browser autoplay policy blocked playback, resume on the first user interaction
+                const unlock = () => {
+                    if (gameSettings["settings-music"] !== false) {
+                        elem.play()?.catch?.(() => {});
+                    }
+                };
+                window.addEventListener("pointerdown", unlock, { once: true, capture: true });
+                window.addEventListener("keydown", unlock, { once: true, capture: true });
+            });
+        }
+    } catch {
+        // Ignore synchronous play errors
+    }
 };
 /** @type {boolean} */
 let autoplay = false;
@@ -177,9 +197,17 @@ export const getOpenWindow = () => openWindow;
 /** @param {string|null} value */
 export const setOpenWindow = (value) => {
     openWindow = value;
-    globalThis.dispatchEvent(new CustomEvent("vnsutra:open-window-changed", {
-        detail: { windowName: value }
-    }));
+    if (typeof globalThis !== "undefined" && typeof globalThis.dispatchEvent === "function") {
+        const CustomEventCtor = typeof CustomEvent !== "undefined" ? CustomEvent : (globalThis.CustomEvent || class {
+            constructor(type, init = {}) {
+                this.type = type;
+                this.detail = init.detail;
+            }
+        });
+        globalThis.dispatchEvent(new CustomEventCtor("vnsutra:open-window-changed", {
+            detail: { windowName: value }
+        }));
+    }
 };
 /** @returns {boolean} */
 export const getIsInputFocused = () => isInputFocused;

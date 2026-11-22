@@ -2,14 +2,16 @@
 export default [
     {
         "type": "scene.transition",
-        "transitionType": "fade",
-        "color": "#000000",
-        "duration": 250
+        "transitionType": "crossfade",
+        "color": "800"
     },
     {
-        "type": "background",
-        "reset": true,
-        "asset": "futon_room"
+        "type": "stage",
+        "asset": "futon_stage",
+        "options": {
+            "mouseTilt": true
+        },
+        "duration": 0.8
     },
     {
         "type": "actor.reset",

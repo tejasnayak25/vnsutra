@@ -387,4 +387,65 @@ describe("Story Script Runner Lifecycle Integration", () => {
         );
         expect(endMock).toHaveBeenCalledTimes(1);
     });
+
+    test("Fast catch-up mode clamps animations, zooms, and waits to 0 duration when replaying saved past state", async () => {
+        const { createStoryFromScript, dialogMock } = await createRunnerHarness();
+        const { setState, setInstructionCount } = await import("../vnsutra_modules/runtime-state.js");
+
+        // Simulate resuming a save where instruction_count is 2
+        setState({ instruction_count: 2 });
+        setInstructionCount(0);
+
+        const panMock = jest.fn(async () => {});
+        const slideInMock = jest.fn(async () => {});
+        const actorToMock = jest.fn(async () => {});
+        const transitionMock = jest.fn(async () => {});
+        const playSFXMock = jest.fn(async () => {});
+
+        const gameInstance = {
+            camera: { pan: panMock },
+            transitionEffect: transitionMock,
+            playSFX: playSFXMock
+        };
+
+        const actorMock = {
+            data: { name: "mary" },
+            slideIn: slideInMock,
+            to: actorToMock
+        };
+
+        const story = createStoryFromScript({
+            scenes: {
+                start: [
+                    { type: "scene.transition", duration: 500 },
+                    { type: "camera.pan", x: 0.2, y: 0.1, zoom: 1.5, duration: 0.8 },
+                    { type: "actor.call", actor: "mary", method: "slideIn", args: [0.2, 0.8] },
+                    { type: "actor.to", actor: "mary", props: { x: 0.4 }, duration: 1000 },
+                    { type: "wait", duration: 5000 },
+                    { type: "sfx.play", track: "boom.mp3" },
+                    { type: "dialog", actor: "mary", text: "Line 1" },
+                    { type: "dialog", actor: "mary", text: "Line 2" }
+                ]
+            },
+            actors: { mary: actorMock },
+            getGame: () => gameInstance
+        });
+
+        // Track that wait did not actually sleep for 5 seconds
+        const startTime = Date.now();
+        await story.start();
+        const elapsed = Date.now() - startTime;
+
+        expect(elapsed).toBeLessThan(1000); // executed near-instantaneously
+        expect(transitionMock).not.toHaveBeenCalled(); // past transition skipped
+        expect(playSFXMock).not.toHaveBeenCalled(); // past SFX skipped
+        expect(panMock).toHaveBeenCalledWith(expect.objectContaining({ zoom: 1.5, duration: 0 })); // camera pan clamped to 0
+        expect(slideInMock).toHaveBeenCalledWith(0.2, 0); // slideIn duration clamped to 0
+        expect(actorToMock).toHaveBeenCalledWith(expect.objectContaining({ x: 0.4 }), expect.objectContaining({ duration: 0 })); // actor.to duration clamped to 0
+        expect(dialogMock).toHaveBeenCalledTimes(2);
+
+        // Reset state
+        setState({});
+        setInstructionCount(0);
+    });
 });

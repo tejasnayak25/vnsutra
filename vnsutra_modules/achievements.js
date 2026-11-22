@@ -282,11 +282,10 @@ class Achievements {
         const theme = this.getThemeColors();
 
         const toast = document.createElement("div");
-        toast.className = "pointer-events-auto rounded-xl border border-slate-400/40 border-l-4 border-l-amber-300 bg-slate-900/90 px-4 py-3 shadow-xl backdrop-blur-sm";
+        toast.className = "pointer-events-auto rounded-xl border border-slate-400/40 bg-slate-900/90 px-4 py-3 shadow-xl backdrop-blur-sm";
         toast.style.background = `${theme.menu}f2`;
         toast.style.color = theme.text;
         toast.style.borderColor = theme.menuBorder;
-        toast.style.borderLeftColor = theme.primary;
 
         const heading = document.createElement("p");
         heading.className = "text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-amber-300";

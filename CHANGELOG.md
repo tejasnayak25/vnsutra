@@ -2,6 +2,33 @@
 
 All notable changes to **VN-Sutra** are documented in this file.
 
+## [3.0.0] - 2026-11-22
+
+### Added
+- **2.5D Depth Parallax Stages (`.vnstage`):**
+  - Standalone binary container specification (`VNST`) bundling high-efficiency packed WebP texture atlases with JSON metadata in a single network payload.
+  - Automated deep-learning background processor (`scripts/build-stage-atlas.py`) utilizing SegFormer (ADE20K) for semantic scene understanding and Depth-Anything-V2 for continuous metric relative depth estimation.
+  - Push-pull normalized background inpainting behind occluding foreground geometry (zero texture tearing, zero holes, zero ghost duplicates).
+  - Runtime `ParallaxStage` module with dynamic camera counter-shifting, mouse tilt tracking, overscan management, and continuous depth displacement.
+  - Added `@stage` directive to `.vn` story scripts and smooth stage-to-stage crossfade transitions (`transition: crossfade <duration>`).
+- **Character Evolution & Sakura Integration:**
+  - Integrated `Sakura` as the flagship intro rigged character with `Casual.vnsprite` bundle, secondary spring physics, eyelid blinks, lip-sync, and quintic mood crossfades.
+- **Model Downloader & Production Asset Tooling:**
+  - Added `scripts/download_stage_models.py` (`npm run models:download:stages`) for pre-caching and verifying SegFormer B0 ADE20K and Depth-Anything-V2 models.
+  - Standardized pipeline scripts in `package.json`: `assets:stages`, `assets:rig`, `models:download`, and `assets:backgrounds`.
+- **Modernized UI & Dark Amethyst Theme:**
+  - Upgraded theme styling with Dark Amethyst palette (`#17152F`, `#B88AEF`, `#F2A9D5`).
+  - Redesigned Alert Window, Disclaimer Window, and Chapter selection.
+
+### Changed
+- Replaced demo character `Nanami` with `Sakura` across all story scripts (`start.vn`), game definitions (`assets.js`, `story.js`), compiled scenes, and preview tools.
+- Moved experimental exploration and prototype scripts into `research/`, keeping `scripts/` dedicated to production builders and packagers.
+- Fixed button shift jump in input proceed dialogs during form submissions.
+
+### Removed
+- Retired legacy uncompressed `Nanami` character assets and intermediate PSD extraction test artifacts.
+- Removed unused and dummy asset files across the repository, keeping the manifest minimal and production-focused.
+
 ## [2.1.0] - 2026-11-12
 
 ### Added

@@ -5,7 +5,7 @@
  */
 import { konvaStage } from "../stage.js";
 import { storage } from "../storage.js";
-import { getConfiguration, getGameSettings, getIsPortrait, getIsAndroid, getActiveLayer, getOpenWindow } from "../runtime-state.js";
+import { getConfiguration, getGameSettings, getIsPortrait, getIsAndroid, getActiveLayer, getOpenWindow, scaleFontSize } from "../runtime-state.js";
 import { STORAGE_KEYS } from "../constants.js";
 import errorTracking from "../error-tracking.js";
 
@@ -94,7 +94,8 @@ function openBar(bar, done = () => {}) {
     bar.visible(true);
     bar.to({
         y: 0,
-        duration: 0.1,
+        duration: 0.28,
+        easing: Konva?.Easings?.EaseOut,
         onFinish: () => {
             const overlayType = bar?.__vnsutraHistoryOverlay;
             if (overlayType) {
@@ -149,7 +150,8 @@ function closeBar(bar, done = () => {}) {
 
     bar.to({
         y: konvaStage.height(),
-        duration: 0.1,
+        duration: 0.22,
+        easing: Konva?.Easings?.EaseIn,
         onFinish: () => {
             bar.visible(false);
             const overlayType = bar?.__vnsutraHistoryOverlay;
@@ -177,18 +179,20 @@ function animateBtn(btn, done = () => {}) {
     const { x, y, width, height } = btn.getAttrs();
 
     btn.to({
-        scaleX: 0.96,
-        scaleY: 0.96,
-        x: x - width*(-0.04)/2,
-        y: y - height*(-0.04)/2,
-        duration: 0.05,
+        scaleX: 0.95,
+        scaleY: 0.95,
+        x: x - width * (-0.05) / 2,
+        y: y - height * (-0.05) / 2,
+        duration: 0.09,
+        easing: Konva?.Easings?.EaseOut,
         onFinish: () => {
             btn.to({
                 scaleX: 1,
                 scaleY: 1,
                 x: x,
                 y: y,
-                duration: 0.05,
+                duration: 0.14,
+                easing: Konva?.Easings?.BackEaseOut,
                 onFinish: () => {
                     done();
                 }
@@ -207,24 +211,27 @@ function animateMenu(menu, done = () => {}) {
         return;
     }
 
-    if(menu.visible()) {
+    if (menu.visible()) {
         menu.to({
-            scaleY: 0,
+            scaleY: 0.85,
             opacity: 0,
-            duration: 0.02,
+            duration: 0.18,
+            easing: Konva?.Easings?.EaseIn,
             onFinish: () => {
                 menu.visible(false);
+                menu.scaleY(1);
                 done();
             }
         });
     } else {
         menu.visible(true);
-        menu.scaleY(0);
+        menu.scaleY(0.85);
         menu.opacity(0);
         menu.to({
             scaleY: 1,
             opacity: 1,
-            duration: 0.02,
+            duration: 0.22,
+            easing: Konva?.Easings?.EaseOut,
             onFinish: () => {
                 done();
             }
@@ -326,8 +333,8 @@ class Switch {
             x: padding + diagonal + 15,
             y: padding,
             text: label,
-            fontFamily: fonts["other"],
-            fontSize: isPortrait ? 30 : (isAndroid ? 25 :  30),
+            fontFamily: fonts["other"]?.name || fonts["other"] || "Inter",
+            fontSize: scaleFontSize(isPortrait ? 17 : (isAndroid ? 15 : 16)),
             fill: config.colors.text,
             fillAfterStrokeEnabled: true
         });
@@ -516,16 +523,13 @@ class ChoiceMenu {
 
         div.innerHTML = `
         <div class="flex w-full max-w-full flex-col gap-2">
-            <div class="flex items-center justify-between gap-3 px-1 pb-1">
-                <div class="min-w-0">
-                    <div class="text-xs uppercase tracking-[0.28em] opacity-55">Choice</div>
-                    <div class="text-sm opacity-85">${multiSelect ? "Pick any combination" : "Pick one option"}</div>
-                </div>
-                <div class="shrink-0 rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] opacity-80" style="border-color: ${mutedBorderColor}; color: ${textColor};">
-                    ${multiSelect ? "Multi-select" : "Single-select"}
-                </div>
-            </div>
-            <ul class="flex max-h-72 flex-col gap-3 overflow-y-auto pr-1">
+            ${multiSelect ? `
+            <div class="flex items-center justify-end px-1 pb-1">
+                <span class="rounded-full border px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-[0.14em] opacity-80" style="border-color: ${mutedBorderColor}; color: ${textColor};">
+                    Multi-select
+                </span>
+            </div>` : ""}
+            <ul class="flex max-h-72 flex-col gap-2.5 overflow-y-auto pr-1">
                 ${getChoiceOptions(options, id, multiSelect)}
             </ul>
         </div>

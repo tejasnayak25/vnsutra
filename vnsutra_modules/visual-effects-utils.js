@@ -312,6 +312,7 @@ function initVisualEffectsSystem(gameInstance) {
                     if (elapsed < totalMs) {
                         scheduleFrame(tick);
                     } else {
+                        wipeNode.remove?.();
                         wipeNode.destroy?.();
                         layer?.batchDraw?.();
                         if (!resolved) {

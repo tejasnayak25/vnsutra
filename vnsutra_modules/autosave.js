@@ -59,14 +59,20 @@ class AutoSave {
             }
 
             const gameBox = konvaStage.findOne("#game-box");
-            if (!gameBox || typeof gameBox.toDataURL !== "function") {
+            if (!gameBox || typeof gameBox.toDataURL !== "function" || !gameBox.getStage?.()) {
                 return null;
             }
 
+            const boxY = typeof gameBox.y === "function" ? gameBox.y() : 0;
+            const boxW = typeof gameBox.width === "function" ? gameBox.width() : konvaStage.width();
+            const boxH = typeof gameBox.height === "function" ? gameBox.height() : konvaStage.height();
+
             return gameBox.toDataURL({
-                imageSmoothingEnabled: true,
-                width: gameBox.width(),
-                height: gameBox.height(),
+                x: 0,
+                y: boxY,
+                width: boxW,
+                height: boxH,
+                imageSmoothingEnabled: true
             });
         } catch (error) {
             errorTracking?.captureError(error, {

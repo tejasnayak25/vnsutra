@@ -289,11 +289,273 @@ function bindActionbarScroll({
     return cleanup;
 }
 
+function bindHorizontalScroll({
+    actionbar,
+    actionContent,
+    contentNode,
+    touchTargets = [],
+    inertia = true,
+    wheelFactor = 1,
+    dragFactor = 1,
+    allow2D = false,
+    resetToStart = true
+}) {
+    if (!actionbar || !actionContent || !contentNode) {
+        return () => {};
+    }
+
+    if (typeof actionbar.__scrollCleanup === "function") {
+        actionbar.__scrollCleanup();
+    }
+
+    const scrollbar = actionbar.scrollbar;
+    const scrollbarWasVisible = typeof scrollbar?.visible === "function" ? scrollbar.visible() : true;
+    if (typeof scrollbar?.visible === "function") {
+        scrollbar.visible(false);
+    }
+
+    if (!Number.isFinite(contentNode.__actionbarBaseX)) {
+        contentNode.__actionbarBaseX = contentNode.x();
+    }
+    if (!Number.isFinite(contentNode.__actionbarBaseY)) {
+        contentNode.__actionbarBaseY = contentNode.y();
+    }
+    const baseX = contentNode.__actionbarBaseX;
+    const baseY = contentNode.__actionbarBaseY;
+    const targets = (touchTargets.length ? touchTargets : [actionContent]).filter(Boolean);
+
+    let scrollX = resetToStart ? 0 : Math.max(0, baseX - contentNode.x());
+    let scrollY = (resetToStart || !allow2D) ? 0 : Math.max(0, baseY - contentNode.y());
+
+    const getMaxScrollX = () => Math.max(0, contentNode.width() - actionContent.width());
+    const getMaxScrollY = () => allow2D ? Math.max(0, contentNode.height() - actionContent.height()) : 0;
+
+    const applyScroll = () => {
+        const maxX = getMaxScrollX();
+        scrollX = Math.max(0, Math.min(scrollX, maxX));
+        contentNode.x(baseX - scrollX);
+
+        if (allow2D) {
+            const maxY = getMaxScrollY();
+            scrollY = Math.max(0, Math.min(scrollY, maxY));
+            contentNode.y(baseY - scrollY);
+        } else {
+            contentNode.y(baseY);
+        }
+    };
+
+    applyScroll();
+
+    let dragListenersAttached = false;
+    let startClientX = 0;
+    let startClientY = 0;
+    let startScrollX = 0;
+    let startScrollY = 0;
+    let lastMoveTs = 0;
+    let inertiaVelocityX = 0;
+    let inertiaVelocityY = 0;
+    let inertiaRaf = null;
+    let inertiaLastTs = 0;
+    let touchMoved = false;
+
+    const stopInertia = () => {
+        if (inertiaRaf !== null) {
+            cancelAnimationFrame(inertiaRaf);
+            inertiaRaf = null;
+        }
+        inertiaLastTs = 0;
+        inertiaVelocityX = 0;
+        inertiaVelocityY = 0;
+    };
+
+    const markTouchScroll = () => {
+        touchMoved = true;
+        actionbar.__scrollSuppressTapUntil = performance.now() + 350;
+    };
+
+    const runInertia = () => {
+        if (!inertia || (Math.abs(inertiaVelocityX) < 0.02 && Math.abs(inertiaVelocityY) < 0.02)) {
+            stopInertia();
+            return;
+        }
+
+        const step = (ts) => {
+            if (!inertiaLastTs) {
+                inertiaLastTs = ts;
+            }
+            const dt = Math.min(32, Math.max(8, ts - inertiaLastTs));
+            inertiaLastTs = ts;
+
+            scrollX += inertiaVelocityX * dt;
+            if (allow2D) {
+                scrollY += inertiaVelocityY * dt;
+            }
+            applyScroll();
+
+            inertiaVelocityX *= Math.pow(0.92, dt / 16);
+            inertiaVelocityY *= Math.pow(0.92, dt / 16);
+
+            if (Math.abs(inertiaVelocityX) < 0.02 && Math.abs(inertiaVelocityY) < 0.02) {
+                stopInertia();
+                return;
+            }
+
+            inertiaRaf = requestAnimationFrame(step);
+        };
+
+        if (inertiaRaf !== null) {
+            cancelAnimationFrame(inertiaRaf);
+        }
+        inertiaLastTs = 0;
+        inertiaRaf = requestAnimationFrame(step);
+    };
+
+    const removeDragListeners = () => {
+        if (!dragListenersAttached) return;
+        window.removeEventListener("mousemove", onMouseMove);
+        window.removeEventListener("mouseup", onPointerUp);
+        window.removeEventListener("touchmove", onTouchMove);
+        window.removeEventListener("touchend", onPointerUp);
+        window.removeEventListener("touchcancel", onPointerUp);
+        dragListenersAttached = false;
+    };
+
+    const onMouseMove = (e) => {
+        const deltaX = startClientX - e.clientX;
+        const deltaY = startClientY - e.clientY;
+        if (!touchMoved && (Math.abs(deltaX) >= 6 || (allow2D && Math.abs(deltaY) >= 6))) {
+            markTouchScroll();
+        }
+
+        const prevX = scrollX;
+        const prevY = scrollY;
+        scrollX = startScrollX + (deltaX * dragFactor);
+        if (allow2D) {
+            scrollY = startScrollY + (deltaY * dragFactor);
+        }
+        applyScroll();
+
+        const now = performance.now();
+        const dt = Math.max(1, now - lastMoveTs);
+        inertiaVelocityX = (scrollX - prevX) / dt;
+        inertiaVelocityY = (scrollY - prevY) / dt;
+        lastMoveTs = now;
+    };
+
+    const onTouchMove = (e) => {
+        const touch = e.touches?.[0];
+        if (!touch) return;
+        e.preventDefault?.();
+
+        const deltaX = startClientX - touch.clientX;
+        const deltaY = startClientY - touch.clientY;
+        if (!touchMoved && (Math.abs(deltaX) >= 6 || (allow2D && Math.abs(deltaY) >= 6))) {
+            markTouchScroll();
+        }
+
+        const prevX = scrollX;
+        const prevY = scrollY;
+        scrollX = startScrollX + (deltaX * dragFactor);
+        if (allow2D) {
+            scrollY = startScrollY + (deltaY * dragFactor);
+        }
+        applyScroll();
+
+        const now = performance.now();
+        const dt = Math.max(1, now - lastMoveTs);
+        inertiaVelocityX = (scrollX - prevX) / dt;
+        inertiaVelocityY = (scrollY - prevY) / dt;
+        lastMoveTs = now;
+    };
+
+    const onPointerUp = () => {
+        removeDragListeners();
+        if (!touchMoved) {
+            actionbar.__scrollSuppressTapUntil = 0;
+        }
+        runInertia();
+    };
+
+    const startDrag = (clientX, clientY) => {
+        stopInertia();
+        touchMoved = false;
+        actionbar.__scrollSuppressTapUntil = 0;
+        startClientX = clientX;
+        startClientY = clientY;
+        startScrollX = scrollX;
+        startScrollY = scrollY;
+        lastMoveTs = performance.now();
+        inertiaVelocityX = 0;
+        inertiaVelocityY = 0;
+
+        removeDragListeners();
+        window.addEventListener("mousemove", onMouseMove);
+        window.addEventListener("mouseup", onPointerUp);
+        window.addEventListener("touchmove", onTouchMove, { passive: false });
+        window.addEventListener("touchend", onPointerUp);
+        window.addEventListener("touchcancel", onPointerUp);
+        dragListenersAttached = true;
+    };
+
+    const onTargetPointerDown = (ev) => {
+        if (ev.type === "touchstart") {
+            const touch = ev.evt?.touches?.[0] || ev.touches?.[0];
+            if (touch) startDrag(touch.clientX, touch.clientY);
+            return;
+        }
+        startDrag(ev.evt?.clientX ?? ev.clientX, ev.evt?.clientY ?? ev.clientY);
+    };
+
+    const onWheel = (e) => {
+        const { x: minX, y: minY } = actionContent.getAbsolutePosition?.() || { x: 0, y: 0 };
+        const maxX = minX + actionContent.width();
+        const maxY = minY + actionContent.height();
+        const inBounds = e.clientX >= minX && e.clientX <= maxX && e.clientY >= minY && e.clientY <= maxY;
+        if (!inBounds) return;
+
+        e.preventDefault?.();
+        stopInertia();
+
+        let delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+        if (e.deltaMode === 1) delta *= 16;
+        else if (e.deltaMode === 2) delta *= actionContent.width();
+
+        scrollX += delta * wheelFactor;
+        applyScroll();
+    };
+
+    targets.forEach((target) => {
+        target.off("mousedown touchstart", onTargetPointerDown);
+        target.on("mousedown touchstart", onTargetPointerDown);
+    });
+
+    window.addEventListener("wheel", onWheel, { passive: false });
+
+    const cleanup = () => {
+        if (actionbar.__scrollCleanup === cleanup) {
+            actionbar.__scrollCleanup = null;
+        }
+        removeDragListeners();
+        stopInertia();
+        actionbar.__scrollSuppressTapUntil = 0;
+        window.removeEventListener("wheel", onWheel);
+        targets.forEach((target) => {
+            target.off("mousedown touchstart", onTargetPointerDown);
+        });
+        if (typeof scrollbar?.visible === "function") {
+            scrollbar.visible(scrollbarWasVisible);
+        }
+    };
+
+    actionbar.__scrollCleanup = cleanup;
+    return cleanup;
+}
+
 function cleanupActionbarScroll(actionbar) {
     if (actionbar && typeof actionbar.__scrollCleanup === "function") {
         actionbar.__scrollCleanup();
     }
 }
 
-export { bindActionbarScroll, cleanupActionbarScroll };
+export { bindActionbarScroll, bindHorizontalScroll, cleanupActionbarScroll };
 export default bindActionbarScroll;

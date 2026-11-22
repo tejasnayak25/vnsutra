@@ -1,7 +1,7 @@
 {
     "engineVersion": "0.1.0",
     "screen": "gameui",
-    "hash": "sha256:ad3ee9c05081b16f5f40121dcdeefb401ffe597239bfde7834d2d366305cbc16",
+    "hash": "sha256:0ea0050b4fff0bee3208d3bae48d2b939ac45332ac00c4a7f767477bb78f5b2e",
     "nodeCount": 11,
     "nodes": [
         {
@@ -62,7 +62,9 @@
             ],
             "attrs": {
                 "x": 0,
-                "y": 0
+                "y": 0,
+                "fill": "#17152F",
+                "opacity": 1
             },
             "dynamic": {
                 "width": {
@@ -87,7 +89,9 @@
             ],
             "attrs": {
                 "x": 0,
-                "height": 2
+                "height": 2,
+                "fill": "#B88AEF",
+                "opacity": 0.4
             },
             "dynamic": {
                 "y": {
@@ -147,7 +151,16 @@
             "attrs": {
                 "x": 0,
                 "y": 0,
-                "strokeWidth": 4,
+                "fill": "#17152F",
+                "opacity": 0.9,
+                "stroke": "#B88AEF",
+                "strokeWidth": 1.5,
+                "cornerRadius": [
+                    20,
+                    20,
+                    4,
+                    4
+                ],
                 "fillAfterStrokeEnabled": true
             },
             "dynamic": {
@@ -199,7 +212,16 @@
             "attrs": {
                 "x": 0,
                 "y": 0,
-                "strokeWidth": 4,
+                "fill": "#252044",
+                "opacity": 0.96,
+                "stroke": "#F2A9D5",
+                "strokeWidth": 1.5,
+                "cornerRadius": [
+                    16,
+                    16,
+                    4,
+                    4
+                ],
                 "fillAfterStrokeEnabled": true
             },
             "dynamic": {
@@ -225,8 +247,9 @@
             ],
             "attrs": {
                 "x": 0,
-                "height": 4,
-                "opacity": 0.9
+                "height": 0,
+                "opacity": 0,
+                "visible": false
             },
             "dynamic": {
                 "y": {
@@ -257,14 +280,16 @@
             ],
             "attrs": {
                 "text": "Alex",
-                "x": 200,
+                "x": 160,
                 "y": 0,
                 "align": "center",
                 "verticalAlign": "middle",
-                "padding": 15,
-                "fontSize": 25,
+                "padding": 14,
+                "fontSize": 28,
+                "fontStyle": "bold",
                 "fontFamily": "YanoneKaffeesatz",
                 "wrap": "none",
+                "fill": "#F8F2FF",
                 "fillAfterStrokeEnabled": true
             },
             "dynamic": {},
@@ -289,14 +314,16 @@
             ],
             "attrs": {
                 "text": "",
-                "x": 100,
+                "x": 120,
                 "y": 0,
                 "align": "left",
                 "verticalAlign": "middle",
-                "padding": 10,
-                "fontSize": 25,
+                "padding": 16,
+                "fontSize": 28,
+                "lineHeight": 1.6,
                 "fontFamily": "YanoneKaffeesatz",
                 "wrap": "word",
+                "fill": "#F8F2FF",
                 "fillAfterStrokeEnabled": true
             },
             "dynamic": {
@@ -310,7 +337,7 @@
                     },
                     "right": {
                         "kind": "static",
-                        "value": 200
+                        "value": 240
                     }
                 }
             },

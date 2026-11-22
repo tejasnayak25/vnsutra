@@ -137,4 +137,57 @@ describe("ui-layout compiler", () => {
         expect(logo.attrs.width).toBe(120);
         expect(logo.attrs.height).toBe(80);
     });
+
+    test("compiles nine-slice nodes with slice borders and image source", () => {
+        const xmlSource = [
+            "<view id=\"root\">",
+            "    <nine-slice id=\"frame\" class=\"dialog-frame\" src=\"assets/frame.png\" slice=\"24 24 24 24\" />",
+            "</view>"
+        ].join("\n");
+
+        const cssSource = [
+            "#root { width: 100%; height: 100%; }",
+            ".dialog-frame { width: 80%; height: 200px; opacity: 0.9; }"
+        ].join("\n");
+
+        const plan = compileUiLayout({
+            screen: "gameui",
+            xmlSource,
+            cssSource
+        });
+
+        const frameNode = plan.nodes.find((n) => n.id === "frame");
+        expect(frameNode).toBeDefined();
+        expect(frameNode.type).toBe("nine-slice");
+        expect(frameNode.attrs.src).toBe("assets/frame.png");
+        expect(frameNode.attrs.slice).toEqual([24, 24, 24, 24]);
+        expect(frameNode.attrs.opacity).toBe(0.9);
+    });
+
+    test("compiles 4-corner corner-radius and shadow attributes", () => {
+        const xmlSource = [
+            "<view id=\"root\">",
+            "    <rect id=\"card\" class=\"cute-card\" />",
+            "</view>"
+        ].join("\n");
+
+        const cssSource = [
+            "#root { width: 100%; height: 100%; }",
+            ".cute-card { width: 300px; height: 150px; corner-radius: 16px 16px 0 0; shadow-color: black; shadow-blur: 10px; shadow-opacity: 0.5; shadow-offset-y: 4px; }"
+        ].join("\n");
+
+        const plan = compileUiLayout({
+            screen: "home",
+            xmlSource,
+            cssSource
+        });
+
+        const cardNode = plan.nodes.find((n) => n.id === "card");
+        expect(cardNode).toBeDefined();
+        expect(cardNode.attrs.cornerRadius).toEqual([16, 16, 0, 0]);
+        expect(cardNode.attrs.shadowColor).toBe("black");
+        expect(cardNode.attrs.shadowBlur).toBe(10);
+        expect(cardNode.attrs.shadowOpacity).toBe(0.5);
+        expect(cardNode.attrs.shadowOffsetY).toBe(4);
+    });
 });

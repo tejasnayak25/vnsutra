@@ -97,6 +97,86 @@ Build commands:
 - `npm run build:bundle` — Build + webpack production bundle + bundle script.
 - `npm run build:css` — Compile and minify CSS for production.
 
+---
+
+## 2.5D Parallax Stages & Live Backgrounds (`.vnstage`)
+
+VN-Sutra features an automated computer-vision pipeline that decomposes standard 2D visual novel backgrounds into hardware-accelerated 2.5D multi-plane parallax stages packaged as compact, standalone `.vnstage` binary bundles.
+
+Each `.vnstage` bundle encodes:
+1. **Semantic Scene Structure:** SegFormer (ADE20K) separates distant sky underlays, unbroken focal base scenery, and near-camera foreground overlays with push-pull background inpainting behind occluders (zero ghost duplicates or texture holes).
+2. **Continuous Metric Depth:** Depth-Anything-V2 estimates relative spatial depth for mouse tilt tracking and focal camera zooming.
+3. **Single Binary Container:** Packed WebP texture atlas with embedded metadata (`[4B "VNST" | u16 version=1 | u16 flags=0 | u32 jsonLen | UTF-8 manifest JSON | raw WebP atlas]`) loaded in a single network request.
+
+### 1. Download Model Weights
+Pre-download and verify the SegFormer and Depth-Anything vision models:
+```bash
+npm run models:download:stages
+```
+*(Or run `npm run models:download` to fetch both stage and character models).*
+
+### 2. Generate `.vnstage` Backgrounds
+Process all 2D background artworks into production `.vnstage` bundles:
+```bash
+npm run assets:stages
+```
+To process an individual image:
+```bash
+python scripts/build-stage-atlas.py assets/game-assets/backgrounds/my_scene.png
+```
+Generated `.vnstage` files are saved directly under `assets/game-assets/backgrounds/`.
+
+### 3. Interactive Preview Studio
+To inspect mouse parallax tilt, depth layers, camera panning, and character layering live in the browser:
+```bash
+npm run assets:backgrounds
+```
+This builds and serves `dist/stage-parallax-preview/preview.html`.
+
+### 4. Using Stages in Story Scripts (`.vn`)
+Load a parallax stage in story files with dynamic mouse tilt or depth zoom:
+```vn
+# Load a stage with interactive mouse tilt:
+@stage reset=true asset="cherry_park" options={"mouseTilt":true}
+
+# Smooth crossfade between parallax stages:
+transition: crossfade 800
+@stage asset="apartment_stage" options={"mouseTilt":true} duration=0.8
+```
+
+In JavaScript asset definitions (`game/assets.js`):
+```js
+import { ParallaxStage } from "../vnsutra_modules/assets/index.js";
+
+const cherry_park = new ParallaxStage({
+    id: "cherry_park",
+    url: "backgrounds/cherry_park.vnstage"
+});
+```
+
+---
+
+## Live Rigged Characters (`.vnsprite`)
+
+VN-Sutra packages multi-mood 2D anime character sprites into `.vnsprite` bundles with GPU mesh deformation, secondary spring physics (hair and skirt sway), voice audio lip-sync, and quintic mood crossfades.
+
+### 1. Download Character Model Weights
+```bash
+npm run models:download:rig
+```
+Downloads DWPose 133 Keypoint Estimator, SegFormer Clothes Parser, and SlimSAM-77 ONNX models into `dist/.cache/`.
+
+### 2. Rig and Build `.vnsprite` Bundles
+```bash
+npm run assets:rig
+```
+To build or repack a specific character:
+```bash
+python -u scripts/rig-characters.py sakura --install
+```
+
+See [docs/RIGGED_CHARACTERS.md](docs/RIGGED_CHARACTERS.md) and [docs/PARALLAX_STAGES.md](docs/PARALLAX_STAGES.md) for full architecture and API documentation.
+
 Notes:
 
 - The dev server serves `api/` routes and static assets; see [api/index.js](api/index.js) and [api/dev.js](api/dev.js).

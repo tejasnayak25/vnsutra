@@ -1,19 +1,21 @@
 {
   "version": 1,
   "folders": {
+    "backgrounds/apartment_exterior_parallax": [
+      "01_sky_far.png",
+      "02_midground_mid.png",
+      "03_focal_near.png",
+      "04_framing_fore.png"
+    ],
+    "backgrounds/futon_room_parallax": [
+      "01_outside_far.png",
+      "02_backwall_mid.png",
+      "03_tatami_near.png",
+      "04_doorframe_fore.png"
+    ],
     "backgrounds/Noraneko_Background_Pack_1": [
       "Apartment_Exterior.png",
       "Futon_Room.png"
-    ],
-    "characters/Akane/Casual": [
-      "Happy.png",
-      "Neutral.png",
-      "Shocked.png"
-    ],
-    "characters/Nanami/Casual": [
-      "Happy.png",
-      "Shocked.png",
-      "Smiling.png"
     ],
     "characters/Rin/Casual": [
       "base_body.png",
@@ -21,6 +23,10 @@
       "Rin_Casual_OpenSmile_EyesClosed.png",
       "Rin_Casual_OpenSmile.png",
       "Rin_Casual_Smile.png"
+    ],
+    "characters/Sakura/Casual": [
+      "Happy.png",
+      "Smiling.png"
     ]
   }
 }

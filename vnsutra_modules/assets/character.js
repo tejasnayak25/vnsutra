@@ -111,10 +111,26 @@ class Character {
         }
     }
 
+    _ensureValidKonvaNode() {
+        if (this.img?._isDestroyed) {
+            const Konva = globalThis.Konva;
+            if (!Konva?.Image) return;
+            const oldAttrs = this.img.attrs ? { ...this.img.attrs } : {};
+            delete oldAttrs.id;
+            this.img = new Konva.Image({
+                ...oldAttrs,
+                image: this._outfit?.img || null
+            });
+        }
+    }
+
     show() {
         const game = getGame();
         if(game) {
-            game.ui.game.container.add(this.img);
+            this._ensureValidKonvaNode();
+            if (this.img.getParent() !== game.ui.game.container) {
+                game.ui.game.container.add(this.img);
+            }
         } else {
             throw new Error("Game UI not ready!");
         }
@@ -138,8 +154,11 @@ class Character {
 
             const game = getGame();
             if(game) {
+                this._ensureValidKonvaNode();
                 this.img.opacity(0);
-                game.ui.game.container.add(this.img);
+                if (this.img.getParent() !== game.ui.game.container) {
+                    game.ui.game.container.add(this.img);
+                }
                 this.img.to({
                     opacity: 1,
                     duration: duration,
@@ -162,6 +181,15 @@ class Character {
 
             const game = getGame();
             if(game) {
+                if (duration <= 0) {
+                    this.img.opacity(0);
+                    this.img.x(this.getValue("x", x));
+                    this.data.x = x;
+                    this.img.remove();
+                    this.img.getLayer()?.batchDraw?.();
+                    resolve();
+                    return;
+                }
                 this.img.to({
                     opacity: 0,
                     duration: duration,
@@ -185,11 +213,22 @@ class Character {
 
             const game = getGame();
             if(game) {
+                this._ensureValidKonvaNode();
                 this.img.opacity(0);
-                game.ui.game.container.add(this.img);
+                if (this.img.getParent() !== game.ui.game.container) {
+                    game.ui.game.container.add(this.img);
+                }
                 // Apply stored y position if set before image was loaded
                 if(typeof this.data.y === "number") {
                     this.img.y(this.getValue("y", this.data.y));
+                }
+                if (duration <= 0) {
+                    this.img.opacity(1);
+                    this.img.x(this.getValue("x", x));
+                    this.data.x = x;
+                    this.img.getLayer()?.batchDraw?.();
+                    resolve();
+                    return;
                 }
                 this.img.to({
                     opacity: 1,
@@ -215,6 +254,15 @@ class Character {
 
             const game = getGame();
             if(game) {
+                if (duration <= 0) {
+                    this.img.opacity(0);
+                    this.img.x(this.getValue("x", x));
+                    this.data.x = x;
+                    this.img.remove();
+                    this.img.getLayer()?.batchDraw?.();
+                    resolve();
+                    return;
+                }
                 this.img.to({
                     opacity: 0,
                     x: this.getValue("x", x),
@@ -234,6 +282,30 @@ class Character {
     to({ x = null, y = null, scale = null, opacity = null, blurRadius = null, noise = null, pixelSize = null, brightness = null, contrast = null, hue = null, saturation = null, luminance = null, mood = null, duration = 0.5 }) {
         return new Promise((resolve, reject) => {
             if(getShouldAbortGame()) {
+                resolve();
+                return;
+            }
+
+            if (duration <= 0) {
+                if (x !== null) { this.img.x(this.getValue("x", x)); this.data.x = x; }
+                if (y !== null) { this.img.y(this.getValue("y", y)); this.data.y = y; }
+                if (scale !== null) {
+                    const value = this.getValue("scale", scale);
+                    this.img.scaleX(value);
+                    this.img.scaleY(value);
+                    this.data.scale = scale;
+                }
+                if (opacity !== null) { this.img.opacity(opacity); this.data.opacity = opacity; }
+                if (blurRadius !== null && typeof this.img.blurRadius === "function") this.img.blurRadius(blurRadius);
+                if (noise !== null && typeof this.img.noise === "function") this.img.noise(noise);
+                if (pixelSize !== null && typeof this.img.pixelSize === "function") this.img.pixelSize(pixelSize);
+                if (brightness !== null && typeof this.img.brightness === "function") this.img.brightness(brightness);
+                if (contrast !== null && typeof this.img.contrast === "function") this.img.contrast(contrast);
+                if (hue !== null && typeof this.img.hue === "function") this.img.hue(hue);
+                if (saturation !== null && typeof this.img.saturation === "function") this.img.saturation(saturation);
+                if (luminance !== null && typeof this.img.luminance === "function") this.img.luminance(luminance);
+                if (mood !== null) this.mood = mood;
+                this.img.getLayer()?.batchDraw?.();
                 resolve();
                 return;
             }
@@ -767,10 +839,26 @@ class IMG {
         }
     }
 
+    _ensureValidKonvaNode() {
+        if (this.img?._isDestroyed) {
+            const Konva = globalThis.Konva;
+            if (!Konva?.Image) return;
+            const oldAttrs = this.img.attrs ? { ...this.img.attrs } : {};
+            delete oldAttrs.id;
+            this.img = new Konva.Image({
+                ...oldAttrs,
+                image: this.imageObj || null
+            });
+        }
+    }
+
     show() {
         const game = getGame();
         if(game) {
-            game.ui.game.container.add(this.img);
+            this._ensureValidKonvaNode();
+            if (this.img.getParent() !== game.ui.game.container) {
+                game.ui.game.container.add(this.img);
+            }
             // Apply stored position if set before image was loaded
             if(typeof this.data.x === "number") {
                 this.img.x(this.getValue("x", this.data.x));
@@ -832,6 +920,15 @@ class IMG {
 
             const game = getGame();
             if(game) {
+                if (duration <= 0) {
+                    this.img.opacity(0);
+                    this.img.x(this.getValue("x", x));
+                    this.data.x = x;
+                    this.img.remove();
+                    this.img.getLayer()?.batchDraw?.();
+                    resolve();
+                    return;
+                }
                 this.img.to({
                     opacity: 0,
                     duration: duration,
@@ -861,6 +958,14 @@ class IMG {
                 if(typeof this.data.y === "number") {
                     this.img.y(this.getValue("y", this.data.y));
                 }
+                if (duration <= 0) {
+                    this.img.opacity(1);
+                    this.img.x(this.getValue("x", x));
+                    this.data.x = x;
+                    this.img.getLayer()?.batchDraw?.();
+                    resolve();
+                    return;
+                }
                 this.img.to({
                     opacity: 1,
                     x: this.getValue("x", x),
@@ -885,6 +990,15 @@ class IMG {
             
             const game = getGame();
             if(game) {
+                if (duration <= 0) {
+                    this.img.opacity(0);
+                    this.img.x(this.getValue("x", x));
+                    this.data.x = x;
+                    this.img.remove();
+                    this.img.getLayer()?.batchDraw?.();
+                    resolve();
+                    return;
+                }
                 this.img.to({
                     opacity: 0,
                     x: this.getValue("x", x),

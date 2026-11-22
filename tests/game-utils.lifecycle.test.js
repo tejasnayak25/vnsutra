@@ -12,6 +12,7 @@ let setActiveScene;
 let getActiveScene;
 let setShouldAbortGame;
 let getAbortInstruction;
+let setOpenWindow;
 
 describe("Game Utils Lifecycle Integration", () => {
     let originalDocument;
@@ -63,7 +64,8 @@ describe("Game Utils Lifecycle Integration", () => {
             setActiveScene,
             getActiveScene,
             setShouldAbortGame,
-            getAbortInstruction
+            getAbortInstruction,
+            setOpenWindow
         } = await import("../vnsutra_modules/runtime-state.js"));
 
         ({ dialog, next } = await import("../vnsutra_modules/game-utils.js"));
@@ -235,5 +237,137 @@ describe("Game Utils Lifecycle Integration", () => {
         expect(spotlightClearSpy).toHaveBeenCalled();
         expect(transitionStopSpy).toHaveBeenCalled();
         expect(transitionOpacitySpy).toHaveBeenCalledWith(0);
+    });
+
+    it("does not advance dialog when clicking on the topbar / navbar", async () => {
+        let domClickListener = null;
+        const mockDomTarget = {
+            addEventListener: (event, handler) => {
+                if (event === "click") domClickListener = handler;
+            },
+            removeEventListener: (event, handler) => {
+                if (event === "click" && domClickListener === handler) domClickListener = null;
+            }
+        };
+
+        global.document.getElementById = jest.fn((id) => (id === "playground" ? mockDomTarget : null));
+
+        const mockViewport = {
+            y: () => 50, // Topbar height is 50px
+            on: jest.fn(),
+            off: jest.fn(),
+            getStage: () => ({
+                getPointerPosition: () => ({ x: 100, y: 25 }), // Click inside navbar (y < 50)
+                getIntersection: () => null,
+                container: () => mockDomTarget
+            })
+        };
+
+        setGame({
+            ui: {
+                dialog: {
+                    name: { text: jest.fn() },
+                    message: {
+                        text: jest.fn(),
+                        fire: jest.fn(),
+                        getLayer: () => ({ getStage: () => ({}) })
+                    }
+                },
+                game: {
+                    viewport: mockViewport,
+                    container: { on: jest.fn(), off: jest.fn() },
+                    end: { visible: jest.fn() },
+                    loading: { visible: jest.fn() }
+                }
+            }
+        });
+
+        let isResolved = false;
+        const pendingDialog = dialog({ data: { name: "Mary" } }, "Navbar click test", true).then(() => {
+            isResolved = true;
+        });
+
+        expect(domClickListener).not.toBeNull();
+
+        // 1. Click inside topbar (y = 25)
+        domClickListener({ target: mockDomTarget, clientY: 25 });
+        await Promise.resolve();
+        expect(isResolved).toBe(false);
+
+        // 2. Click inside game viewport (y = 150)
+        mockViewport.getStage = () => ({
+            getPointerPosition: () => ({ x: 100, y: 150 }),
+            getIntersection: () => null,
+            container: () => mockDomTarget
+        });
+        domClickListener({ target: mockDomTarget, clientY: 150 });
+        await pendingDialog;
+        expect(isResolved).toBe(true);
+    });
+
+    it("does not advance dialog when an actionbar window is open", async () => {
+        let domClickListener = null;
+        let konvaClickListener = null;
+        const mockDomTarget = {
+            addEventListener: (event, handler) => {
+                if (event === "click") domClickListener = handler;
+            },
+            removeEventListener: (event, handler) => {
+                if (event === "click" && domClickListener === handler) domClickListener = null;
+            }
+        };
+
+        global.document.getElementById = jest.fn((id) => (id === "playground" ? mockDomTarget : null));
+
+        const mockViewport = {
+            y: () => 50,
+            on: (event, handler) => {
+                if (event.includes("click")) konvaClickListener = handler;
+            },
+            off: jest.fn(),
+            getStage: () => ({
+                getPointerPosition: () => ({ x: 100, y: 200 }),
+                getIntersection: () => null,
+                container: () => mockDomTarget
+            })
+        };
+
+        setGame({
+            ui: {
+                dialog: {
+                    name: { text: jest.fn() },
+                    message: {
+                        text: jest.fn(),
+                        fire: jest.fn(),
+                        getLayer: () => ({ getStage: () => ({}) })
+                    }
+                },
+                game: {
+                    viewport: mockViewport,
+                    container: { on: jest.fn(), off: jest.fn() },
+                    end: { visible: jest.fn() },
+                    loading: { visible: jest.fn() }
+                }
+            }
+        });
+
+        setOpenWindow("settings");
+
+        let isResolved = false;
+        const pendingDialog = dialog({ data: { name: "Mary" } }, "Open window test", true).then(() => {
+            isResolved = true;
+        });
+
+        // Click while window is open
+        domClickListener({ target: mockDomTarget, clientY: 200 });
+        if (konvaClickListener) konvaClickListener();
+        await Promise.resolve();
+        expect(isResolved).toBe(false);
+
+        // Close window and click again
+        setOpenWindow(null);
+        domClickListener({ target: mockDomTarget, clientY: 200 });
+        await pendingDialog;
+        expect(isResolved).toBe(true);
     });
 });

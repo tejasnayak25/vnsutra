@@ -15,6 +15,8 @@
     top: 0px;
     width: 100%;
     height: 100%;
+    fill: "#17152F";
+    opacity: 1;
 }
 
 .topbar-border {
@@ -22,6 +24,8 @@
     top: calc(100% - 2px);
     width: 100%;
     height: 2px;
+    fill: "#B88AEF";
+    opacity: 0.40;
 }
 
 .dialog-box {
@@ -37,7 +41,11 @@
     top: 0px;
     width: 100%;
     height: 100%;
-    stroke-width: 4px;
+    fill: "#17152F";
+    opacity: 0.90;
+    stroke: "#B88AEF";
+    stroke-width: 1.5px;
+    corner-radius: 20px 20px 4px 4px;
     fill-after-stroke-enabled: true;
 }
 
@@ -53,7 +61,11 @@
     top: 0px;
     width: 100%;
     height: 100%;
-    stroke-width: 4px;
+    fill: "#252044";
+    opacity: 0.96;
+    stroke: "#F2A9D5";
+    stroke-width: 1.5px;
+    corner-radius: 16px 16px 4px 4px;
     fill-after-stroke-enabled: true;
 }
 
@@ -61,32 +73,37 @@
     left: 0px;
     top: 100%;
     width: 100%;
-    height: 4px;
-    opacity: 0.9;
+    height: 0px;
+    opacity: 0;
+    visible: false;
 }
 
 .dialog-name {
-    left: 200px;
+    left: 160px;
     top: 0px;
     text-align: center;
     vertical-align: middle;
-    padding: 15px;
-    font-size: 25px;
+    padding: 14px;
+    font-size: 28px;
+    font-weight: bold;
     font-family: "YanoneKaffeesatz";
     wrap: none;
+    fill: "#F8F2FF";
     fill-after-stroke-enabled: true;
 }
 
 .dialog-message {
-    left: 100px;
+    left: 120px;
     top: 0px;
-    width: calc(100% - 200px);
+    width: calc(100% - 240px);
     text-align: left;
     vertical-align: middle;
-    padding: 10px;
-    font-size: 25px;
+    padding: 16px;
+    font-size: 28px;
+    line-height: 1.6;
     font-family: "YanoneKaffeesatz";
     wrap: word;
+    fill: "#F8F2FF";
     fill-after-stroke-enabled: true;
 }
 

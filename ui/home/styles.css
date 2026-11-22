@@ -4,9 +4,9 @@
 }
 
 .sidebar-root {
-    left: 0px;
+    left: 50px;
     top: 0px;
-    width: 250px;
+    width: 280px;
     height: 100%;
 }
 
@@ -15,37 +15,50 @@
     top: 0px;
     width: 100%;
     height: 100%;
-    opacity: 0.8;
-    fill: "#020617";
+    opacity: 0.88;
+    fill: "#141126";
+    corner-radius: 0;
+    stroke: "#B88AEF";
+    stroke-width: 1.5px;
+    shadow-color: "#080612";
+    shadow-blur: 24px;
+    shadow-opacity: 0.65;
 }
 
 #home-sidebar-top-border {
     left: 0px;
     top: 0px;
     width: 100%;
-    height: 6px;
-    background-color: cornflowerblue;
+    height: 3px;
+    corner-radius: 0;
+    fill: "#F2A9D5";
+    opacity: 0.9;
 }
 
 .sidebar-title {
     left: 0px;
     top: 0px;
     width: 100%;
-    height: 95px;
-    font-size: 30px;
-    font-family: "YanoneKaffeesatz";
-    /* font-weight: bold; */
+    height: 105px;
+    font-size: 26px;
+    font-family: "Cinzel";
+    font-weight: bold;
     text-align: center;
     vertical-align: middle;
-    fill: "white";
+    fill: "#F8F2FF";
+    shadow-color: "#05030A";
+    shadow-blur: 10px;
+    shadow-opacity: 0.7;
+    shadow-offset-y: 2px;
 }
 
 #home-sidebar-title-border {
-    left: 30px;
-    top: 85px;
-    width: calc(100% - 60px);
-    height: 2px;
-    fill: "grey";
+    left: 20px;
+    top: 96px;
+    width: calc(100% - 40px);
+    height: 1px;
+    fill: "#B88AEF";
+    opacity: 0.35;
 }
 
 .sidebar-divider {
@@ -53,7 +66,8 @@
     top: 0px;
     width: 1px;
     height: 100%;
-    fill: "cornflowerblue";
+    fill: "#B88AEF";
+    opacity: 0.25;
 }
 
 .close-menu-btn {
@@ -66,7 +80,7 @@
 
 .opts-viewport {
     left: 0px;
-    top: 97px;
+    top: 105px;
     width: 100%;
 }
 
@@ -78,9 +92,9 @@
 }
 
 .main-root {
-    left: 250px;
+    left: 350px;
     top: 0px;
-    width: calc(100% - 250px);
+    width: calc(100% - 350px);
     height: 100%;
 }
 
@@ -95,24 +109,40 @@
     left: 0px;
     top: 0px;
     width: 100%;
-    font-size: 90px;
-    font-family: "LavishlyYours";
+    font-size: 78px;
+    font-family: "Cinzel";
+    font-weight: bold;
     text-align: right;
     padding: 60px;
     wrap: word;
-    fill: "white";
+    fill: "#FFFFFF";
+    stroke: "#0A0614";
+    stroke-width: 2px;
+    perfect-draw-enabled: false;
+    shadow-color: "#05030A";
+    shadow-blur: 20px;
+    shadow-opacity: 0.95;
+    shadow-offset-y: 4px;
 }
 
 #home-subtitle {
     left: 0px;
-    top: calc(74px + 0.6vh);
+    top: calc(70px + 0.6vh);
     width: 100%;
-    font-size: 30px;
-    font-family: "YanoneKaffeesatz";
+    font-size: 22px;
+    font-family: "Inter";
+    font-weight: 500;
     text-align: right;
     padding: 60px;
     wrap: word;
-    fill: "white";
+    fill: "#F2A9D5";
+    stroke: "#0A0614";
+    stroke-width: 1px;
+    perfect-draw-enabled: false;
+    shadow-color: "#05030A";
+    shadow-blur: 14px;
+    shadow-opacity: 0.90;
+    shadow-offset-y: 2px;
 }
 
 .mobile-buttons {
@@ -140,6 +170,7 @@
 /* Portrait-specific overrides */
 @portrait {
     .sidebar-root {
+        left: 0px;
         width: 100%;
     }
 
@@ -185,14 +216,14 @@
         scale-x: 1.5;
         scale-y: 1.5;
         padding: 0px;
-        font-size: 50px;
+        font-size: 44px;
         text-align: center;
     }
 
     #home-subtitle {
         top: 40px;
         padding: 60px;
-        font-size: 30px;
+        font-size: 20px;
         text-align: center;
     }
 
@@ -231,12 +262,12 @@
     }
 
     #home-title {
-        font-size: 50px;
+        font-size: 44px;
         padding: 30px;
     }
 
     #home-subtitle {
-        font-size: 25px;
+        font-size: 18px;
         padding: 30px;
     }
 

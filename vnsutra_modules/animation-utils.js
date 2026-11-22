@@ -96,6 +96,17 @@ function addKonvaAnimationMethods(shape) {
      */
     shape.to = function(props = {}, options = {}) {
         const duration = options.duration ?? 1000;
+        if (duration <= 0) {
+            for (const [key, value] of Object.entries(props)) {
+                if (typeof shape[key] === "function") {
+                    shape[key](value);
+                } else {
+                    shape[key] = value;
+                }
+            }
+            shape.getLayer?.()?.batchDraw?.();
+            return Promise.resolve();
+        }
         const konvaDuration = duration / 1000; // Konva uses seconds
         const easing = options.easing;
 
@@ -138,6 +149,12 @@ function addKonvaAnimationMethods(shape) {
         const endOpacity = direction === "in" ? 1 : 0;
         const scheduleDraw = createLayerDrawScheduler(shape.getLayer?.());
 
+        if (duration <= 0) {
+            shape.opacity(endOpacity);
+            scheduleDraw();
+            return Promise.resolve();
+        }
+
         shape.opacity(startOpacity);
         scheduleDraw();
 
@@ -158,9 +175,22 @@ function addKonvaAnimationMethods(shape) {
      * Move to a position
      */
     shape.moveTo = function(x, y, duration = 1000) {
+        const scheduleDraw = createLayerDrawScheduler(shape.getLayer?.());
+
+        if (duration <= 0) {
+            if (typeof shape.x === "function") {
+                shape.x(x);
+                shape.y(y);
+            } else {
+                shape.x = x;
+                shape.y = y;
+            }
+            scheduleDraw();
+            return Promise.resolve();
+        }
+
         const startX = shape.x?.() ?? shape.x;
         const startY = shape.y?.() ?? shape.y;
-        const scheduleDraw = createLayerDrawScheduler(shape.getLayer?.());
 
         return new Promise((resolve) => {
             createTween(duration, (progress) => {
@@ -192,6 +222,9 @@ function addKonvaAnimationMethods(shape) {
      * Shake effect
      */
     shape.shake = function(intensity = 5, duration = 300) {
+        if (duration <= 0) {
+            return Promise.resolve();
+        }
         const originalX = shape.x?.() ?? shape.x;
         const originalY = shape.y?.() ?? shape.y;
         const scheduleDraw = createLayerDrawScheduler(shape.getLayer?.());

@@ -1,7 +1,7 @@
 {
     "engineVersion": "0.1.0",
     "screen": "actionbar",
-    "hash": "sha256:a67b8f358b94b39fe8f434628d90db47e0b7da20f0cbfe12be916dc3ecf8cda8",
+    "hash": "sha256:10bf1f0527dd855c4386f168458093e0771bf043f96ce0bb3af3248644a8ef89",
     "nodeCount": 5,
     "nodes": [
         {
@@ -40,7 +40,16 @@
             "attrs": {
                 "x": 0,
                 "y": 0,
-                "opacity": 0.8
+                "fill": "#141126",
+                "opacity": 0.92,
+                "stroke": "#B88AEF",
+                "strokeWidth": 1.5,
+                "cornerRadius": 24,
+                "shadowColor": "#080612",
+                "shadowBlur": 32,
+                "shadowOpacity": 0.7,
+                "shadowOffsetX": -4,
+                "shadowOffsetY": 4
             },
             "dynamic": {
                 "width": {
@@ -55,7 +64,13 @@
                 }
             },
             "portraitAttrs": {
-                "opacity": 0.9
+                "opacity": 0.95,
+                "cornerRadius": [
+                    24,
+                    24,
+                    0,
+                    0
+                ]
             },
             "events": {}
         },
@@ -67,15 +82,45 @@
                 "action-top-border"
             ],
             "attrs": {
-                "x": 0,
+                "x": 36,
                 "y": 0,
-                "height": 6
+                "height": 2,
+                "fill": "#F2A9D5",
+                "cornerRadius": 1,
+                "opacity": 0.85
             },
             "dynamic": {
                 "width": {
-                    "kind": "percent",
-                    "value": 100,
-                    "base": "parentWidth"
+                    "kind": "calc",
+                    "op": "-",
+                    "left": {
+                        "kind": "percent",
+                        "value": 100,
+                        "base": "parentWidth"
+                    },
+                    "right": {
+                        "kind": "static",
+                        "value": 72
+                    }
+                }
+            },
+            "portraitAttrs": {
+                "x": 24,
+                "cornerRadius": 1
+            },
+            "portraitDynamic": {
+                "width": {
+                    "kind": "calc",
+                    "op": "-",
+                    "left": {
+                        "kind": "percent",
+                        "value": 100,
+                        "base": "parentWidth"
+                    },
+                    "right": {
+                        "kind": "static",
+                        "value": 48
+                    }
                 }
             },
             "events": {}
@@ -89,30 +134,43 @@
             ],
             "attrs": {
                 "text": "Action Menu",
-                "x": 0,
+                "x": 32,
                 "y": 0,
-                "height": 95,
+                "height": 80,
                 "align": "left",
                 "verticalAlign": "middle",
-                "padding": 60,
-                "fontSize": 30,
-                "fontFamily": "YanoneKaffeesatz"
+                "padding": 0,
+                "fontSize": 32,
+                "fontFamily": "LavishlyYours",
+                "fill": "#F8F2FF",
+                "shadowColor": "#0D0B18",
+                "shadowBlur": 10,
+                "shadowOpacity": 0.5,
+                "shadowOffsetY": 2
             },
             "dynamic": {
                 "width": {
-                    "kind": "percent",
-                    "value": 100,
-                    "base": "parentWidth"
+                    "kind": "calc",
+                    "op": "-",
+                    "left": {
+                        "kind": "percent",
+                        "value": 100,
+                        "base": "parentWidth"
+                    },
+                    "right": {
+                        "kind": "static",
+                        "value": 160
+                    }
                 }
             },
             "portraitAttrs": {
-                "height": 90,
-                "padding": 30,
-                "fontSize": 30
+                "height": 80,
+                "x": 20,
+                "fontSize": 28
             },
             "androidLandscapeAttrs": {
                 "height": 60,
-                "padding": 40,
+                "padding": 0,
                 "fontSize": 25
             },
             "events": {}
@@ -125,9 +183,11 @@
                 "action-title-border"
             ],
             "attrs": {
-                "x": 30,
-                "y": 85,
-                "height": 2
+                "x": 28,
+                "y": 79,
+                "height": 1,
+                "fill": "#B88AEF",
+                "opacity": 0.3
             },
             "dynamic": {
                 "width": {
@@ -140,13 +200,13 @@
                     },
                     "right": {
                         "kind": "static",
-                        "value": 60
+                        "value": 56
                     }
                 }
             },
             "portraitAttrs": {
-                "x": 30,
-                "y": 80
+                "x": 20,
+                "y": 79
             },
             "portraitDynamic": {
                 "width": {
@@ -159,13 +219,13 @@
                     },
                     "right": {
                         "kind": "static",
-                        "value": 60
+                        "value": 40
                     }
                 }
             },
             "androidLandscapeAttrs": {
                 "x": 20,
-                "y": 50
+                "y": 59
             },
             "androidLandscapeDynamic": {
                 "width": {

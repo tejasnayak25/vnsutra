@@ -5,7 +5,16 @@ import { initAudioSystem } from "./audio-effects-utils.js";
 import { initVisualEffectsSystem } from "./visual-effects-utils.js";
 import { RollbackManager } from "./rollback.js";
 import { SpeakerSpotlight } from "./spotlight.js";
-import { getShouldAbortGame, getGameSessionId, getConfiguration } from "./runtime-state.js";
+import { getShouldAbortGame, getGameSessionId, getConfiguration, getState, getInstructionCount } from "./runtime-state.js";
+
+function isReplayCatchingUp(runtime) {
+    const state = getState();
+    const target = Number(runtime?.vars?.instruction_count ?? state?.instruction_count ?? 0);
+    if (target <= 0) {
+        return false;
+    }
+    return getInstructionCount() < target;
+}
 
 function resolveResponsive(value, { isPortrait = false, isAndroid = false } = {}) {
     if (!value || typeof value !== "object" || Array.isArray(value)) {
@@ -37,6 +46,63 @@ function resolveVarRef(value, vars = {}) {
     }
 
     return value;
+}
+
+function evaluateCondition(test, vars = {}) {
+    if (!test || typeof test !== "object") {
+        return Boolean(test);
+    }
+
+    if (test.op === "and" || test.op === "all") {
+        const list = Array.isArray(test.conditions) ? test.conditions : [];
+        return list.every((cond) => evaluateCondition(cond, vars));
+    }
+
+    if (test.op === "or" || test.op === "any") {
+        const list = Array.isArray(test.conditions) ? test.conditions : [];
+        return list.some((cond) => evaluateCondition(cond, vars));
+    }
+
+    if (test.op === "not" || test.op === "!") {
+        return !evaluateCondition(test.test ?? test.condition, vars);
+    }
+
+    if (test.op === "truthy" || (!test.op && test.fromVar)) {
+        const val = resolveVarRef(test.value ?? test, vars);
+        return Boolean(val);
+    }
+
+    if (test.op === "falsy") {
+        const val = resolveVarRef(test.value ?? test, vars);
+        return !val;
+    }
+
+    const left = resolveVarRef(test.left, vars);
+    const right = resolveVarRef(test.right, vars);
+    const op = test.op || "===";
+
+    switch (op) {
+    case "===":
+    case "==":
+        return left === right;
+    case "!==":
+    case "!=":
+        return left !== right;
+    case ">":
+        return left > right;
+    case ">=":
+        return left >= right;
+    case "<":
+        return left < right;
+    case "<=":
+        return left <= right;
+    case "in":
+        return Array.isArray(right) && right.includes(left);
+    case "not-in":
+        return !Array.isArray(right) || !right.includes(left);
+    default:
+        return false;
+    }
 }
 
 function resolveDialogParams(params = {}, vars = {}) {
@@ -91,13 +157,68 @@ async function executeActions(actions = [], runtime) {
         const actor = action.actor ? runtime.getActor(action.actor) : null;
 
         switch (action.type) {
+        case "stage":
+        case "background.stage":
+        case "background.parallax":
         case "background": {
             const gameInstance = runtime.getGame?.();
             if (action.reset) {
                 gameInstance?.background?.reset?.();
+                if (!action.stage && !action.asset && action.type !== "stage" && action.type !== "background.stage") {
+                    gameInstance?.clearParallaxBackground?.();
+                }
             }
-            if (gameInstance && action.asset) {
-                gameInstance.background = runtime.getAsset(action.asset);
+            const isCatchingUp = isReplayCatchingUp(runtime);
+            let defaultDuration = isCatchingUp ? 0 : (action.duration !== undefined ? Number(action.duration) : (action.transition === "none" ? 0 : 0.6));
+            let hadPendingSceneTransition = false;
+            if (!isCatchingUp && runtime._pendingSceneTransitionDuration !== undefined) {
+                defaultDuration = runtime._pendingSceneTransitionDuration;
+                runtime._pendingSceneTransitionDuration = undefined;
+                hadPendingSceneTransition = true;
+            }
+            const stageOptions = { ...(action.options || {}) };
+            if (action.duration !== undefined || isCatchingUp || hadPendingSceneTransition) {
+                stageOptions.duration = defaultDuration;
+            }
+            if (action.transition !== undefined) {
+                stageOptions.transition = action.transition;
+            }
+
+            if (action.stage || (action.asset && String(action.asset).endsWith(".vnstage")) || action.type === "stage" || action.type === "background.stage") {
+                const stageTarget = action.stage || action.asset || action.file;
+                const resolvedTarget = typeof stageTarget === "string" ? (runtime.getAsset?.(stageTarget) || stageTarget) : stageTarget;
+                await gameInstance?.loadStage?.(resolvedTarget, stageOptions);
+            } else if (action.planes && Array.isArray(action.planes)) {
+                const resolvedPlanes = action.planes.map((p) => {
+                    const asset = p.asset || p.image || p.src;
+                    const img = typeof asset === "string" ? runtime.getAsset(asset) : asset;
+                    return {
+                        ...p,
+                        image: img
+                    };
+                });
+                gameInstance?.setParallaxBackground?.(resolvedPlanes, stageOptions);
+            } else if (action.far || action.mid || action.near || action.fore) {
+                const depths = { far: 0.2, mid: 0.6, near: 1.0, fore: 1.5 };
+                const resolvedPlanes = [];
+                for (const key of ["far", "mid", "near", "fore"]) {
+                    if (action[key]) {
+                        const img = typeof action[key] === "string" ? runtime.getAsset(action[key]) : action[key];
+                        resolvedPlanes.push({ image: img, depth: depths[key], id: key });
+                    }
+                }
+                gameInstance?.setParallaxBackground?.(resolvedPlanes, stageOptions);
+            } else if (gameInstance && action.asset) {
+                const resolvedAsset = runtime.getAsset(action.asset);
+                if (typeof gameInstance.changeBackground === "function") {
+                    await gameInstance.changeBackground(resolvedAsset, {
+                        duration: defaultDuration,
+                        transition: action.transition || "crossfade",
+                        ...(action.options || {})
+                    });
+                } else {
+                    gameInstance.background = resolvedAsset;
+                }
             }
             break;
         }
@@ -117,6 +238,11 @@ async function executeActions(actions = [], runtime) {
         }
         case "actor.show": {
             actor?.show?.();
+            break;
+        }
+        case "actor.bringToFront": {
+            const gameInstance = runtime.getGame?.();
+            gameInstance?.bringCharactersToFront?.();
             break;
         }
         case "actor.hide": {
@@ -170,10 +296,17 @@ async function executeActions(actions = [], runtime) {
             if (!actor || typeof actor[action.method] !== "function") {
                 break;
             }
-            const args = Array.isArray(action.args) ? action.args.map((arg) => resolveResponsive(arg, {
+            const isCatchingUp = isReplayCatchingUp(runtime);
+            let args = Array.isArray(action.args) ? action.args.map((arg) => resolveResponsive(arg, {
                 isPortrait: runtime.isPortrait,
                 isAndroid: runtime.isAndroid
             })) : [];
+            if (isCatchingUp) {
+                if (action.method === "slideIn" || action.method === "slideOut") {
+                    const targetX = args[0] !== undefined ? args[0] : (action.method === "slideIn" ? 0 : 1.25);
+                    args = [targetX, 0];
+                }
+            }
             await actor[action.method](...args);
             break;
         }
@@ -334,26 +467,29 @@ async function executeActions(actions = [], runtime) {
             break;
         }
         case "camera.pan": {
+            const isCatchingUp = isReplayCatchingUp(runtime);
             await runtime.getGame?.()?.camera?.pan?.({
                 x: action.x ?? 0,
                 y: action.y ?? 0,
                 zoom: action.zoom ?? 1,
                 rotation: action.rotation ?? 0,
-                duration: action.duration ?? 0.8,
+                duration: isCatchingUp ? 0 : (action.duration ?? 0.8),
                 easing: action.easing ?? "EaseInOut"
             });
             break;
         }
         case "camera.focus": {
+            const isCatchingUp = isReplayCatchingUp(runtime);
             await runtime.getGame?.()?.camera?.focus?.(actor, {
                 zoom: action.zoom ?? 1.25,
-                duration: action.duration ?? 0.7,
+                duration: isCatchingUp ? 0 : (action.duration ?? 0.7),
                 yOffset: action.yOffset ?? -0.05
             });
             break;
         }
         case "camera.reset": {
-            await runtime.getGame?.()?.camera?.reset?.({ duration: action.duration ?? 0.6 });
+            const isCatchingUp = isReplayCatchingUp(runtime);
+            await runtime.getGame?.()?.camera?.reset?.({ duration: isCatchingUp ? 0 : (action.duration ?? 0.6) });
             break;
         }
         case "camera.lighting": {
@@ -362,43 +498,7 @@ async function executeActions(actions = [], runtime) {
             break;
         }
         case "if": {
-            let conditionMet = false;
-
-            if (action.test && typeof action.test === "object") {
-                const left = resolveVarRef(action.test.left, runtime.vars);
-                const right = resolveVarRef(action.test.right, runtime.vars);
-                const op = action.test.op || "===";
-
-                switch (op) {
-                case "===":
-                    conditionMet = left === right;
-                    break;
-                case "!==":
-                    conditionMet = left !== right;
-                    break;
-                case ">":
-                    conditionMet = left > right;
-                    break;
-                case ">=":
-                    conditionMet = left >= right;
-                    break;
-                case "<":
-                    conditionMet = left < right;
-                    break;
-                case "<=":
-                    conditionMet = left <= right;
-                    break;
-                case "in":
-                    conditionMet = Array.isArray(right) && right.includes(left);
-                    break;
-                case "not-in":
-                    conditionMet = !Array.isArray(right) || !right.includes(left);
-                    break;
-                default:
-                    conditionMet = false;
-                }
-            }
-
+            const conditionMet = evaluateCondition(action.test, runtime.vars);
             const branch = conditionMet ? action.then : action.else;
             if (Array.isArray(branch)) {
                 const result = await executeActions(branch, runtime);
@@ -450,6 +550,9 @@ async function executeActions(actions = [], runtime) {
             break;
         }
         case "wait": {
+            if (isReplayCatchingUp(runtime)) {
+                break;
+            }
             const duration = resolveVarRef(action.duration, runtime.vars) ?? 1000;
             await new Promise((resolve) => {
                 setTimeout(resolve, duration);
@@ -487,7 +590,8 @@ async function executeActions(actions = [], runtime) {
             if (!actor) {
                 break;
             }
-            const duration = action.duration ?? 1000;
+            const isCatchingUp = isReplayCatchingUp(runtime);
+            const duration = isCatchingUp ? 0 : (action.duration ?? 1000);
             const easing = action.easing ?? "linear";
             const target = {};
             for (const [key, value] of Object.entries(action.props ?? {})) {
@@ -507,7 +611,8 @@ async function executeActions(actions = [], runtime) {
             if (!gameInstance?.background) {
                 break;
             }
-            const duration = action.duration ?? 1000;
+            const isCatchingUp = isReplayCatchingUp(runtime);
+            const duration = isCatchingUp ? 0 : (action.duration ?? 1000);
             const easing = action.easing ?? "linear";
             const target = {};
             for (const [key, value] of Object.entries(action.props ?? {})) {
@@ -525,7 +630,8 @@ async function executeActions(actions = [], runtime) {
             if (!actor) {
                 break;
             }
-            const duration = action.duration ?? 500;
+            const isCatchingUp = isReplayCatchingUp(runtime);
+            const duration = isCatchingUp ? 0 : (action.duration ?? 500);
             const direction = action.direction ?? "in";
             if (typeof actor.fade === "function") {
                 await actor.fade(direction, duration);
@@ -536,7 +642,8 @@ async function executeActions(actions = [], runtime) {
             if (!actor) {
                 break;
             }
-            const duration = action.duration ?? 1000;
+            const isCatchingUp = isReplayCatchingUp(runtime);
+            const duration = isCatchingUp ? 0 : (action.duration ?? 1000);
             const x = resolveResponsive(action.x, {
                 isPortrait: runtime.isPortrait,
                 isAndroid: runtime.isAndroid
@@ -551,7 +658,7 @@ async function executeActions(actions = [], runtime) {
             break;
         }
         case "actor.shake": {
-            if (!actor) {
+            if (!actor || isReplayCatchingUp(runtime)) {
                 break;
             }
             const duration = action.duration ?? 300;
@@ -563,7 +670,7 @@ async function executeActions(actions = [], runtime) {
         }
         case "effect.screen-shake": {
             const gameInstance = runtime.getGame?.();
-            if (gameInstance) {
+            if (gameInstance && !isReplayCatchingUp(runtime)) {
                 const duration = action.duration ?? 300;
                 const intensity = action.intensity ?? 5;
                 if (typeof gameInstance.shake === "function") {
@@ -574,7 +681,7 @@ async function executeActions(actions = [], runtime) {
         }
         case "effect.flash": {
             const gameInstance = runtime.getGame?.();
-            if (gameInstance) {
+            if (gameInstance && !isReplayCatchingUp(runtime)) {
                 const duration = action.duration ?? 300;
                 const color = action.color ?? "#ffffff";
                 if (typeof gameInstance.flash === "function") {
@@ -585,7 +692,7 @@ async function executeActions(actions = [], runtime) {
         }
         case "effect.particles": {
             const gameInstance = runtime.getGame?.();
-            if (gameInstance) {
+            if (gameInstance && !isReplayCatchingUp(runtime)) {
                 const x = resolveResponsive(action.x, {
                     isPortrait: runtime.isPortrait,
                     isAndroid: runtime.isAndroid
@@ -603,7 +710,8 @@ async function executeActions(actions = [], runtime) {
         case "music.play": {
             const gameInstance = runtime.getGame?.();
             if (gameInstance) {
-                const fadeIn = action.fadeIn ?? 0;
+                const isCatchingUp = isReplayCatchingUp(runtime);
+                const fadeIn = isCatchingUp ? 0 : (action.fadeIn ?? 0);
                 if (typeof gameInstance.playMusic === "function") {
                     await gameInstance.playMusic(action.track, {
                         fadeIn,
@@ -616,25 +724,36 @@ async function executeActions(actions = [], runtime) {
         }
         case "music.crossfade": {
             const gameInstance = runtime.getGame?.();
-            await gameInstance?.crossfadeMusic?.(action.track, {
-                duration: action.duration ?? 1200,
-                loop: action.loop !== false,
-                volume: action.volume ?? 1
-            });
+            const isCatchingUp = isReplayCatchingUp(runtime);
+            if (isCatchingUp && gameInstance && typeof gameInstance.playMusic === "function") {
+                await gameInstance.playMusic(action.track, {
+                    fadeIn: 0,
+                    loop: action.loop !== false,
+                    volume: action.volume ?? 1
+                });
+            } else {
+                await gameInstance?.crossfadeMusic?.(action.track, {
+                    duration: action.duration ?? 1200,
+                    loop: action.loop !== false,
+                    volume: action.volume ?? 1
+                });
+            }
             break;
         }
         case "ambient.play": {
             const gameInstance = runtime.getGame?.();
+            const isCatchingUp = isReplayCatchingUp(runtime);
             await gameInstance?.playAmbient?.(action.track, {
                 loop: action.loop !== false,
                 volume: action.volume ?? 0.5,
-                fadeIn: action.fadeIn ?? 500
+                fadeIn: isCatchingUp ? 0 : (action.fadeIn ?? 500)
             });
             break;
         }
         case "ambient.stop": {
             const gameInstance = runtime.getGame?.();
-            await gameInstance?.stopAmbient?.(action.fadeOut ?? 500);
+            const isCatchingUp = isReplayCatchingUp(runtime);
+            await gameInstance?.stopAmbient?.(isCatchingUp ? 0 : (action.fadeOut ?? 500));
             break;
         }
         case "weather.set": {
@@ -650,7 +769,8 @@ async function executeActions(actions = [], runtime) {
         case "music.stop": {
             const gameInstance = runtime.getGame?.();
             if (gameInstance) {
-                const fadeOut = action.fadeOut ?? 500;
+                const isCatchingUp = isReplayCatchingUp(runtime);
+                const fadeOut = isCatchingUp ? 0 : (action.fadeOut ?? 500);
                 if (typeof gameInstance.stopMusic === "function") {
                     await gameInstance.stopMusic(fadeOut);
                 }
@@ -660,8 +780,9 @@ async function executeActions(actions = [], runtime) {
         case "music.fade": {
             const gameInstance = runtime.getGame?.();
             if (gameInstance) {
+                const isCatchingUp = isReplayCatchingUp(runtime);
                 const volume = action.volume ?? 0;
-                const duration = action.duration ?? 1000;
+                const duration = isCatchingUp ? 0 : (action.duration ?? 1000);
                 if (typeof gameInstance.fadeMusic === "function") {
                     await gameInstance.fadeMusic(volume, duration);
                 }
@@ -670,7 +791,7 @@ async function executeActions(actions = [], runtime) {
         }
         case "sfx.play": {
             const gameInstance = runtime.getGame?.();
-            if (gameInstance) {
+            if (gameInstance && !isReplayCatchingUp(runtime)) {
                 const volume = action.volume ?? 1;
                 const targetActor = action.actor ? runtime.actors?.[action.actor] : null;
                 if (typeof gameInstance.playSFX === "function") {
@@ -687,7 +808,7 @@ async function executeActions(actions = [], runtime) {
         }
         case "voice.play": {
             const gameInstance = runtime.getGame?.();
-            if (gameInstance) {
+            if (gameInstance && !isReplayCatchingUp(runtime)) {
                 const targetActor = action.actor ? runtime.actors?.[action.actor] : null;
                 if (typeof gameInstance.playVoice === "function") {
                     await gameInstance.playVoice(action.track, {
@@ -705,8 +826,15 @@ async function executeActions(actions = [], runtime) {
         case "scene.transition": {
             const gameInstance = runtime.getGame?.();
             if (gameInstance) {
+                if (isReplayCatchingUp(runtime)) {
+                    break;
+                }
                 const duration = action.duration ?? 500;
                 const transitionType = action.transitionType ?? "fade";
+                if (transitionType === "crossfade") {
+                    runtime._pendingSceneTransitionDuration = duration / 1000;
+                    break;
+                }
                 const color = action.color ?? "#000000";
                 const overlapRatio = action.overlapRatio ?? action.overlap;
                 const fadeInRatio = action.fadeInRatio;
@@ -1017,5 +1145,5 @@ function createStoryFromScript({
     return story;
 }
 
-export { createStoryFromScript };
-export default { createStoryFromScript };
+export { createStoryFromScript, executeActions, evaluateCondition };
+export default { createStoryFromScript, executeActions, evaluateCondition };

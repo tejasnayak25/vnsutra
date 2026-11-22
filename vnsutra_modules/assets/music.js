@@ -21,9 +21,9 @@ class Music {
         const id = currentInstructionCount + 1;
         if ((state.instruction_count ?? 0) > id) return;
 
-        if (gameSettings["settings-music"] === true) {
+        if (gameSettings["settings-music"] !== false) {
             this.elem.src = this.src;
-            this.elem.play();
+            this.elem.play()?.catch?.(() => {});
         }
     }
 

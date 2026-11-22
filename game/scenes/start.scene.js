@@ -7,9 +7,12 @@ export default [
         "duration": 250
     },
     {
-        "type": "background",
+        "type": "stage",
         "reset": true,
-        "asset": "futon_room"
+        "asset": "cherry_park",
+        "options": {
+            "mouseTilt": true
+        }
     },
     {
         "type": "actor.reset",
@@ -46,19 +49,19 @@ export default [
     },
     {
         "type": "actor.reset",
-        "actor": "nanami",
+        "actor": "sakura",
         "fields": [
             "scale"
         ]
     },
     {
         "type": "sprite.apply",
-        "actor": "nanami",
+        "actor": "sakura",
         "sprite": "smiling"
     },
     {
         "type": "actor.set",
-        "actor": "nanami",
+        "actor": "sakura",
         "props": {
             "x": 1.25,
             "y": {
@@ -70,7 +73,7 @@ export default [
     },
     {
         "type": "actor.call",
-        "actor": "nanami",
+        "actor": "sakura",
         "method": "slideIn",
         "args": [
             0.82,
@@ -84,44 +87,29 @@ export default [
     },
     {
         "type": "dialog",
-        "actor": "nanami",
-        "text": "Hi! I'm Nanami, running live from a single .vnsprite binary bundle — watch me blink, breathe, sway in the wind, and lip-sync as I speak!"
-    },
-    {
-        "type": "sprite.apply",
-        "actor": "nanami",
-        "sprite": "happy"
+        "actor": "sakura",
+        "text": "Hi! I'm Sakura, running live from a single .vnsprite binary bundle on a 2.5D .vnstage — {fx=sparkles}tilt your mouse to see the cherry blossoms and park benches parallax around me!"
     },
     {
         "type": "camera.focus",
-        "actor": "nanami",
+        "actor": "sakura",
         "zoom": 1.22,
         "duration": 0.6
     },
     {
-        "type": "actor.call",
-        "actor": "nanami",
-        "method": "hop"
+        "type": "dialog",
+        "actor": "sakura",
+        "text": "{hop}Woohoo! Notice how the camera zoom separates the foreground cherry blossoms from the background park while keeping every seam locked!"
     },
     {
         "type": "dialog",
-        "actor": "nanami",
-        "text": "Woohoo! Notice how a single spring hop ripples through my hair and outfit while keeping every seam locked!"
-    },
-    {
-        "type": "sprite.apply",
-        "actor": "nanami",
-        "sprite": "shocked"
-    },
-    {
-        "type": "actor.call",
-        "actor": "nanami",
-        "method": "shake"
+        "actor": "sakura",
+        "text": "{mood=happy}{fx=sweat}Wait... {w=0.4}{shake}Eek!{/shake} Did the camera just shake?! {shake=screen}"
     },
     {
         "type": "dialog",
-        "actor": "nanami",
-        "text": "Eek! Shock shake triggers full-body physics too! Now I'll let Mary take it from here!"
+        "actor": "sakura",
+        "text": "{mood=smiling}{fx=blush}Hehe, now I'll let Mary take it from here!"
     },
     {
         "type": "camera.reset",
@@ -129,7 +117,7 @@ export default [
     },
     {
         "type": "actor.call",
-        "actor": "nanami",
+        "actor": "sakura",
         "method": "slideOut",
         "args": [
             1.35,
@@ -238,7 +226,9 @@ export default [
                 "fromVar": "que1"
             },
             "op": "===",
-            "right": "$firstAnswer"
+            "right": {
+                "fromVar": "firstAnswer"
+            }
         },
         "then": [
             {
@@ -259,11 +249,6 @@ export default [
         "type": "dialog",
         "actor": "mary",
         "text": "@scene1.question2"
-    },
-    {
-        "type": "effect.flash",
-        "color": "#ffffff",
-        "duration": 120
     },
     {
         "type": "jump",

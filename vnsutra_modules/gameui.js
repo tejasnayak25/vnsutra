@@ -135,6 +135,20 @@ async function gameUI(config, fonts, navigate) {
     const isPortrait = getIsPortrait();
     const isAndroid = getIsAndroid();
     const game_layer = new Konva.Layer();
+    const origGameDrawScene = game_layer.drawScene;
+    game_layer.drawScene = function() {
+        if (!this.getStage()) {
+            return this;
+        }
+        return origGameDrawScene.apply(this, arguments);
+    };
+    const origGameDraw = game_layer.draw;
+    game_layer.draw = function() {
+        if (!this.getStage()) {
+            return this;
+        }
+        return origGameDraw.apply(this, arguments);
+    };
 
     const { width, height } = konvaStage.getAttrs();
 
@@ -149,26 +163,35 @@ async function gameUI(config, fonts, navigate) {
 
     const topbar_container = compiledGameUiLayout?.topbarContainer ?? new Konva.Group({
         width: width,
-        height: isPortrait ? 50 : (isAndroid ? 40 : 50)
+        height: isPortrait ? 52 : (isAndroid ? 44 : 52),
+        id: "topbar-container"
     });
+    if (topbar_container && !topbar_container.id()) {
+        topbar_container.id("topbar-container");
+    }
 
     const topbar_rect = compiledGameUiLayout?.topbarBg ?? new Konva.Rect({
         width: width,
         height: topbar_container.height(),
-        fill: config.colors.menu
+        fill: config.colors.menu,
+        perfectDrawEnabled: false
     });
     topbar_rect.setAttrs({
-        fill: config.colors.menu
+        fill: config.colors.menu,
+        perfectDrawEnabled: false
     });
 
     const topbar_border = compiledGameUiLayout?.topbarBorder ?? new Konva.Rect({
         width: width,
         height: 2,
-        fill: config.colors.primary,
-        y: topbar_container.height() - 2
+        fill: "rgba(184, 138, 239, 0.40)",
+        y: topbar_container.height() - 2,
+        perfectDrawEnabled: false
     });
     topbar_border.setAttrs({
-        fill: config.colors.primary
+        height: 2,
+        fill: "rgba(184, 138, 239, 0.40)",
+        perfectDrawEnabled: false
     });
 
     if (!compiledGameUiLayout?.topbarContainer) {
@@ -182,38 +205,111 @@ async function gameUI(config, fonts, navigate) {
     const backicon = new Image();
     backicon.src = config.gui["back-icon"];
 
-    const backPadding = 5;
-    const backBtn = new Konva.Image({
-        width: topbarInnerHeight - 2 * backPadding,
-        height: topbarInnerHeight - 2 * backPadding,
-        x: backPadding,
-        y: backPadding,
+    const backBtnHeight = isPortrait ? 36 : (isAndroid ? 32 : 36);
+    const backBtnWidth = isPortrait ? 40 : (isAndroid ? 86 : 94);
+    const backBtnX = isPortrait ? 10 : 16;
+    const backBtnY = (topbarInnerHeight - backBtnHeight) / 2;
+
+    const backBtn = new Konva.Group({
+        width: backBtnWidth,
+        height: backBtnHeight,
+        x: backBtnX,
+        y: backBtnY
+    });
+
+    const backPill = new Konva.Rect({
+        x: 0,
+        y: 0,
+        width: backBtnWidth,
+        height: backBtnHeight,
+        cornerRadius: 8,
+        fill: "rgba(184, 138, 239, 0.14)",
+        stroke: "rgba(184, 138, 239, 0.32)",
+        strokeWidth: 1,
+        perfectDrawEnabled: false
+    });
+
+    const backIconSize = 18;
+    const backIconImg = new Konva.Image({
+        width: backIconSize,
+        height: backIconSize,
+        x: isPortrait ? (backBtnWidth - backIconSize) / 2 : 11,
+        y: (backBtnHeight - backIconSize) / 2,
         image: backicon.cloneNode(true)
     });
+
+    let backText = null;
+    if (!isPortrait) {
+        backText = new Konva.Text({
+            x: 34,
+            y: 0,
+            width: backBtnWidth - 36,
+            height: backBtnHeight,
+            text: "Home",
+            fontFamily: fonts["other"]?.name || "Inter",
+            fontSize: scaleFontSize(isAndroid ? 13 : 14),
+            fontStyle: "bold",
+            fill: "#F8F2FF",
+            align: "left",
+            verticalAlign: "middle",
+            perfectDrawEnabled: false
+        });
+        backBtn.add(backPill, backIconImg, backText);
+    } else {
+        backBtn.add(backPill, backIconImg);
+    }
 
     const expandIcon = new Image();
     expandIcon.src = config.gui["expand-icon"];
 
-    const expandButtonWidth = topbarInnerHeight - 2 * backPadding;
-    const rightOffset = isPortrait ? 0 : 10;
+    const expandBtnSize = isPortrait ? 36 : (isAndroid ? 32 : 36);
+    const rightOffset = isPortrait ? 0 : 16;
 
-    const expandBtn = new Konva.Image({
-        width: expandButtonWidth,
-        height: expandButtonWidth,
-        x: isPortrait ? (width - (topbarInnerHeight - backPadding) - expandButtonWidth - 15) : (width - expandButtonWidth - backPadding - rightOffset),
-        y: backPadding,
-        image: expandIcon.cloneNode(true),
+    const expandBtnX = isPortrait
+        ? (width - (topbarInnerHeight - 8) - expandBtnSize - 12)
+        : (width - expandBtnSize - rightOffset);
+    const expandBtnY = (topbarInnerHeight - expandBtnSize) / 2;
+
+    const expandBtn = new Konva.Group({
+        width: expandBtnSize,
+        height: expandBtnSize,
+        x: expandBtnX,
+        y: expandBtnY,
         visible: true,
         opacity: isPortrait ? (document.fullscreenElement ? 0.3 : 1) : (!document.fullscreenElement ? 1 : 0)
     });
 
-    const topbarDivider = new Konva.Line({
-        points: [0, 5, 0, topbarInnerHeight - 5],
-        stroke: config.colors.primary,
+    const expandPill = new Konva.Rect({
+        x: 0,
+        y: 0,
+        width: expandBtnSize,
+        height: expandBtnSize,
+        cornerRadius: 8,
+        fill: "rgba(184, 138, 239, 0.14)",
+        stroke: "rgba(184, 138, 239, 0.32)",
         strokeWidth: 1,
-        opacity: 0.5,
+        perfectDrawEnabled: false
+    });
+
+    const expandIconSize = 18;
+    const expandIconImg = new Konva.Image({
+        width: expandIconSize,
+        height: expandIconSize,
+        x: (expandBtnSize - expandIconSize) / 2,
+        y: (expandBtnSize - expandIconSize) / 2,
+        image: expandIcon.cloneNode(true)
+    });
+
+    expandBtn.add(expandPill, expandIconImg);
+
+    const topbarDivider = new Konva.Line({
+        points: [0, 8, 0, topbarInnerHeight - 8],
+        stroke: "rgba(184, 138, 239, 0.30)",
+        strokeWidth: 1,
+        opacity: 0.6,
         visible: false,
-        x: expandBtn.x() - rightOffset - backPadding
+        x: expandBtnX - 14,
+        perfectDrawEnabled: false
     });
 
     const syncExpandBtnVisibility = () => {
@@ -233,7 +329,8 @@ async function gameUI(config, fonts, navigate) {
             expandBtnTween = new Konva.Tween({
                 node: expandBtn,
                 opacity: targetOpacity,
-                duration: 0.2
+                duration: 0.22,
+                easing: Konva?.Easings?.EaseOut
             });
             expandBtnTween.play();
         } else {
@@ -245,7 +342,8 @@ async function gameUI(config, fonts, navigate) {
             menuHolderTween = new Konva.Tween({
                 node: menuHolder,
                 x: newX,
-                duration: 0.2
+                duration: 0.24,
+                easing: Konva?.Easings?.EaseOut
             });
             menuHolderTween.play();
         }
@@ -263,18 +361,56 @@ async function gameUI(config, fonts, navigate) {
     };
 
     backBtn.on("mouseover", () => {
+        backPill.to({
+            fill: "rgba(242, 169, 213, 0.26)",
+            stroke: "rgba(242, 169, 213, 0.65)",
+            duration: 0.18,
+            easing: Konva?.Easings?.EaseOut
+        });
+        if (backText) {
+            backText.to({
+                fill: "#FFFFFF",
+                duration: 0.18,
+                easing: Konva?.Easings?.EaseOut
+            });
+        }
         document.body.style.cursor = "pointer";
     });
 
     backBtn.on("mouseout", () => {
+        backPill.to({
+            fill: "rgba(184, 138, 239, 0.12)",
+            stroke: "rgba(184, 138, 239, 0.28)",
+            duration: 0.18,
+            easing: Konva?.Easings?.EaseOut
+        });
+        if (backText) {
+            backText.to({
+                fill: "#F8F2FF",
+                duration: 0.18,
+                easing: Konva?.Easings?.EaseOut
+            });
+        }
         document.body.style.cursor = "auto";
     });
 
     expandBtn.on("mouseover", () => {
+        expandPill.to({
+            fill: "rgba(242, 169, 213, 0.26)",
+            stroke: "rgba(242, 169, 213, 0.65)",
+            duration: 0.18,
+            easing: Konva?.Easings?.EaseOut
+        });
         document.body.style.cursor = "pointer";
     });
 
     expandBtn.on("mouseout", () => {
+        expandPill.to({
+            fill: "rgba(184, 138, 239, 0.12)",
+            stroke: "rgba(184, 138, 239, 0.28)",
+            duration: 0.18,
+            easing: Konva?.Easings?.EaseOut
+        });
         document.body.style.cursor = "auto";
     });
 
@@ -355,6 +491,23 @@ async function gameUI(config, fonts, navigate) {
 
     const remove_img = new Image();
     remove_img.src = config.gui["remove-icon"];
+    const captureGameSnapshot = () => {
+        const gameBox = game_layer.findOne("#game-box");
+        if (!gameBox || typeof gameBox.toDataURL !== "function") {
+            return null;
+        }
+        const boxY = typeof gameBox.y === "function" ? gameBox.y() : topbarHeight;
+        const boxW = typeof gameBox.width === "function" ? gameBox.width() : width;
+        const boxH = typeof gameBox.height === "function" ? gameBox.height() : (height - topbarHeight);
+        return gameBox.toDataURL({
+            x: 0,
+            y: boxY,
+            width: boxW,
+            height: boxH,
+            imageSmoothingEnabled: true
+        });
+    };
+
     const saveSnapshot = async () => {
         try {
             let games = await storage.getItem("saved-games");
@@ -362,7 +515,7 @@ async function gameUI(config, fonts, navigate) {
                 games = [];
             }
 
-            const url = game_layer.findOne("#game-box").toDataURL({ imageSmoothingEnabled: true, width: width, height: (height - topbarHeight) });
+            const url = captureGameSnapshot();
             const id = Date.now();
             const state = getState() ?? {};
             const activeScene = getActiveScene();
@@ -423,9 +576,10 @@ async function gameUI(config, fonts, navigate) {
             name: "Save Game",
             icon: config.gui["save-icon"],
             onclick: (element) => {
+                const snapshotUrl = captureGameSnapshot();
                 loadgame(config, load_win, "Save Game", fonts, remove_img, (details) => {
                     proceedBtn.onclick = async () => {
-                        const url = game_layer.findOne("#game-box").toDataURL({ imageSmoothingEnabled: true, width: width, height: (height - topbarHeight) });
+                        const url = snapshotUrl || captureGameSnapshot();
 
                         storage.getItem("saved-games").then((games) => {
                             const index = games.findIndex(item => item.id === details.id);
@@ -464,7 +618,7 @@ async function gameUI(config, fonts, navigate) {
                     alertWin.message = "Are you sure you want to overwrite this game?";
                     alertWin.show();
                 }, true, () => {
-                    const url = game_layer.findOne("#game-box").toDataURL({ imageSmoothingEnabled: true, width: width, height: (height - topbarHeight) });
+                    const url = snapshotUrl || captureGameSnapshot();
 
                     storage.getItem("saved-games").then((games) => {
                         const id = Date.now();
@@ -525,7 +679,9 @@ async function gameUI(config, fonts, navigate) {
             name: "Screenshot",
             icon: config.gui["screenshot-icon"],
             onclick: (element) => {
-                menuBtn.fire("click");
+                if (isPortrait) {
+                    menuBtn.fire("click");
+                }
                 setTimeout(() => {
                     game_layer.toBlob({ imageSmoothingEnabled: true }).then(blob => {
                         const a = document.createElement("a");
@@ -542,30 +698,46 @@ async function gameUI(config, fonts, navigate) {
         }
     ];
 
-    const mobilePadding = isPortrait ? 10 : 0;
-    const calculateMenuHolderX = () => {
+    const mobilePadding = isPortrait ? 12 : 0;
+    function calculateMenuHolderX() {
+        if (!menuHolder) {
+            return 0;
+        }
         if (isPortrait) {
-            return width - menuHolder.width();
+            return width - menuHolder.width() - 8;
         }
         // On desktop: adjust menu position based on expand button visibility
         const expandBtnVisible = !document.fullscreenElement;
         if (expandBtnVisible) {
-            const requiredSpace = expandButtonWidth + 2 * rightOffset + 20;
-            return Math.max(backPadding, width - menuHolder.width() - requiredSpace);
+            const requiredSpace = expandBtnSize + rightOffset + 24;
+            return Math.max(backBtn.x() + backBtn.width() + 16, width - menuHolder.width() - requiredSpace);
         } else {
-            return Math.max(0, width - menuHolder.width());
+            return Math.max(backBtn.x() + backBtn.width() + 16, width - menuHolder.width() - rightOffset);
         }
-    };
+    }
+
+    const pillHeight = isAndroid ? 32 : 36;
+    const pillY = (topbarInnerHeight - pillHeight) / 2;
+    const rowHeight = 46;
+    const btnGap = 8;
 
     const menuHolder = new Konva.Group({
-        height: isPortrait ? ((menuItems.length * topbarInnerHeight) + 2 * mobilePadding) : topbarInnerHeight,
+        height: isPortrait ? ((menuItems.length * rowHeight) + 2 * mobilePadding) : topbarInnerHeight,
         y: isPortrait ? topbarInnerHeight : 0,
         visible: !isPortrait
     });
 
     if (isPortrait) {
         const menuBg = new Konva.Rect({
-            fill: config.colors.menu,
+            fill: "rgba(18, 14, 34, 0.96)",
+            cornerRadius: [0, 0, 16, 16],
+            stroke: "rgba(184, 138, 239, 0.35)",
+            strokeWidth: 1.2,
+            shadowColor: "#05030A",
+            shadowBlur: 20,
+            shadowOpacity: 0.7,
+            shadowOffsetY: 6,
+            perfectDrawEnabled: false,
             id: "game-menu-bg"
         });
 
@@ -573,8 +745,7 @@ async function gameUI(config, fonts, navigate) {
     }
 
     const btns_height = [], btns_width = [];
-
-    const iconPadding = 10;
+    let currentX = 0;
 
     for (let j = 0; j < menuItems.length; j++) {
         const element = menuItems[j];
@@ -584,47 +755,133 @@ async function gameUI(config, fonts, navigate) {
 
         element.img = img;
 
+        const iconSize = 18;
+        const fontSize = scaleFontSize(isPortrait ? 15 : (isAndroid ? 13 : 14));
+
         const btn_img = new Konva.Image({
-            width: topbarInnerHeight - 2 * iconPadding,
-            height: topbarInnerHeight - 2 * iconPadding,
-            x: iconPadding,
-            y: iconPadding,
+            width: iconSize,
+            height: iconSize,
             image: img
         });
 
         const btn_text = new Konva.Text({
             align: "left",
-            padding: (topbarInnerHeight - (isPortrait ? 23 : (isAndroid ? 20 : 23))) / 2,
-            x: btn_img.width() + iconPadding,
             verticalAlign: "middle",
             text: element.name,
-            fontFamily: fonts["other"],
-            fontSize: scaleFontSize(isPortrait ? 23 : (isAndroid ? 20 : 23)),
-            fill: config.colors.text,
+            fontFamily: fonts["other"]?.name || "Inter",
+            fontSize: fontSize,
+            fontStyle: "bold",
+            fill: "#F8F2FF",
             fillAfterStrokeEnabled: true,
-            wrap: "word"
+            perfectDrawEnabled: false,
+            wrap: "none"
         });
 
-        let x = 0;
+        let btnHolder;
+        let btnPill;
 
-        if (btns_width.length > 0) {
-            x = btns_width.reduce((prev, current) => {
-                return prev + current;
+        if (isPortrait) {
+            const rowWidth = 180;
+            btnHolder = new Konva.Group({
+                width: rowWidth,
+                height: rowHeight,
+                x: mobilePadding,
+                y: (j * rowHeight) + mobilePadding
             });
+
+            btnPill = new Konva.Rect({
+                x: 0,
+                y: 2,
+                width: rowWidth,
+                height: rowHeight - 4,
+                cornerRadius: 8,
+                fill: "rgba(184, 138, 239, 0.12)",
+                stroke: "rgba(184, 138, 239, 0.25)",
+                strokeWidth: 1,
+                perfectDrawEnabled: false
+            });
+
+            btn_img.setAttrs({
+                x: 14,
+                y: (rowHeight - 4 - iconSize) / 2 + 2
+            });
+
+            btn_text.setAttrs({
+                x: 42,
+                y: 2,
+                width: rowWidth - 50,
+                height: rowHeight - 4
+            });
+
+            btns_width.push(rowWidth);
+            btns_height.push(rowHeight);
+        } else {
+            const textWidth = Math.ceil(btn_text.width());
+            const btnHolderWidth = textWidth + iconSize + 28;
+
+            btnHolder = new Konva.Group({
+                width: btnHolderWidth,
+                height: pillHeight,
+                x: currentX,
+                y: pillY
+            });
+
+            btnPill = new Konva.Rect({
+                x: 0,
+                y: 0,
+                width: btnHolderWidth,
+                height: pillHeight,
+                cornerRadius: 8,
+                fill: "rgba(184, 138, 239, 0.14)",
+                stroke: "rgba(184, 138, 239, 0.30)",
+                strokeWidth: 1,
+                perfectDrawEnabled: false
+            });
+
+            btn_img.setAttrs({
+                x: 12,
+                y: (pillHeight - iconSize) / 2
+            });
+
+            btn_text.setAttrs({
+                x: 12 + iconSize + 8,
+                y: 0,
+                width: textWidth + 4,
+                height: pillHeight
+            });
+
+            currentX += btnHolderWidth + btnGap;
+            btns_width.push(btnHolderWidth);
+            btns_height.push(pillHeight);
         }
 
-        const btnHolder = new Konva.Group({
-            width: btn_img.width() + iconPadding + btn_text.width(),
-            height: topbarInnerHeight,
-            x: isPortrait ? mobilePadding : x,
-            y: isPortrait ? ((j * topbarInnerHeight)) + mobilePadding : 0
-        });
-
         btnHolder.on("mouseover", () => {
+            btnPill.to({
+                fill: "rgba(242, 169, 213, 0.28)",
+                stroke: "rgba(242, 169, 213, 0.70)",
+                duration: 0.18,
+                easing: Konva?.Easings?.EaseOut
+            });
+            btn_text.to({
+                fill: "#FFFFFF",
+                duration: 0.18,
+                easing: Konva?.Easings?.EaseOut
+            });
             document.body.style.cursor = "pointer";
         });
 
         btnHolder.on("mouseout", () => {
+            btnPill.to({
+                fill: isPortrait ? "rgba(184, 138, 239, 0.12)" : "rgba(184, 138, 239, 0.14)",
+                stroke: isPortrait ? "rgba(184, 138, 239, 0.25)" : "rgba(184, 138, 239, 0.30)",
+                duration: 0.18,
+                easing: Konva?.Easings?.EaseOut
+            });
+            btn_text.to({
+                fill: "#F8F2FF",
+                duration: 0.18,
+                easing: Konva?.Easings?.EaseOut
+            });
             document.body.style.cursor = "auto";
         });
 
@@ -640,53 +897,76 @@ async function gameUI(config, fonts, navigate) {
             }
         });
 
-        btnHolder.add(btn_img, btn_text);
-
+        btnHolder.add(btnPill, btn_img, btn_text);
         menuHolder.add(btnHolder);
-
-        btns_width.push(btnHolder.width());
-        btns_height.push(btnHolder.height());
     }
 
-    let menuWidth = 0;
-
     if (isPortrait) {
-        menuWidth = btns_width.reduce((prev, current) => {
-            return prev > current ? prev : current;
-        });
-    } else {
-        menuWidth = btns_width.reduce((prev, current) => {
-            return prev + current;
-        });
-    }
-
-    menuHolder.width(menuWidth + 2 * mobilePadding);
-    menuHolder.x(calculateMenuHolderX());
-
-    if (isPortrait) {
+        const menuWidth = 180;
+        menuHolder.width(menuWidth + 2 * mobilePadding);
         const menuBg = menuHolder.findOne("#game-menu-bg");
-        menuBg.width(menuHolder.width());
-        menuBg.height(menuHolder.height());
+        if (menuBg) {
+            menuBg.width(menuHolder.width());
+            menuBg.height(menuHolder.height());
+        }
+    } else {
+        menuHolder.width(Math.max(0, currentX - btnGap));
     }
 
+    menuHolder.x(calculateMenuHolderX());
 
     const menuicon = new Image();
     menuicon.src = config.gui["menu-icon"];
 
-    const menuBtn = new Konva.Image({
-        width: topbarInnerHeight - 2 * backPadding,
-        height: topbarInnerHeight - 2 * backPadding,
-        x: width - (topbarInnerHeight - backPadding),
-        y: backPadding,
-        image: menuicon.cloneNode(true),
+    const menuBtnSize = isPortrait ? 36 : 36;
+    const menuBtn = new Konva.Group({
+        width: menuBtnSize,
+        height: menuBtnSize,
+        x: width - menuBtnSize - 12,
+        y: (topbarInnerHeight - menuBtnSize) / 2,
         visible: isPortrait
     });
 
+    const menuPill = new Konva.Rect({
+        x: 0,
+        y: 0,
+        width: menuBtnSize,
+        height: menuBtnSize,
+        cornerRadius: 8,
+        fill: "rgba(184, 138, 239, 0.14)",
+        stroke: "rgba(184, 138, 239, 0.32)",
+        strokeWidth: 1,
+        perfectDrawEnabled: false
+    });
+
+    const menuIconSize = 20;
+    const menuIconImg = new Konva.Image({
+        width: menuIconSize,
+        height: menuIconSize,
+        x: (menuBtnSize - menuIconSize) / 2,
+        y: (menuBtnSize - menuIconSize) / 2,
+        image: menuicon.cloneNode(true)
+    });
+
+    menuBtn.add(menuPill, menuIconImg);
+
     menuBtn.on("mouseover", () => {
+        menuPill.to({
+            fill: "rgba(242, 169, 213, 0.28)",
+            stroke: "rgba(242, 169, 213, 0.70)",
+            duration: 0.18,
+            easing: Konva?.Easings?.EaseOut
+        });
         document.body.style.cursor = "pointer";
     });
 
     menuBtn.on("mouseout", () => {
+        menuPill.to({
+            fill: "rgba(184, 138, 239, 0.14)",
+            stroke: "rgba(184, 138, 239, 0.32)",
+            duration: 0.18,
+            easing: Konva?.Easings?.EaseOut
+        });
         document.body.style.cursor = "auto";
     });
 
@@ -721,6 +1001,10 @@ async function gameUI(config, fonts, navigate) {
         width: width,
         height: height - topbarHeight,
         y: topbarHeight,
+        clipX: 0,
+        clipY: 0,
+        clipWidth: width,
+        clipHeight: height - topbarHeight,
         id: "game-box"
     });
 
@@ -742,14 +1026,18 @@ async function gameUI(config, fonts, navigate) {
         fill: config.colors.menu,
         id: "dialog-bg",
         stroke: config.colors.primary,
-        strokeWidth: 4,
+        strokeWidth: 2,
+        cornerRadius: [14, 14, 0, 0],
         fillAfterStrokeEnabled: true,
+        perfectDrawEnabled: false,
     });
     dialogContainerBG.setAttrs({
         fill: config.colors.menu,
         stroke: config.colors.primary,
-        strokeWidth: 4,
-        fillAfterStrokeEnabled: true
+        strokeWidth: 2,
+        cornerRadius: [14, 14, 0, 0],
+        fillAfterStrokeEnabled: true,
+        perfectDrawEnabled: false
     });
 
     const nameGroup = compiledGameUiLayout?.dialogNameGroup ?? new Konva.Group({
@@ -765,48 +1053,54 @@ async function gameUI(config, fonts, navigate) {
         fill: config.colors.menu,
         id: "name-bg",
         stroke: config.colors.primary,
-        strokeWidth: 4,
+        strokeWidth: 2,
+        cornerRadius: [12, 12, 4, 4],
         fillAfterStrokeEnabled: true,
+        perfectDrawEnabled: false,
     });
     nameContainerBG.setAttrs({
         fill: config.colors.menu,
         stroke: config.colors.primary,
-        strokeWidth: 4,
+        strokeWidth: 2,
+        cornerRadius: [12, 12, 4, 4],
         fillAfterStrokeEnabled: true,
+        perfectDrawEnabled: false,
     });
 
     const nameBorderB = compiledGameUiLayout?.dialogNameBorder ?? new Konva.Rect({
         width: width,
-        height: isPortrait ? 5 : 4,
+        height: 0,
         x: nameContainerBG.x(),
         y: nameContainerBG.height(),
-        fill: config.colors.menu,
-        opacity: 0.9
+        fill: config.colors.primary,
+        opacity: 0,
+        visible: false
     });
     nameBorderB.setAttrs({
-        fill: config.colors.menu,
-        opacity: 0.9
+        height: 0,
+        opacity: 0,
+        visible: false
     });
 
     const name_text = compiledGameUiLayout?.dialogName ?? new Konva.Text({
         align: "center",
-        padding: isPortrait ? 15 : (isAndroid ? 10 : 15),
+        padding: isPortrait ? 12 : 14,
         verticalAlign: "middle",
-        // width: dialogContainer.width(),
-        x: isPortrait ? 0 : (isAndroid ? 100 : 200),
+        x: isPortrait ? 0 : (isAndroid ? 100 : 160),
         text: "Alex",
         fontFamily: fonts["other"],
-        fontSize: scaleFontSize(isPortrait ? 23 : (isAndroid ? 22 : 25)),
+        fontStyle: "bold",
+        fontSize: scaleFontSize(isPortrait ? 24 : (isAndroid ? 23 : 27)),
         fill: config.colors.text,
         fillAfterStrokeEnabled: true,
         wrap: "none",
-        // textDecoration: "underline",
         id: "dialog-name"
     });
     name_text.setAttrs({
         text: "Alex",
         fontFamily: fonts["other"],
-        fontSize: scaleFontSize(isPortrait ? 23 : (isAndroid ? 22 : 25)),
+        fontStyle: "bold",
+        fontSize: scaleFontSize(isPortrait ? 24 : (isAndroid ? 23 : 27)),
         fill: config.colors.text,
         fillAfterStrokeEnabled: true,
     });
@@ -821,14 +1115,14 @@ async function gameUI(config, fonts, navigate) {
     const dialog_text = compiledGameUiLayout?.dialogMessage ?? new Konva.Text({
         align: config["game-ui"].dialog.speech.align,
         verticalAlign: "middle",
-        padding: isPortrait ? 10 : (isAndroid ? 5 : 10),
-        width: isPortrait ? (dialogContainerWidth - 30) : (dialogContainerWidth - 200),
-        x: isPortrait ? 15 : 100,
+        padding: isPortrait ? 12 : 16,
+        width: isPortrait ? (dialogContainerWidth - 30) : (dialogContainerWidth - 240),
+        x: isPortrait ? 15 : 120,
         y: name_text.height() + dialogPadding,
         text: "",
         fontFamily: fonts["other"],
-        fontSize: scaleFontSize(isPortrait ? 23 : (isAndroid ? 22 : 25)),
-        lineHeight: 1.5,
+        fontSize: scaleFontSize(isPortrait ? 24 : (isAndroid ? 23 : 28)),
+        lineHeight: 1.6,
         fill: config.colors.text,
         fillAfterStrokeEnabled: true,
         wrap: "word",
@@ -839,8 +1133,8 @@ async function gameUI(config, fonts, navigate) {
         y: name_text.height() + dialogPadding,
         text: "",
         fontFamily: fonts["other"],
-        fontSize: scaleFontSize(isPortrait ? 23 : (isAndroid ? 22 : 25)),
-        lineHeight: 1.5,
+        fontSize: scaleFontSize(isPortrait ? 24 : (isAndroid ? 23 : 28)),
+        lineHeight: 1.6,
         fill: config.colors.text,
         fillAfterStrokeEnabled: true,
     });
@@ -917,7 +1211,8 @@ async function gameUI(config, fonts, navigate) {
         dialogContainerBG.to({
             height: height - name_text.height(),
             y: name_text.height() + 3,
-            duration: 0.2,
+            duration: 0.22,
+            easing: Konva?.Easings?.EaseOut,
             opacity: 0.9
         });
         const name_width = Math.max(name_text.width(), 200);
@@ -930,19 +1225,37 @@ async function gameUI(config, fonts, navigate) {
             width: name_width,
             x: name_x,
             height: name_text.height(),
-            duration: 0.2,
+            duration: 0.22,
+            easing: Konva?.Easings?.EaseOut,
             opacity: 0.9
         });
         dialogContainer.to({
             height: height,
             y: gameHeight - height,
-            duration: 0.2
+            duration: 0.22,
+            easing: Konva?.Easings?.EaseOut
         });
 
         game_rect.to({
             height: gameHeight - height,
-            duration: 0.2
+            duration: 0.22,
+            easing: Konva?.Easings?.EaseOut
         });
+    });
+
+    const game_bg_group = new Konva.Group({
+        id: "game-bg-group",
+        width: width,
+        height: gameHeight,
+        listening: false
+    });
+    game_bg_group.add(game_bg);
+
+    const game_fore_group = new Konva.Group({
+        id: "game-fore-group",
+        width: width,
+        height: gameHeight,
+        listening: false
     });
 
     const game_camera = new Konva.Group({
@@ -963,7 +1276,7 @@ async function gameUI(config, fonts, navigate) {
         listening: false,
         globalCompositeOperation: "multiply"
     });
-    game_camera.add(game_bg, game_rect, lightingOverlay);
+    game_camera.add(game_bg_group, game_fore_group, game_rect, lightingOverlay);
 
     // Keep background in the full viewport so translucent dialog always has scene content behind it,
     // while gameplay nodes can still shrink via game_rect height when dialog is open.
@@ -1416,7 +1729,7 @@ async function gameUI(config, fonts, navigate) {
         document.removeEventListener("keydown", handleFullscreenEscape);
         game_container.off("click touchstart");
 
-        game_layer.destroyChildren();
+        game_layer.removeChildren();
     };
 
     const playEndingSequence = ({ creditsDurationMs = 9000, endHoldMs = 900, allowSkip = true } = {}) => {
@@ -1462,7 +1775,7 @@ async function gameUI(config, fonts, navigate) {
                 node: creditsContent,
                 y: scrollEndY,
                 duration: durationMs / 1000,
-                easing: Konva.Easings.Linear,
+                easing: Konva?.Easings?.Linear,
                 onFinish: () => {
                     endingCreditsTween = null;
                     if (token !== endingRunToken) {
@@ -1547,6 +1860,7 @@ async function gameUI(config, fonts, navigate) {
 
     return ({
         layer: game_layer,
+        topbar: topbar_container,
         actionbar: load_win,
         promptExitToHome,
         resetSession,
@@ -1557,6 +1871,8 @@ async function gameUI(config, fonts, navigate) {
             lightingOverlay: game_layer.findOne("#game-lighting-overlay"),
             viewport: game_layer.findOne("#game-box"),
             bg: game_layer.findOne("#game-bg"),
+            bgGroup: game_layer.findOne("#game-bg-group"),
+            foreGroup: game_layer.findOne("#game-fore-group"),
             transitionOverlay: game_layer.findOne("#game-transition-overlay"),
             flashOverlay: game_layer.findOne("#game-flash-overlay"),
             end: game_layer.findOne("#end-group"),
@@ -1573,6 +1889,9 @@ async function gameUI(config, fonts, navigate) {
         dialog: {
             box: game_layer.findOne("#dialog-box"),
             bg: game_layer.findOne("#dialog-bg"),
+            nameGroup: game_layer.findOne("#dialog-name-group"),
+            nameBg: game_layer.findOne("#name-bg"),
+            nameBorder: game_layer.findOne("#dialog-name-border"),
             name: game_layer.findOne("#dialog-name"),
             message: game_layer.findOne("#dialog-message")
         },

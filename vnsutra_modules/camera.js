@@ -8,6 +8,13 @@ const LIGHTING_PRESETS = {
     noir: { color: "#64748b", strength: 0.62 }
 };
 
+const DEFAULT_PARALLAX_DEPTHS = {
+    far: 0.2,
+    mid: 0.6,
+    near: 1.0,
+    fore: 1.5
+};
+
 function clamp(v, min, max) {
     return Math.min(max, Math.max(min, v));
 }
@@ -15,6 +22,7 @@ function clamp(v, min, max) {
 /**
  * 2D Stage Camera & Ambient Lighting Controller.
  * Operates on `game.ui.game.camera` (wrapping background + actors) while leaving dialogue/UI untouched.
+ * Supports 2.5D multi-plane parallax depth, mouse-tilt, and mobile gyro orientation.
  */
 class CameraController {
     /**
@@ -24,21 +32,253 @@ class CameraController {
         this.game = gameInstance;
         this._tween = null;
         this._bgTween = null;
+        this._planeTweens = [];
         this.state = { x: 0, y: 0, zoom: 1, rotation: 0 };
         this.lighting = { ...LIGHTING_PRESETS.day };
-        this.parallax = { enabled: true, bgMultiplier: 0.35 };
+        this.parallax = {
+            enabled: true,
+            bgMultiplier: 0.35,
+            mouseTilt: true,
+            maxTiltX: 32,
+            maxTiltY: 18,
+            smoothing: 0.12
+        };
+        this._planes = [];
+        this._targetTilt = { x: 0, y: 0 };
+        this._currentTilt = { x: 0, y: 0 };
+        this._rafId = null;
+        this._trackingTarget = null;
+        this._boundPointerMove = null;
+        this._boundPointerLeave = null;
+        this._boundOrientation = null;
     }
 
     /**
      * Configure depth parallax settings.
-     * @param {{ enabled?: boolean, bgMultiplier?: number }} [options]
+     * @param {{ enabled?: boolean, bgMultiplier?: number, mouseTilt?: boolean, maxTiltX?: number, maxTiltY?: number, smoothing?: number }} [options]
      */
-    setParallax({ enabled = true, bgMultiplier = 0.35 } = {}) {
+    setParallax({
+        enabled = true,
+        bgMultiplier = 0.35,
+        mouseTilt = true,
+        maxTiltX = 32,
+        maxTiltY = 18,
+        smoothing = 0.12
+    } = {}) {
         this.parallax = {
             enabled: Boolean(enabled),
-            bgMultiplier: clamp(Number(bgMultiplier) || 0.35, 0, 1)
+            bgMultiplier: clamp(Number(bgMultiplier) || 0.35, 0, 1),
+            mouseTilt: Boolean(mouseTilt),
+            maxTiltX: Math.max(0, Number(maxTiltX) || 32),
+            maxTiltY: Math.max(0, Number(maxTiltY) || 18),
+            smoothing: clamp(Number(smoothing) || 0.12, 0.01, 1)
         };
+        if (!this.parallax.enabled || !this.parallax.mouseTilt || this._isReducedMotion()) {
+            this._targetTilt = { x: 0, y: 0 };
+            this._currentTilt = { x: 0, y: 0 };
+        }
+        this._applyPlaneTransforms();
         return this.parallax;
+    }
+
+    /**
+     * Set active 2.5D background planes for multi-layer parallax depth.
+     * @param {Array<{ node: any, depth?: number, baseX?: number, baseY?: number, id?: string }>} planes
+     */
+    setPlanes(planes) {
+        this._planes = Array.isArray(planes) ? [...planes] : [];
+        this._applyPlaneTransforms();
+        return this._planes;
+    }
+
+    getPlanes() {
+        return this._planes;
+    }
+
+    /**
+     * Apply pan and mouse/gyro tilt transforms across all active planes.
+     */
+    _applyPlaneTransforms() {
+        if (!this.parallax.enabled || this._isReducedMotion()) {
+            this._currentTilt = { x: 0, y: 0 };
+        }
+
+        const tiltX = this._currentTilt.x;
+        const tiltY = this._currentTilt.y;
+        const maxTiltX = this.parallax.maxTiltX;
+        const maxTiltY = this.parallax.maxTiltY;
+        const px = this.state.x;
+        const py = this.state.y;
+
+        if (this._planes.length > 0) {
+            for (const plane of this._planes) {
+                const node = plane.node;
+                if (!node) continue;
+                const depth = plane.depth !== undefined ? plane.depth : 1.0;
+                // Optical depth coefficient: (1 - depth).
+                // Far (depth < 1): moves with pan/tilt
+                // Focal (depth = 1): static relative to camera frame
+                // Fore (depth > 1): shifts in reverse past camera lens
+                const factor = plane.factor !== undefined ? plane.factor : (1.0 - depth);
+                const tiltFactor = plane.tiltFactor !== undefined ? plane.tiltFactor : factor;
+                const panShiftX = px * factor;
+                const panShiftY = py * factor;
+                const tiltShiftX = -tiltX * maxTiltX * tiltFactor;
+                const tiltShiftY = -tiltY * maxTiltY * tiltFactor;
+
+                const baseX = Number(plane.baseX) || 0;
+                const baseY = Number(plane.baseY) || 0;
+
+                node.x?.(baseX + panShiftX + tiltShiftX);
+                node.y?.(baseY + panShiftY + tiltShiftY);
+            }
+        }
+
+        // Base/legacy background node
+        const bgNode = this._getBgNode();
+        if (bgNode) {
+            const bgMul = this.parallax.bgMultiplier;
+            const factor = 1.0 - bgMul;
+            const panShiftX = px * factor;
+            const panShiftY = py * factor;
+            const tiltShiftX = -tiltX * maxTiltX * factor;
+            const tiltShiftY = -tiltY * maxTiltY * factor;
+
+            bgNode.x?.(panShiftX + tiltShiftX);
+            bgNode.y?.(panShiftY + tiltShiftY);
+        }
+    }
+
+    /**
+     * Start interactive pointer-tilt and device-orientation parallax tracking.
+     * @param {HTMLElement} [target]
+     */
+    initParallaxTracking(target = null) {
+        if (typeof window === "undefined") return;
+        const el = target || this.game?.ui?.game?.container || document?.body;
+        if (!el) return;
+
+        this.stopParallaxTracking();
+        this._trackingTarget = el;
+
+        this._boundPointerMove = (e) => {
+            if (!this.parallax.enabled || !this.parallax.mouseTilt || this._isReducedMotion()) {
+                return;
+            }
+            let rect = null;
+            if (typeof el.getBoundingClientRect === "function") {
+                rect = el.getBoundingClientRect();
+            } else if (typeof window !== "undefined") {
+                rect = { left: 0, top: 0, width: window.innerWidth || 1280, height: window.innerHeight || 720 };
+            }
+            if (!rect || rect.width <= 0 || rect.height <= 0) return;
+
+            const clientX = e.clientX !== undefined ? e.clientX : (e.touches?.[0]?.clientX ?? (rect.left + rect.width / 2));
+            const clientY = e.clientY !== undefined ? e.clientY : (e.touches?.[0]?.clientY ?? (rect.top + rect.height / 2));
+
+            const relX = clientX - rect.left;
+            const relY = clientY - rect.top;
+
+            let normX = (relX - rect.width * 0.5) / (rect.width * 0.5);
+            let normY = (relY - rect.height * 0.5) / (rect.height * 0.5);
+
+            // Circular radial clamping: ensures corner diagonal distance matches edge limit (1.0)
+            // preventing the 41% diagonal corner acceleration and reverse drag sensation
+            const dist = Math.hypot(normX, normY);
+            if (dist > 1.0) {
+                normX /= dist;
+                normY /= dist;
+            } else {
+                normX = clamp(normX, -1, 1);
+                normY = clamp(normY, -1, 1);
+            }
+
+            this._targetTilt.x = normX;
+            this._targetTilt.y = normY;
+            this._startTiltLoop();
+        };
+
+        this._boundPointerLeave = (e) => {
+            // Only reset if pointer truly leaves window, not when reaching canvas corners
+            if (e && e.relatedTarget) return;
+            this._targetTilt.x = 0;
+            this._targetTilt.y = 0;
+            this._startTiltLoop();
+        };
+
+        this._boundOrientation = (e) => {
+            if (!this.parallax.enabled || !this.parallax.mouseTilt || this._isReducedMotion()) {
+                return;
+            }
+            const gamma = Number(e.gamma);
+            const beta = Number(e.beta);
+            if (!Number.isNaN(gamma) && !Number.isNaN(beta)) {
+                this._targetTilt.x = clamp(gamma / 30, -1, 1);
+                this._targetTilt.y = clamp((beta - 45) / 30, -1, 1);
+                this._startTiltLoop();
+            }
+        };
+
+        if (typeof el.addEventListener === "function") {
+            el.addEventListener("pointermove", this._boundPointerMove, { passive: true });
+        }
+        if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
+            // Window-level tracking ensures corners remain active without abrupt pointerleave snapback
+            window.addEventListener("pointermove", this._boundPointerMove, { passive: true });
+            window.addEventListener("pointerleave", this._boundPointerLeave, { passive: true });
+            window.addEventListener("deviceorientation", this._boundOrientation, { passive: true });
+            window.addEventListener("blur", this._boundPointerLeave, { passive: true });
+        }
+    }
+
+    _startTiltLoop() {
+        if (this._rafId || typeof requestAnimationFrame === "undefined") return;
+
+        const step = () => {
+            const dx = this._targetTilt.x - this._currentTilt.x;
+            const dy = this._targetTilt.y - this._currentTilt.y;
+            const dist = Math.abs(dx) + Math.abs(dy);
+
+            if (dist < 0.001) {
+                this._currentTilt.x = this._targetTilt.x;
+                this._currentTilt.y = this._targetTilt.y;
+                this._applyPlaneTransforms();
+                this._getCameraNode()?.getLayer?.()?.batchDraw?.();
+                this._rafId = null;
+                return;
+            }
+
+            const alpha = this.parallax.smoothing;
+            this._currentTilt.x += dx * alpha;
+            this._currentTilt.y += dy * alpha;
+            this._applyPlaneTransforms();
+            this._getCameraNode()?.getLayer?.()?.batchDraw?.();
+
+            this._rafId = requestAnimationFrame(step);
+        };
+
+        this._rafId = requestAnimationFrame(step);
+    }
+
+    stopParallaxTracking() {
+        if (this._rafId && typeof cancelAnimationFrame !== "undefined") {
+            cancelAnimationFrame(this._rafId);
+            this._rafId = null;
+        }
+        if (this._trackingTarget && typeof this._trackingTarget.removeEventListener === "function") {
+            if (this._boundPointerMove) this._trackingTarget.removeEventListener("pointermove", this._boundPointerMove);
+            if (this._boundPointerLeave) this._trackingTarget.removeEventListener("pointerleave", this._boundPointerLeave);
+        }
+        if (typeof window !== "undefined" && typeof window.removeEventListener === "function") {
+            if (this._boundPointerMove) window.removeEventListener("pointermove", this._boundPointerMove);
+            if (this._boundPointerLeave) window.removeEventListener("pointerleave", this._boundPointerLeave);
+            if (this._boundOrientation) window.removeEventListener("deviceorientation", this._boundOrientation);
+            if (this._boundPointerLeave) window.removeEventListener("blur", this._boundPointerLeave);
+        }
+        this._trackingTarget = null;
+        this._boundPointerMove = null;
+        this._boundPointerLeave = null;
+        this._boundOrientation = null;
     }
 
     _getBgNode() {
@@ -128,15 +368,17 @@ class CameraController {
             node.scaleX(targetZoom);
             node.scaleY(targetZoom);
             node.rotation?.(targetRot);
-            if (bgNode) {
-                bgNode.x?.(bgShiftX);
-                bgNode.y?.(bgShiftY);
-            }
+            this._applyPlaneTransforms();
             node.getLayer?.()?.batchDraw?.();
             return;
         }
 
-        const easingFn = Konva.Easings?.[easing] || Konva.Easings?.EaseInOut;
+        for (const pt of this._planeTweens) {
+            pt.destroy?.();
+        }
+        this._planeTweens = [];
+
+        const easingFn = Konva?.Easings?.[easing] || Konva?.Easings?.EaseInOut;
         const promises = [
             new Promise((resolve) => {
                 this._tween = new Konva.Tween({
@@ -174,6 +416,31 @@ class CameraController {
                     this._bgTween.play();
                 })
             );
+        }
+
+        if (this._planes.length > 0) {
+            for (const plane of this._planes) {
+                const pNode = plane.node;
+                if (!pNode) continue;
+                const depth = plane.depth !== undefined ? plane.depth : 1.0;
+                const factor = 1.0 - depth;
+                const targetX = (Number(plane.baseX) || 0) + (useParallax ? px * factor : 0);
+                const targetY = (Number(plane.baseY) || 0) + (useParallax ? py * factor : 0);
+                promises.push(
+                    new Promise((resolve) => {
+                        const pt = new Konva.Tween({
+                            node: pNode,
+                            duration: actualDur,
+                            x: targetX,
+                            y: targetY,
+                            easing: easingFn,
+                            onFinish: () => resolve()
+                        });
+                        this._planeTweens.push(pt);
+                        pt.play();
+                    })
+                );
+            }
         }
 
         await Promise.all(promises);
@@ -275,6 +542,7 @@ class CameraController {
     }
 
     dispose() {
+        this.stopParallaxTracking();
         if (this._tween) {
             this._tween.destroy?.();
             this._tween = null;
@@ -283,8 +551,12 @@ class CameraController {
             this._bgTween.destroy?.();
             this._bgTween = null;
         }
+        for (const pt of this._planeTweens) {
+            pt.destroy?.();
+        }
+        this._planeTweens = [];
     }
 }
 
-export { CameraController, LIGHTING_PRESETS };
+export { CameraController, LIGHTING_PRESETS, DEFAULT_PARALLAX_DEPTHS };
 

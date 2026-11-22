@@ -2,14 +2,16 @@
 export default [
     {
         "type": "scene.transition",
-        "transitionType": "fade",
-        "color": "#111111",
-        "duration": 250
+        "transitionType": "crossfade",
+        "color": "800"
     },
     {
-        "type": "background",
-        "reset": true,
-        "asset": "apartment_ext"
+        "type": "stage",
+        "asset": "apartment_stage",
+        "options": {
+            "mouseTilt": true
+        },
+        "duration": 0.8
     },
     {
         "type": "actor.reset",
@@ -141,6 +143,37 @@ export default [
                 },
                 "then": [
                     {
+                        "type": "dialog",
+                        "actor": "mary",
+                        "text": "@scene2.bgCrossfadeDemo"
+                    },
+                    {
+                        "type": "stage",
+                        "asset": "rainy_cafe",
+                        "options": {
+                            "mouseTilt": true
+                        },
+                        "duration": 0.8
+                    },
+                    {
+                        "type": "dialog",
+                        "actor": "mary",
+                        "text": "@scene2.bgCrossfadeCafe"
+                    },
+                    {
+                        "type": "stage",
+                        "asset": "apartment_stage",
+                        "options": {
+                            "mouseTilt": true
+                        },
+                        "duration": 0.8
+                    },
+                    {
+                        "type": "dialog",
+                        "actor": "mary",
+                        "text": "@scene2.bgCrossfadeReturn"
+                    },
+                    {
                         "type": "actor.prop",
                         "actor": "mary",
                         "prop": "grayscale",
@@ -207,11 +240,6 @@ export default [
         "type": "actor.call",
         "actor": "mary",
         "method": "slideOut"
-    },
-    {
-        "type": "effect.flash",
-        "color": "#f8f8ff",
-        "duration": 140
     },
     {
         "type": "jump",

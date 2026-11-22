@@ -20,7 +20,9 @@ const REGEX_DIALOG_ACTOR = /^(\w+):\s*(.+)$/; // mary: Hello
 const REGEX_DIALOG_NARRATOR = /^"([^"]+)"$/; // "Just narration"
 
 // Phase 2 Regex Matchers (Game Actions)
+const REGEX_STAGE = /^stage:\s*([^ ]+)$/i; // stage: cherry_park.vnstage or stage: cherry_park
 const REGEX_BG = /^bg:\s*([^ ]+)$/i; // bg: futon_room
+const REGEX_PARALLAX_BG = /^(?:parallax\s+bg|bg\s+parallax):\s*(.+)$/i; // bg parallax: far=sky mid=forest near=clearing fore=vines
 const REGEX_MUSIC_PLAY = /^music play:\s*([^ ]+)$/i; // music play: bgm.mp3
 const REGEX_MUSIC_CROSSFADE = /^music crossfade:\s*([^ ]+)(?:\s+([0-9]+))?$/i; // music crossfade: bgm2.mp3 1200
 const REGEX_MUSIC_STOP = /^music stop$/i;
@@ -32,7 +34,8 @@ const REGEX_VAR_SET_NUM = /^\$([a-zA-Z0-9_]+)\s*=\s*([0-9.]+)$/; // $score = 10
 const REGEX_STORAGE_SET = /^storage\s*set:\s*([a-zA-Z0-9_-]+)\s*=\s*\$([a-zA-Z0-9_]+)$/i; // storage set: name = $name
 
 // Phase 3 Regex Matchers (Control Flow Blocks)
-const REGEX_IF = /^if\s+\$([a-zA-Z0-9_]+)\s*(===|!==|>=|<=|==|!=|>|<)\s*(.+):$/i;
+const REGEX_IF = /^if\s+(.+):$/i;
+const REGEX_ELIF = /^elif\s+(.+):$/i;
 const REGEX_ELSE = /^else:$/i;
 const REGEX_SWITCH = /^switch\s+\$([a-zA-Z0-9_]+)\s*:$/i;
 const REGEX_CHOICE = /^>\s*choice\s+\$([a-zA-Z0-9_]+)\s*:\s*"([^"]+)"$/i;
@@ -61,6 +64,81 @@ const REGEX_FLASH = /^flash\s*screen(?:\s+([a-zA-Z0-9#]+))?(?:\s+([0-9]+))?$/i; 
 const REGEX_SHAKE_SCREEN = /^shake\s*screen(?:\s+([0-9]+))?(?:\s+([0-9]+))?$/i; // shake screen 5 300
 const REGEX_TRANSITION = /^transition:\s*([a-zA-Z0-9_-]+)(?:\s+([a-zA-Z0-9#]+))?(?:\s+([0-9]+))?$/i; // transition: wipe-left #000 500
 const REGEX_WEATHER = /^weather:\s*([a-zA-Z0-9_-]+)(?:\s+intensity=([0-9.]+))?$/i; // weather: rain intensity=0.7
+
+function parseSingleCondition(str) {
+    const trimmed = str.trim();
+    if (!trimmed) {
+        return { op: "truthy", value: true };
+    }
+
+    if (trimmed.startsWith("not ") || trimmed.startsWith("!")) {
+        const inner = trimmed.startsWith("not ") ? trimmed.slice(4).trim() : trimmed.slice(1).trim();
+        return { op: "not", test: parseSingleCondition(inner) };
+    }
+
+    const cmpMatch = trimmed.match(/^\$([a-zA-Z0-9_]+)\s*(===|!==|>=|<=|==|!=|>|<|in|not-in)\s*(.+)$/i);
+    if (cmpMatch) {
+        let rightVal = cmpMatch[3].trim();
+        if ((rightVal.startsWith("\"") && rightVal.endsWith("\"")) || (rightVal.startsWith("'") && rightVal.endsWith("'"))) {
+            rightVal = rightVal.slice(1, -1);
+        } else if (rightVal === "true") {
+            rightVal = true;
+        } else if (rightVal === "false") {
+            rightVal = false;
+        } else if (rightVal === "null") {
+            rightVal = null;
+        } else if (!isNaN(rightVal)) {
+            rightVal = Number(rightVal);
+        } else if (rightVal.startsWith("$")) {
+            rightVal = { fromVar: rightVal.slice(1) };
+        }
+
+        let opVal = cmpMatch[2];
+        if (opVal === "==") opVal = "===";
+        if (opVal === "!=") opVal = "!==";
+
+        return {
+            left: { fromVar: cmpMatch[1] },
+            op: opVal,
+            right: rightVal
+        };
+    }
+
+    const varMatch = trimmed.match(/^\$([a-zA-Z0-9_]+)$/);
+    if (varMatch) {
+        return {
+            left: { fromVar: varMatch[1] },
+            op: "truthy",
+            value: { fromVar: varMatch[1] }
+        };
+    }
+
+    if (trimmed === "true") return { op: "truthy", value: true };
+    if (trimmed === "false") return { op: "truthy", value: false };
+
+    return { op: "truthy", value: trimmed };
+}
+
+function parseConditionExpression(expr) {
+    const raw = expr.trim();
+    const orTokens = raw.split(/\s+(?:or|\|\|)\s+/i);
+    if (orTokens.length > 1) {
+        return {
+            op: "or",
+            conditions: orTokens.map((token) => parseConditionExpression(token))
+        };
+    }
+
+    const andTokens = raw.split(/\s+(?:and|&&)\s+/i);
+    if (andTokens.length > 1) {
+        return {
+            op: "and",
+            conditions: andTokens.map((token) => parseSingleCondition(token))
+        };
+    }
+
+    return parseSingleCondition(raw);
+}
 
 async function compileFile(filePath) {
     try {
@@ -119,25 +197,36 @@ async function compileFile(filePath) {
 
             const ifMatch = line.match(REGEX_IF);
             if (ifMatch) {
-                let rightVal = ifMatch[3].trim();
-                if (rightVal.startsWith("\"") && rightVal.endsWith("\"")) {
-                    rightVal = rightVal.slice(1, -1);
-                } else if (!isNaN(rightVal)) {
-                    rightVal = Number(rightVal);
-                }
-
-                let opVal = ifMatch[2];
-                if (opVal === "==") opVal = "===";
-                if (opVal === "!=") opVal = "!==";
-
                 const ifObj = {
                     type: "if",
-                    test: { left: { fromVar: ifMatch[1] }, op: opVal, right: rightVal },
+                    test: parseConditionExpression(ifMatch[1]),
                     then: [],
                     else: []
                 };
                 targetArray.push(ifObj);
                 expectingBlock = { target: ifObj.then };
+                continue;
+            }
+
+            const elifMatch = line.match(REGEX_ELIF);
+            if (elifMatch) {
+                const lastAction = targetArray[targetArray.length - 1];
+                if (!lastAction || lastAction.type !== "if") {
+                    console.warn(chalk.yellow(`Warning: Found 'elif:' without matching 'if' at line ${i + 1}`));
+                    continue;
+                }
+                let currentIf = lastAction;
+                while (currentIf.else && currentIf.else.length === 1 && currentIf.else[0].type === "if") {
+                    currentIf = currentIf.else[0];
+                }
+                const elifObj = {
+                    type: "if",
+                    test: parseConditionExpression(elifMatch[1]),
+                    then: [],
+                    else: []
+                };
+                currentIf.else.push(elifObj);
+                expectingBlock = { target: elifObj.then };
                 continue;
             }
 
@@ -149,7 +238,11 @@ async function compileFile(filePath) {
                     console.warn(chalk.yellow(`Warning: Found 'else:' without matching 'if' at line ${i + 1}`));
                     continue;
                 }
-                expectingBlock = { target: lastAction.else };
+                let currentIf = lastAction;
+                while (currentIf.else && currentIf.else.length === 1 && currentIf.else[0].type === "if") {
+                    currentIf = currentIf.else[0];
+                }
+                expectingBlock = { target: currentIf.else };
                 continue;
             }
 
@@ -251,6 +344,29 @@ async function compileFile(filePath) {
 
             if (REGEX_END.test(line)) {
                 targetArray.push({ type: "end" });
+                continue;
+            }
+
+            const parallaxBgMatch = line.match(REGEX_PARALLAX_BG);
+            if (parallaxBgMatch) {
+                const argsStr = parallaxBgMatch[1].trim();
+                const planes = [];
+                const depths = { far: 0.2, mid: 0.6, near: 1.0, fore: 1.5 };
+                const kvRegex = /([a-zA-Z0-9_]+)=(?:'([^']*)'|"([^"]*)"|([^ ]+))/g;
+                let match;
+                while ((match = kvRegex.exec(argsStr)) !== null) {
+                    const key = match[1];
+                    const val = match[2] !== undefined ? match[2] : (match[3] !== undefined ? match[3] : match[4]);
+                    const depth = depths[key] !== undefined ? depths[key] : (!isNaN(key) ? Number(key) : 1.0);
+                    planes.push({ asset: val, depth, id: key });
+                }
+                targetArray.push({ type: "background.parallax", planes });
+                continue;
+            }
+
+            const stageMatch = line.match(REGEX_STAGE);
+            if (stageMatch) {
+                targetArray.push({ type: "stage", asset: stageMatch[1] });
                 continue;
             }
 

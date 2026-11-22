@@ -533,7 +533,7 @@ class WebGLRigRenderer {
         const drawHeadOverlay = (canvas, texProp) => {
             if (!canvas) return;
             if (!this[texProp]) {
-                this[texProp] = this.createTexture(canvas);
+                this[texProp] = this._uploadTexture(canvas);
             } else {
                 gl.bindTexture(gl.TEXTURE_2D, this[texProp]);
                 gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);

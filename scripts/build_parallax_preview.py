@@ -5,17 +5,19 @@ import base64
 import struct
 
 def build_parallax_preview():
-    # Load Nanami .vnsprite
-    vns_path = 'assets/game-assets/characters/Nanami/Casual.vnsprite'
+    # Load Sakura .vnsprite
+    vns_path = 'assets/game-assets/characters/Sakura/Casual.vnsprite'
     data = open(vns_path, 'rb').read()
     jlen = struct.unpack_from('<I', data, 8)[0]
     manifest = json.loads(data[12:12+jlen].decode('utf-8'))
     char_b64 = base64.b64encode(data[12+jlen:]).decode('ascii')
 
-    # Load Apartment_Exterior background as base64 webp/png
-    bg_path = 'assets/game-assets/backgrounds/Noraneko_Background_Pack_1/Apartment_Exterior.png'
-    bg_data = open(bg_path, 'rb').read()
-    bg_b64 = base64.b64encode(bg_data).decode('ascii')
+    # Load Backgrounds
+    apt_path = 'assets/game-assets/backgrounds/Noraneko_Background_Pack_1/Apartment_Exterior.png'
+    apt_b64 = base64.b64encode(open(apt_path, 'rb').read()).decode('ascii')
+
+    futon_path = 'assets/game-assets/backgrounds/Noraneko_Background_Pack_1/Futon_Room.png'
+    futon_b64 = base64.b64encode(open(futon_path, 'rb').read()).decode('ascii')
 
     manifest_json = json.dumps(manifest, separators=(',', ':'))
 
@@ -54,7 +56,7 @@ def build_parallax_preview():
   }}
   .sv {{ color: #38bdf8; font-weight: 700; }}
   #panel {{
-    width: 380px; min-width: 380px; flex-shrink: 0; background: #0f172a; border-left: 1px solid #1e293b;
+    width: 390px; min-width: 390px; flex-shrink: 0; background: #0f172a; border-left: 1px solid #1e293b;
     padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px;
   }}
   h2 {{ margin: 0; font-size: 1.15rem; color: #38bdf8; display: flex; align-items: center; gap: 8px; }}
@@ -87,16 +89,25 @@ def build_parallax_preview():
     <canvas id="view" width="1280" height="720"></canvas>
   </div>
   <div id="hud">
+    <div>Scene: <span class="sv" id="hud-scene">Apartment Exterior</span></div>
     <div>Camera: <span class="sv" id="hud-cam">x=0 y=0 z=1.20</span></div>
-    <div>Background Parallax: <span class="sv" id="hud-bg">x=0 y=0 (0.35x)</span></div>
-    <div>Focal Actor: <span class="sv" id="hud-actor">Nanami (1.00x)</span></div>
+    <div>Background Parallax: <span class="sv" id="hud-bg">shiftX=0 shiftY=0 (0.35x)</span></div>
+    <div>Focal Actor: <span class="sv" id="hud-actor">Sakura (1.00x)</span></div>
   </div>
 </div>
 
 <div id="panel">
   <div>
-    <h2>2.5D Parallax Stage <span style="font-size:0.65rem;background:#0284c7;color:#fff;padding:2px 6px;border-radius:999px;">Live Preview</span></h2>
-    <p>Simulates the exact <code>CameraController</code> 2.5D depth parallax engine where the scenic background plane counter-shifts at <code>0.35x</code>.</p>
+    <h2>2.5D Parallax Stage <span style="font-size:0.65rem;background:#0284c7;color:#fff;padding:2px 6px;border-radius:999px;">Live Stage</span></h2>
+    <p>Dynamic camera tilt where the entire stage and character move smoothly with mouse tracking while the background counter-shifts at <code>0.35x</code>.</p>
+  </div>
+
+  <div class="sec">
+    <div class="st">Select Background Scene</div>
+    <div class="grid2" id="bg-btns">
+      <button data-bg="apt" class="active">Apartment</button>
+      <button data-bg="futon">Futon Room</button>
+    </div>
   </div>
 
   <div class="sec">
@@ -163,7 +174,7 @@ def build_parallax_preview():
   </div>
 
   <div class="sec">
-    <div class="st">Actor Expressions & FX</div>
+    <div class="st">Actor Expressions &amp; FX</div>
     <div class="row">
       <span>Mood</span>
       <div style="display:flex;gap:4px;" id="mood-btns"></div>
@@ -192,8 +203,14 @@ def build_parallax_preview():
 const manifest = {manifest_json};
 const atlasImg = new Image();
 atlasImg.src = "data:image/webp;base64,{char_b64}";
-const bgImg = new Image();
-bgImg.src = "data:image/png;base64,{bg_b64}";
+
+const bgImgs = {{
+  apt: new Image(),
+  futon: new Image()
+}};
+bgImgs.apt.src = "data:image/png;base64,{apt_b64}";
+bgImgs.futon.src = "data:image/png;base64,{futon_b64}";
+let curBg = "apt";
 
 const canvas = document.getElementById("view");
 const ctx = canvas.getContext("2d");
@@ -208,6 +225,15 @@ let bgMul = 0.35;
 let parallaxEnabled = true;
 let charScaleFactor = 0.52;
 let charOffsetY = -15;
+
+// Background Selector
+document.getElementById("bg-btns").addEventListener("click", e => {{
+  const bg = e.target.dataset.bg;
+  if (!bg) return;
+  curBg = bg;
+  document.querySelectorAll("#bg-btns button").forEach(b => b.classList.toggle("active", b.dataset.bg === bg));
+  document.getElementById("hud-scene").textContent = bg === "apt" ? "Apartment Exterior" : "Futon Room";
+}});
 
 // Framing Presets
 document.getElementById("framing-btns").addEventListener("click", e => {{
@@ -296,7 +322,7 @@ function updateSnippet() {{
   const z = camZoom.toFixed(2);
   let cmd = `@camera.pan x=${{px}} y=${{py}} zoom=${{z}} duration=0.8`;
   if (activeFx.size > 0) {{
-    cmd += `\\n@actor.fx actor="nanami" fx=${{JSON.stringify([...activeFx])}}`;
+    cmd += `\\n@actor.fx actor="sakura" fx=${{JSON.stringify([...activeFx])}}`;
   }}
   document.getElementById("code-snippet").textContent = cmd;
 }}
@@ -348,7 +374,7 @@ function syncControls() {{
   updateSnippet();
 }}
 
-// Mouse Tilt Parallax
+// Mouse Tilt Parallax: Pointer movement moves the camera smoothly
 window.addEventListener("mousemove", e => {{
   if (!document.getElementById("chk-mouse-tilt").checked) {{
     mouseTargetX = 0; mouseTargetY = 0;
@@ -374,7 +400,7 @@ function render(now) {{
 
   ctx.clearRect(0, 0, W, H);
 
-  // 1. Compute Camera Transformations
+  // 1. Compute Camera Transformations: The entire stage and character pivot!
   const px = totalPanX * W;
   const py = totalPanY * H;
   const zoom = camZoom;
@@ -382,7 +408,7 @@ function render(now) {{
   const destCamX = (W * 0.5) - px * zoom;
   const destCamY = (H * 0.5) - py * zoom;
 
-  // 2. Compute Depth Parallax Background Shift
+  // 2. Compute Depth Parallax Background Shift (counter-shifts relative to camera)
   const bgShiftX = parallaxEnabled ? px * (1 - bgMul) : 0;
   const bgShiftY = parallaxEnabled ? py * (1 - bgMul) : 0;
 
@@ -391,12 +417,13 @@ function render(now) {{
   document.getElementById("hud-bg").textContent = `shiftX=${{Math.round(bgShiftX)}} shiftY=${{Math.round(bgShiftY)}} (${{bgMul.toFixed(2)}}x)`;
 
   ctx.save();
-  // Main Camera Pivot Group
+  // Main Camera Pivot Group: MOVES THE ENTIRE STAGE AND CHARACTER
   ctx.translate(destCamX, destCamY);
   ctx.scale(zoom, zoom);
   ctx.translate(-W * 0.5, -H * 0.5);
 
-  // Draw Background with Parallax Shift (scaled slightly to prevent edge leakage)
+  // Draw Background with Parallax Shift
+  const bgImg = bgImgs[curBg];
   if (bgImg.complete && bgImg.naturalWidth > 0) {{
     ctx.save();
     ctx.translate(bgShiftX, bgShiftY);
@@ -409,7 +436,7 @@ function render(now) {{
     ctx.restore();
   }}
 
-  // Draw Rigged Character in the Stage Plane
+  // Draw Rigged Character in the Stage Plane: MOVES WITH THE CAMERA + BREATHES
   if (atlasImg.complete && atlasImg.naturalWidth > 0) {{
     const fd = manifest.frames[curMood] || manifest.frames.Smiling;
     const cW = manifest.width, cH = manifest.height;
@@ -523,6 +550,7 @@ requestAnimationFrame(render);
     with open(out_path, 'w', encoding='utf-8') as f:
         f.write(html)
     print(f"Built {out_path} ({len(html)/1024:.1f} KB)")
+    return out_path
 
 if __name__ == '__main__':
     build_parallax_preview()

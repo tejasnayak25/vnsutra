@@ -925,7 +925,16 @@ class RiggedCharacter {
         const game = getGame();
         const container = game?.ui?.game?.container;
         if (container?.add && this.img) {
-            container.add(this.img);
+            if (this.img._isDestroyed) {
+                const Konva = globalThis.Konva;
+                this.img = new Konva.Image({
+                    image: this._outfit?.canvas || null,
+                    listening: false
+                });
+            }
+            if (this.img.getParent() !== container) {
+                container.add(this.img);
+            }
         }
         if (this.img && !this.img.getAttr?.("origScale") && this._outfit?.canvas) {
             this._outfit.applyInitialLayout(this._outfit.canvas);

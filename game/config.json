@@ -26,8 +26,8 @@
 
     ],
     "fonts": {
-        "title": { "name": "LavishlyYours", "url": "./assets/fonts/LavishlyYours/LavishlyYours-Regular.ttf" },
-        "other": { "name": "YanoneKaffeesatz", "url": "./assets/fonts/YanoneKaffeesatz/YanoneKaffeesatz-VariableFont_wght.ttf" }
+        "title": { "name": "Cinzel", "url": "./assets/fonts/Cinzel/Cinzel-VariableFont_wght.ttf" },
+        "other": { "name": "Inter", "url": "./assets/fonts/Inter/Inter-VariableFont_opsz,wght.ttf" }
     },
     "gui": {
         "button": null,
@@ -68,7 +68,8 @@
             "mode": "progressive",
             "title": "Chapters",
             "sidebarLabel": "Chapters",
-            "path": "game/chapters.json"
+            "path": "game/chapters.json",
+            "layout": "map"
         },
         "end": {
             "mode": "credits-then-end",
@@ -91,15 +92,15 @@
             ]
         },
         "sidebar": {
-            "opacity": 0.8
+            "opacity": 0.85
         },
         "poster": {
             "url": "./assets/images/poster.jpg",
-            "opacity": 0.8
+            "opacity": 1.0
         },
         "title": {
             "align": "right",
-            "color": "white"
+            "color": "#F8F2FF"
         },
         "mobile": {
             "sidebar": {
@@ -107,7 +108,7 @@
             },
             "poster": {
                 "url": "./assets/images/poster.jpg",
-                "opacity": 0.8
+                "opacity": 1.0
             },
             "title": {
                 "scale": 1.5
@@ -143,15 +144,17 @@
         }
     },
     "colors": {
-        "menu": "#020617",
-        "text": "white",
-        "menu-border": "grey",
-        "primary": "cornflowerblue",
-        "secondary": "cyan",
-        "primary-text": "white",
-        "button": "white",
-        "button-text": "black",
-        "timestamp-text": "white"
+        "menu": "#17152F",
+        "text": "#F8F2FF",
+        "menu-border": "rgba(184, 138, 239, 0.35)",
+        "primary": "#B88AEF",
+        "secondary": "#F2A9D5",
+        "primary-text": "#F8F2FF",
+        "button": "#252044",
+        "button-text": "#F8F2FF",
+        "timestamp-text": "#C4B6DC",
+        "accent": "#F2A9D5",
+        "gold": "#F6C66B"
     },
     "credits": {
         "Poster Design": "Image by vandesart from [Pixabay](https://pixabay.com/users/vandesart-39485690/)",

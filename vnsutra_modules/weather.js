@@ -280,6 +280,7 @@ class WeatherSystem {
     dispose() {
         this.stop();
         this._sprites.clear();
+        this._node?.remove?.();
         this._node?.destroy?.();
         this._node = null;
         this._canvas = null;

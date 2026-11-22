@@ -2,7 +2,7 @@
     <view id="home-sidebar-root" class="sidebar-root">
         <rect id="home-sidebar" class="sidebar" />
         <rect id="home-sidebar-top-border" class="sidebar-top-border" />
-        <text id="home-sidebar-title" class="sidebar-title" text="Menu" />
+        <text id="home-sidebar-title" class="sidebar-title" text="🌸 Visual Novel" />
         <rect id="home-sidebar-title-border" class="sidebar-title-border" />
         <rect id="home-sidebar-divider" class="sidebar-divider" />
         <image id="home-close-menu-btn" class="close-menu-btn" src="./assets/svgs/close-square.svg" />

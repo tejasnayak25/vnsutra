@@ -1,7 +1,8 @@
 import "https://unpkg.com/konva@10.0.0-1/konva.min.js";
-import { animateBtn, closeBar } from "./utils.js";
+import { animateBtn, closeBar, openBar } from "./utils.js";
 import { cleanupActionbarScroll } from "./scrollable-content.js";
-import { getIsPortrait, getIsAndroid, setOpenWindow, scaleFontSize } from "../runtime-state.js";
+import { getIsPortrait, getIsAndroid, setOpenWindow, scaleFontSize, getGameSettings } from "../runtime-state.js";
+import { STORAGE_KEYS } from "../constants.js";
 import errorTracking from "../error-tracking.js";
 import { createKonvaNodesFromPlan } from "../ui-layout/runtime.js";
 
@@ -119,7 +120,8 @@ async function actionBar(config, siderect, width, height, fonts, close_square_im
 
     const isPortrait = getIsPortrait();
     const isAndroid = getIsAndroid();
-    const actionWidth = isPortrait ? width : (width - siderect.width());
+    const sidebarRight = (siderect?.x?.() || 0) + (siderect?.width?.() || 0);
+    const actionWidth = isPortrait ? width : Math.max(300, width - sidebarRight);
 
     const compiledActionbarLayout = isXmlLayoutEnabled(config)
         ? await buildActionbarCompiledLayout({
@@ -135,114 +137,251 @@ async function actionBar(config, siderect, width, height, fonts, close_square_im
     const actionrect = compiledActionbarLayout?.actionRoot ?? new Konva.Group({
         width: actionWidth,
         height: height,
-        x: isPortrait ? 0 : siderect.width(),
+        x: isPortrait ? 0 : sidebarRight,
         visible: false
     });
     actionrect.width(actionWidth);
     actionrect.height(height);
-    actionrect.x(isPortrait ? 0 : siderect.width());
+    actionrect.x(isPortrait ? 0 : sidebarRight);
     actionrect.visible(false);
     actionrect.__vnsutraHistoryOverlay = "actionbar";
 
+    const cardMarginX = isPortrait ? 0 : 24;
+    const cardMarginY = isPortrait ? 0 : 20;
+    const cardWidth = isPortrait ? actionWidth : (actionWidth - cardMarginX * 2);
+    const cardHeight = isPortrait ? height : (height - cardMarginY * 2);
+
     const actionbar = compiledActionbarLayout?.actionBg ?? new Konva.Rect({
-        width: actionWidth,
-        height: height
+        x: isPortrait ? 0 : cardMarginX,
+        y: isPortrait ? 0 : cardMarginY,
+        width: cardWidth,
+        height: cardHeight
     });
     actionbar.setAttrs({
-        fill: config.colors.menu,
-        opacity: isPortrait ? config.ui.mobile.sidebar.opacity : config.ui.sidebar.opacity
+        x: isPortrait ? 0 : cardMarginX,
+        y: isPortrait ? 0 : cardMarginY,
+        width: cardWidth,
+        height: cardHeight,
+        fill: config.colors.menu || "#141126",
+        opacity: 0.92,
+        cornerRadius: isPortrait ? [24, 24, 0, 0] : 24,
+        stroke: "rgba(184, 138, 239, 0.40)",
+        strokeWidth: 1.5,
+        shadowColor: "#080612",
+        shadowBlur: 32,
+        shadowOpacity: 0.70,
+        shadowOffsetX: -4,
+        shadowOffsetY: 4,
+        perfectDrawEnabled: false
     });
 
     const actionbar_border = compiledActionbarLayout?.actionTopBorder ?? new Konva.Rect({
-        width: actionbar.width(),
-        height: 6
+        x: (isPortrait ? 0 : cardMarginX) + 36,
+        y: isPortrait ? 0 : cardMarginY,
+        width: cardWidth - 72,
+        height: 2
     });
     actionbar_border.setAttrs({
-        width: actionbar.width(),
-        fill: config.colors.primary
+        x: (isPortrait ? 0 : cardMarginX) + 36,
+        y: isPortrait ? 0 : cardMarginY,
+        width: cardWidth - 72,
+        height: 2,
+        fill: config.colors.secondary || "#F2A9D5",
+        cornerRadius: 1,
+        opacity: 0.85,
+        perfectDrawEnabled: false
     });
 
+    const titleHeight = isPortrait ? 80 : 80;
     const actionbar_title = compiledActionbarLayout?.actionTitle ?? new Konva.Text({
         align: "left",
         verticalAlign: "middle",
-        padding: isPortrait ? 30 : (isAndroid ? 40 : 60),
-        width: actionbar.width(),
-        height: isPortrait ? 90 : (isAndroid ? 60 : 95),
-        text: "Action Menu",
-        fontFamily: fonts["other"],
-        fontSize: isPortrait ? 30 : (isAndroid ? 25 : 30)
+        x: (isPortrait ? 0 : cardMarginX) + 32,
+        y: isPortrait ? 0 : cardMarginY,
+        width: cardWidth - (isPortrait ? 130 : 170),
+        height: titleHeight,
+        text: "🌸  Action Menu",
+        fontFamily: fonts["title"]?.name || "LavishlyYours",
+        fontStyle: "italic",
+        fontSize: scaleFontSize(isPortrait ? 28 : (isAndroid ? 24 : 32)),
+        fill: "#F8F2FF"
     });
-    actionbar_title.fontSize(scaleFontSize(actionbar_title.fontSize()));
     actionbar_title.setAttrs({
-        width: actionbar.width(),
-        text: "Action Menu",
-        fill: config.colors.text,
-        fillAfterStrokeEnabled: true
+        x: (isPortrait ? 0 : cardMarginX) + 32,
+        y: isPortrait ? 0 : cardMarginY,
+        width: cardWidth - (isPortrait ? 130 : 170),
+        height: titleHeight,
+        text: "🌸  Action Menu",
+        fontFamily: fonts["title"]?.name || "LavishlyYours",
+        fontStyle: "italic",
+        fontSize: scaleFontSize(isPortrait ? 28 : (isAndroid ? 24 : 32)),
+        verticalAlign: "middle",
+        fill: "#F8F2FF",
+        shadowColor: "#0D0B18",
+        shadowBlur: 10,
+        shadowOpacity: 0.5,
+        shadowOffsetY: 2,
+        fillAfterStrokeEnabled: true,
+        perfectDrawEnabled: false
     });
 
-    const borderPadding = isPortrait ? 30 : (isAndroid ? 20 : 30);
-
+    const borderPadding = isPortrait ? 20 : 28;
     const actionbar_title_border = compiledActionbarLayout?.actionTitleBorder ?? new Konva.Rect({
-        x: borderPadding,
-        y: actionbar_title.height() - 10,
-        height: 2,
-        width: actionbar.width() - 2 * borderPadding
+        x: (isPortrait ? 0 : cardMarginX) + borderPadding,
+        y: (isPortrait ? 0 : cardMarginY) + titleHeight,
+        height: 1,
+        width: cardWidth - (2 * borderPadding)
     });
     actionbar_title_border.setAttrs({
-        x: borderPadding,
-        y: actionbar_title.height() - 10,
-        width: actionbar.width() - 2 * borderPadding,
-        fill: config.colors["menu-border"]
+        x: (isPortrait ? 0 : cardMarginX) + borderPadding,
+        y: (isPortrait ? 0 : cardMarginY) + titleHeight,
+        height: 1,
+        width: cardWidth - (2 * borderPadding),
+        fill: config.colors.primary || "#B88AEF",
+        opacity: 0.30,
+        perfectDrawEnabled: false
     });
 
-    const closeActionMenuBtn = new Konva.Image({
-        width: isPortrait ? 50 : (isAndroid ? 30 : 40),
-        height: isPortrait ? 50 : (isAndroid ? 30 : 40),
-        x: actionrect.width() - (isPortrait ? 70 : (isAndroid ? 70 : 90)),
-        y: isPortrait ? 15 : (isAndroid ? 15 : 25),
-        image: close_square_img.cloneNode(true)
+    // Sleek Back Pill Button matching mockup with crisp vector arrow
+    const backBtnWidth = isPortrait ? 90 : 96;
+    const backBtnHeight = 36;
+    const backBtnX = (isPortrait ? 0 : cardMarginX) + cardWidth - backBtnWidth - (isPortrait ? 16 : 28);
+    const backBtnY = (isPortrait ? 0 : cardMarginY) + (titleHeight - backBtnHeight) / 2;
+    const backBtnGroup = new Konva.Group({
+        x: backBtnX,
+        y: backBtnY,
+        width: backBtnWidth,
+        height: backBtnHeight
     });
 
+    const backPill = new Konva.Rect({
+        x: 0,
+        y: 0,
+        width: backBtnWidth,
+        height: backBtnHeight,
+        cornerRadius: 18,
+        fill: "rgba(38, 30, 64, 0.85)",
+        stroke: "rgba(184, 138, 239, 0.50)",
+        strokeWidth: 1.2,
+        shadowColor: "#0D0B18",
+        shadowBlur: 8,
+        shadowOpacity: 0.4,
+        perfectDrawEnabled: false
+    });
+
+    const backArrowData = "M19 11H7.414l3.293-3.293a1 1 0 0 0-1.414-1.414l-5 5a1 1 0 0 0 0 1.414l5 5a1 1 0 0 0 1.414-1.414L7.414 13H19a1 1 0 0 0 0-2z";
+    const backIconScale = isPortrait ? 0.62 : 0.65;
+    const backIconBaseX = isPortrait ? 16 : 18;
+    const backIcon = (typeof Konva.Path === "function")
+        ? new Konva.Path({
+            x: backIconBaseX,
+            y: (backBtnHeight - (24 * backIconScale)) / 2,
+            data: backArrowData,
+            fill: "#F8F2FF",
+            scale: { x: backIconScale, y: backIconScale },
+            perfectDrawEnabled: false
+        })
+        : new Konva.Text({
+            x: backIconBaseX,
+            y: (backBtnHeight - scaleFontSize(16)) / 2,
+            text: "<",
+            fontSize: scaleFontSize(16),
+            fill: "#F8F2FF"
+        });
+
+    const backTextX = isPortrait ? 38 : 40;
+    const backText = new Konva.Text({
+        x: backTextX,
+        y: 0,
+        width: backBtnWidth - backTextX,
+        height: backBtnHeight,
+        text: "Back",
+        fontFamily: fonts["other"]?.name || "YanoneKaffeesatz",
+        fontSize: scaleFontSize(isPortrait ? 17 : 19),
+        fontStyle: "normal",
+        fill: "#F8F2FF",
+        align: "left",
+        verticalAlign: "middle",
+        perfectDrawEnabled: false
+    });
+
+    backBtnGroup.add(backPill, backIcon, backText);
+
+    backBtnGroup.on("mouseover", () => {
+        backPill.to({
+            fill: "rgba(168, 85, 247, 0.40)",
+            stroke: "#F2A9D5",
+            strokeWidth: 1.5,
+            duration: 0.15,
+            easing: Konva?.Easings?.EaseOut
+        });
+        backIcon.to({
+            x: backIconBaseX - 2,
+            fill: "#FFFFFF",
+            duration: 0.15,
+            easing: Konva?.Easings?.EaseOut
+        });
+        document.body.style.cursor = "pointer";
+    });
+
+    backBtnGroup.on("mouseout", () => {
+        backPill.to({
+            fill: "rgba(38, 30, 64, 0.85)",
+            stroke: "rgba(184, 138, 239, 0.50)",
+            strokeWidth: 1.2,
+            duration: 0.15,
+            easing: Konva?.Easings?.EaseOut
+        });
+        backIcon.to({
+            x: backIconBaseX,
+            fill: "#F8F2FF",
+            duration: 0.15,
+            easing: Konva?.Easings?.EaseOut
+        });
+        document.body.style.cursor = "auto";
+    });
+
+    backBtnGroup.on("click touchstart", () => {
+        setOpenWindow(null);
+        animateBtn(backBtnGroup);
+        closeBar(actionrect);
+    });
+
+    const closeActionMenuBtn = backBtnGroup;
+
+    const addBtnSize = isPortrait ? 36 : 32;
     const addBtn = new Konva.Image({
-        width: isPortrait ? 55 : (isAndroid ? 35 : 45),
-        height: isPortrait ? 55 : (isAndroid ? 35 : 45),
-        x: actionrect.width() - closeActionMenuBtn.width() - (isPortrait ? 70 : (isAndroid ? 70 : 90)) - 15,
-        y: isPortrait ? 13 : (isAndroid ? 13 : 23),
+        width: addBtnSize,
+        height: addBtnSize,
+        x: backBtnX - addBtnSize - 12,
+        y: (isPortrait ? 0 : cardMarginY) + (titleHeight - addBtnSize) / 2,
         image: add_img.cloneNode(true),
         visible: false
     });
 
     addBtn.on("mouseover", () => {
+        addBtn.opacity(0.8);
         document.body.style.cursor = "pointer";
     });
 
     addBtn.on("mouseout", () => {
+        addBtn.opacity(1);
         document.body.style.cursor = "auto";
     });
 
-    closeActionMenuBtn.on("mouseover", () => {
-        document.body.style.cursor = "pointer";
-    });
+    const contentPaddingX = isPortrait ? 16 : 28;
+    const contentPaddingTop = 16;
+    const contentPaddingBottom = 20;
+    const contentWidth = cardWidth - contentPaddingX * 2;
+    const contentHeight = cardHeight - titleHeight - contentPaddingTop - contentPaddingBottom;
+    const contentY = (isPortrait ? 0 : cardMarginY) + titleHeight + contentPaddingTop;
+    let viewTransitionTween = null;
 
-    closeActionMenuBtn.on("mouseout", () => {
-        document.body.style.cursor = "auto";
-    });
-
-    closeActionMenuBtn.on("click touchstart", () => {
-        setOpenWindow(null);
-        animateBtn(closeActionMenuBtn);
-        closeBar(actionrect);
-    });
-
-    const padding = 30;
-
-    const contentWidth = actionrect.width() - 2 * padding;
-    const contentHeight = height - actionbar_title.height() - 2 * padding;
     const actionContent = new Konva.Group({
         width: contentWidth,
         height: contentHeight,
-        x: padding,
-        y: actionbar_title.height() + padding,
+        x: (isPortrait ? 0 : cardMarginX) + contentPaddingX,
+        y: contentY,
         id: "action-content",
         clipX: 0,
         clipY: 0,
@@ -251,33 +390,37 @@ async function actionBar(config, siderect, width, height, fonts, close_square_im
     });
 
     const scrollContainer = new Konva.Group({
-        width: 4,
+        width: 5,
         height: contentHeight,
-        x: contentWidth + padding,
+        x: actionContent.x() + contentWidth + 6,
         y: actionContent.y()
     });
 
     const scrollbarBg = new Konva.Rect({
-        width: 4,
+        width: 5,
         height: contentHeight,
-        fill: config.colors.primary,
-        opacity: 0.5
+        cornerRadius: 2.5,
+        fill: "rgba(184, 138, 239, 0.12)",
+        opacity: 0.5,
+        perfectDrawEnabled: false
     });
 
     scrollContainer.add(scrollbarBg);
 
     const scrollbar = new Konva.Rect({
-        width: 4,
+        width: 5,
         height: scrollContainer.height(),
-        fill: config.colors.primary,
-        draggable: true
+        cornerRadius: 2.5,
+        fill: "rgba(184, 138, 239, 0.55)",
+        draggable: true,
+        perfectDrawEnabled: false
     });
 
     scrollbar.dragBoundFunc(function (pos) {
-        const actionHeight = actionbar_title.height();
-        const totalHeight = actionHeight + actionContent.height() + padding;
-        if (pos.y < actionHeight + padding) {
-            pos.y = actionHeight + padding;
+        const actionContentY = actionContent.y();
+        const totalHeight = actionContentY + actionContent.height();
+        if (pos.y < actionContentY) {
+            pos.y = actionContentY;
         } else if (pos.y > (totalHeight - scrollbar.height())) {
             pos.y = totalHeight - scrollbar.height();
         }
@@ -288,11 +431,11 @@ async function actionBar(config, siderect, width, height, fonts, close_square_im
     });
 
     scrollbar.on("mouseover", () => {
-        scrollbar.fill(config.colors.secondary);
+        scrollbar.fill(config.colors.secondary || "#F2A9D5");
     });
 
     scrollbar.on("mouseout", () => {
-        scrollbar.fill(config.colors.primary);
+        scrollbar.fill(config.colors.primary || "#B88AEF");
     });
 
     scrollContainer.add(scrollbar);
@@ -308,6 +451,7 @@ async function actionBar(config, siderect, width, height, fonts, close_square_im
         actionrect,
         actionContent,
         actionbar_title,
+        closeActionMenuBtn,
         scrollbar,
         scrollContainer,
         scrollScale: 1,
@@ -315,7 +459,8 @@ async function actionBar(config, siderect, width, height, fonts, close_square_im
          * @param {string} value 
          */
         set title(value) {
-            actionbar_title.text(value);
+            const formatted = value ? (value.startsWith("🌸") ? value : `🌸  ${value}`) : "";
+            actionbar_title.text(formatted);
         },
         /**
          * @param {number} value 
@@ -355,13 +500,98 @@ async function actionBar(config, siderect, width, height, fonts, close_square_im
             cleanupActionbarScroll(this);
             actionContent.removeChildren();
             this.scrollbarHeight = 0;
+            if (!viewTransitionTween) {
+                actionContent.opacity(1);
+                actionContent.y(contentY);
+                actionbar_title.opacity(1);
+            }
+        },
+        /**
+         * Smoothly switches the actionbar view.
+         * If the actionbar is already visible, it runs a smooth cross-fade transition on actionContent.
+         * If the actionbar is closed, it renders the content and animates the actionbar open.
+         * @param {() => void | Promise<void>} renderFn
+         * @param {() => void} [done]
+         */
+        switchView(renderFn, done = () => {}) {
+            if (typeof renderFn !== "function") {
+                if (typeof done === "function") done();
+                return;
+            }
+
+            if (viewTransitionTween) {
+                try { viewTransitionTween.destroy(); } catch {}
+                viewTransitionTween = null;
+            }
+
+            if (!actionrect.visible()) {
+                actionContent.opacity(1);
+                actionContent.y(contentY);
+                actionbar_title.opacity(1);
+                const result = renderFn();
+                if (result && typeof result.then === "function") {
+                    result.then(() => openBar(actionrect, done));
+                } else {
+                    openBar(actionrect, done);
+                }
+                return;
+            }
+
+            const gameSettings = getGameSettings();
+            const reduceMotion = Boolean(gameSettings?.[STORAGE_KEYS.ACCESSIBILITY_REDUCE_MOTION]);
+            if (reduceMotion) {
+                actionContent.opacity(1);
+                actionContent.y(contentY);
+                actionbar_title.opacity(1);
+                const result = renderFn();
+                if (result && typeof result.then === "function") {
+                    result.then(() => done());
+                } else {
+                    done();
+                }
+                return;
+            }
+
+            viewTransitionTween = actionContent.to({
+                opacity: 0,
+                y: contentY - 8,
+                duration: 0.12,
+                easing: Konva?.Easings?.EaseIn,
+                onFinish: () => {
+                    viewTransitionTween = null;
+                    const result = renderFn();
+                    const finishTransition = () => {
+                        actionContent.y(contentY + 8);
+                        viewTransitionTween = actionContent.to({
+                            opacity: 1,
+                            y: contentY,
+                            duration: 0.16,
+                            easing: Konva?.Easings?.EaseOut,
+                            onFinish: () => {
+                                viewTransitionTween = null;
+                                done();
+                            }
+                        });
+                    };
+
+                    if (result && typeof result.then === "function") {
+                        result.then(finishTransition);
+                    } else {
+                        finishTransition();
+                    }
+                }
+            });
         },
         close(done = () => { }, options = {}) {
             const { animateButton = true } = options;
+            if (viewTransitionTween) {
+                try { viewTransitionTween.destroy(); } catch {}
+                viewTransitionTween = null;
+            }
             cleanupActionbarScroll(this);
             setOpenWindow(null);
-            if (animateButton) {
-                animateBtn(closeActionMenuBtn);
+            if (animateButton && backBtnGroup) {
+                animateBtn(backBtnGroup);
             }
             closeBar(actionrect, done);
         }

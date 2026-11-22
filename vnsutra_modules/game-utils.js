@@ -28,7 +28,8 @@ import {
     setIsInputFocused,
     setResizeSuppressedUntil,
     getShouldAbortGame,
-    setAbortInstruction
+    setAbortInstruction,
+    getOpenWindow
 } from "./runtime-state.js";
 import { i18n } from "./i18n.js";
 import playback from "./playback-controls.js";
@@ -40,6 +41,7 @@ import chapters from "./chapters.js";
 import errorTracking from "./error-tracking.js";
 import { registerAbortHandler, rejectWithAbortCleanup } from "./abort-utils.js";
 import { isFullscreenActive, restoreFullscreenIfNeeded as restoreFullscreen } from "./fullscreen-utils.js";
+import { isTextInputTarget } from "./keyboard.js";
 
 function dispatchGameEvent(name, detail) {
     if (typeof globalThis === "undefined" || typeof globalThis.dispatchEvent !== "function") {
@@ -76,6 +78,78 @@ function getAdvanceInteractionTarget(gameInstance) {
     // non-interactive zones. Use viewport so tap/click-to-advance works
     // across the full visible game area on desktop and landscape devices.
     return gameInstance?.ui?.game?.viewport ?? gameInstance?.ui?.game?.container ?? null;
+}
+
+function getStageContentElement(gameInstance) {
+    const target = getAdvanceInteractionTarget(gameInstance);
+    const stage = target?.getStage?.() ?? (typeof globalThis !== "undefined" ? globalThis.__vnsutraStage : null);
+    if (stage?.content && typeof stage.content.addEventListener === "function") {
+        return stage.content;
+    }
+    if (typeof stage?.container === "function") {
+        const container = stage.container();
+        if (container && typeof container.addEventListener === "function") {
+            return container;
+        }
+    }
+    if (typeof document !== "undefined" && typeof document.getElementById === "function") {
+        return document.getElementById("playground");
+    }
+    return null;
+}
+
+function isClickInAdvanceZone(e, gameInstance) {
+    if (typeof getOpenWindow === "function" && getOpenWindow()) {
+        return false;
+    }
+
+    if (e?.target && typeof e.target.closest === "function") {
+        if (e.target.closest("#alert-win, #disclaimer-modal, #install-app-utility, button, input, select, textarea")) {
+            return false;
+        }
+    }
+
+    const target = getAdvanceInteractionTarget(gameInstance);
+    if (!target) {
+        return true;
+    }
+
+    const stage = target.getStage?.() ?? (typeof globalThis !== "undefined" ? globalThis.__vnsutraStage : null);
+    const viewportY = typeof target.y === "function" ? target.y() : 0;
+
+    let stageY = null;
+    const pointerPos = stage?.getPointerPosition?.();
+    if (pointerPos && typeof pointerPos.y === "number") {
+        stageY = pointerPos.y;
+    } else if (typeof e?.clientY === "number" && stage) {
+        const domContainer = stage.container?.() ?? (typeof document !== "undefined" && typeof document.getElementById === "function" ? document.getElementById("playground") : null);
+        if (domContainer && typeof domContainer.getBoundingClientRect === "function") {
+            const rect = domContainer.getBoundingClientRect();
+            const stageHeight = typeof stage.height === "function" ? stage.height() : rect.height;
+            const scaleY = rect.height > 0 ? (stageHeight / rect.height) : 1;
+            stageY = (e.clientY - rect.top) * scaleY;
+        }
+    }
+
+    if (stageY !== null && viewportY > 0 && stageY < viewportY) {
+        return false;
+    }
+
+    if (stage && typeof stage.getIntersection === "function" && pointerPos) {
+        const shape = stage.getIntersection(pointerPos);
+        if (shape) {
+            const topbar = shape.findAncestor?.("#topbar-container") ?? shape.findAncestor?.((node) => node.name?.() === "topbar" || node.id?.() === "topbar-container");
+            if (topbar) {
+                return false;
+            }
+            const actionbar = shape.findAncestor?.((node) => node.id?.() === "actionbar" || node === gameInstance?.ui?.actionbar?.actionrect);
+            if (actionbar) {
+                return false;
+            }
+        }
+    }
+
+    return true;
 }
 
 /**
@@ -215,8 +289,20 @@ function dialog(speaker, text = "", wait = true, params = {}) {
                                 data.message.offsetY?.(0);
                             }
                         }
-                        if (speaker?.blip) {
-                            gameInstance.playBlip?.({ ...speaker.blip, charIndex: time - 1 });
+                        const currentChar = text[time - 1];
+                        const isWhitespace = !currentChar || /\s/.test(currentChar);
+                        if (!isWhitespace) {
+                            if (speaker?.blip) {
+                                gameInstance.playBlip?.({ ...speaker.blip, charIndex: time - 1 });
+                            } else if (speaker?.data?.name && gameInstance?.playBlip) {
+                                let hash = 0;
+                                const sName = String(speaker.data.name);
+                                for (let i = 0; i < sName.length; i++) hash = (hash * 31 + sName.charCodeAt(i)) & 0xffffffff;
+                                const charPitch = 320 + (Math.abs(hash) % 260);
+                                gameInstance.playBlip({ mode: "vocal", pitchHz: charPitch, rate: 2, charIndex: time - 1, volume: 0.16 });
+                            } else if (gameInstance?.defaultBlip && gameInstance?.playBlip) {
+                                gameInstance.playBlip({ ...gameInstance.defaultBlip, charIndex: time - 1 });
+                            }
                         }
                         scheduleNext();
                     } else {
@@ -245,8 +331,8 @@ function dialog(speaker, text = "", wait = true, params = {}) {
                     return;
                 }
 
-                completed = true;
-                if(e.key === "Enter" || e.key === " ") {
+                if (e.key === "Enter" || e.key === " ") {
+                    completed = true;
                     e.preventDefault();
                     e.stopPropagation();
                     userSkipped = true;
@@ -263,6 +349,9 @@ function dialog(speaker, text = "", wait = true, params = {}) {
                     return;
                 }
                 if (completed) {
+                    return;
+                }
+                if (typeof getOpenWindow === "function" && getOpenWindow()) {
                     return;
                 }
 
@@ -283,11 +372,29 @@ function dialog(speaker, text = "", wait = true, params = {}) {
                 resolve(userSkipped);
             };
 
+            const domTarget = getStageContentElement(gameInstance);
+            const domClickHandler = (e) => {
+                if (completed) return;
+                if (shouldIgnoreAdvanceInteraction()) return;
+                if (!isClickInAdvanceZone(e, gameInstance)) {
+                    return;
+                }
+                if (typeof document !== "undefined" && document.activeElement && document.activeElement !== document.body && !isTextInputTarget(document.activeElement)) {
+                    document.activeElement.blur?.();
+                }
+                clickHandler();
+            };
+
             function cleanup() {
                 clearStepTimer();
                 data.message.offsetX?.(0);
                 data.message.offsetY?.(0);
-                document.body.removeEventListener("keydown", keyHandler);
+                document.body?.removeEventListener?.("keydown", keyHandler);
+                if (typeof window !== "undefined") {
+                    window.removeEventListener?.("keydown", keyHandler);
+                }
+                domTarget?.removeEventListener?.("click", domClickHandler);
+                domTarget?.removeEventListener?.("touchend", domClickHandler);
                 getAdvanceInteractionTarget(gameInstance)?.off("click touchstart", clickHandler);
             }
 
@@ -303,7 +410,12 @@ function dialog(speaker, text = "", wait = true, params = {}) {
                 });
             }
 
-            document.body.addEventListener("keydown", keyHandler);
+            document.body?.addEventListener?.("keydown", keyHandler);
+            if (typeof window !== "undefined") {
+                window.addEventListener?.("keydown", keyHandler);
+            }
+            domTarget?.addEventListener?.("click", domClickHandler);
+            domTarget?.addEventListener?.("touchend", domClickHandler);
             getAdvanceInteractionTarget(gameInstance)?.on("click touchstart", clickHandler);
         });
     }
@@ -342,13 +454,16 @@ function dialog(speaker, text = "", wait = true, params = {}) {
 
             const clickHandler = () => {
                 if (completed) return;
+                if (shouldIgnoreAdvanceInteraction()) {
+                    return;
+                }
+                if (typeof getOpenWindow === "function" && getOpenWindow()) {
+                    return;
+                }
                 if (!isDialogMounted()) {
                     completed = true;
                     cleanup();
                     resolve();
-                    return;
-                }
-                if (shouldIgnoreAdvanceInteraction()) {
                     return;
                 }
                 completed = true;
@@ -356,8 +471,26 @@ function dialog(speaker, text = "", wait = true, params = {}) {
                 resolve();
             };
 
+            const domTarget = getStageContentElement(gameInstance);
+            const domClickHandler = (e) => {
+                if (completed) return;
+                if (shouldIgnoreAdvanceInteraction()) return;
+                if (!isClickInAdvanceZone(e, gameInstance)) {
+                    return;
+                }
+                if (typeof document !== "undefined" && document.activeElement && document.activeElement !== document.body && !isTextInputTarget(document.activeElement)) {
+                    document.activeElement.blur?.();
+                }
+                clickHandler();
+            };
+
             function cleanup() {
-                document.body.removeEventListener("keydown", keyHandler);
+                document.body?.removeEventListener?.("keydown", keyHandler);
+                if (typeof window !== "undefined") {
+                    window.removeEventListener?.("keydown", keyHandler);
+                }
+                domTarget?.removeEventListener?.("click", domClickHandler);
+                domTarget?.removeEventListener?.("touchend", domClickHandler);
                 getAdvanceInteractionTarget(gameInstance)?.off("click touchstart", clickHandler);
                 if (autoPlayTimer) clearTimeout(autoPlayTimer);
                 if (playback) {
@@ -377,7 +510,12 @@ function dialog(speaker, text = "", wait = true, params = {}) {
                 });
             }
 
-            document.body.addEventListener("keydown", keyHandler);
+            document.body?.addEventListener?.("keydown", keyHandler);
+            if (typeof window !== "undefined") {
+                window.addEventListener?.("keydown", keyHandler);
+            }
+            domTarget?.addEventListener?.("click", domClickHandler);
+            domTarget?.addEventListener?.("touchend", domClickHandler);
             getAdvanceInteractionTarget(gameInstance)?.on("click touchstart", clickHandler);
 
             // Auto-play if enabled (and user didn't manually skip)
@@ -400,7 +538,27 @@ function dialog(speaker, text = "", wait = true, params = {}) {
             return;
         }
 
-        data.name.text(speaker?.data?.name ?? "");
+        const speakerName = speaker?.data?.name ?? "";
+        data.name.text(speakerName);
+        if (typeof data.nameGroup?.visible === "function") {
+            data.nameGroup.visible(Boolean(speakerName));
+        }
+        const config = getConfiguration();
+        const defaultAccent = config?.colors?.primary || "#38bdf8";
+        const accent = speaker?.accentColor || speaker?.data?.accentColor;
+        if (accent) {
+            data.name?.fill?.(accent);
+            data.nameBorder?.stroke?.(accent);
+            data.nameBorder?.fill?.(accent);
+            data.nameBg?.stroke?.(accent);
+            data.bg?.stroke?.(accent);
+        } else {
+            data.name?.fill?.(config?.colors?.text || "#ffffff");
+            data.nameBorder?.stroke?.(defaultAccent);
+            data.nameBorder?.fill?.(defaultAccent);
+            data.nameBg?.stroke?.(defaultAccent);
+            data.bg?.stroke?.(defaultAccent);
+        }
     
         const speakerX = typeof speaker?.data?.x === "number" ? speaker.data.x : null;
         if(gameSettings && gameSettings["text_animation"]) {
@@ -484,15 +642,36 @@ function dialog(speaker, text = "", wait = true, params = {}) {
                         if (shouldIgnoreAdvanceInteraction()) {
                             return;
                         }
+                        if (typeof getOpenWindow === "function" && getOpenWindow()) {
+                            return;
+                        }
                         completed = true;
                         clearAbort();
                         cleanup();
                         resolve();
                     };
 
+                    const domTarget = getStageContentElement(gameInstance);
+                    const domClickHandler = (e) => {
+                        if (completed) return;
+                        if (shouldIgnoreAdvanceInteraction()) return;
+                        if (!isClickInAdvanceZone(e, gameInstance)) {
+                            return;
+                        }
+                        if (typeof document !== "undefined" && document.activeElement && document.activeElement !== document.body && !isTextInputTarget(document.activeElement)) {
+                            document.activeElement.blur?.();
+                        }
+                        clickHandler();
+                    };
+
                     function cleanup() {
-                        document.body.removeEventListener("keydown", keyHandler);
-                        target.off("click touchstart", clickHandler);
+                        document.body?.removeEventListener?.("keydown", keyHandler);
+                        if (typeof window !== "undefined") {
+                            window.removeEventListener?.("keydown", keyHandler);
+                        }
+                        domTarget?.removeEventListener?.("click", domClickHandler);
+                        domTarget?.removeEventListener?.("touchend", domClickHandler);
+                        target?.off?.("click touchstart", clickHandler);
                         if (autoPlayTimer) {
                             clearTimeout(autoPlayTimer);
                             autoPlayTimer = null;
@@ -510,9 +689,14 @@ function dialog(speaker, text = "", wait = true, params = {}) {
                         reject(new Error("Dialog aborted"));
                     });
 
-                    document.body.addEventListener("keydown", keyHandler);
+                    document.body?.addEventListener?.("keydown", keyHandler);
+                    if (typeof window !== "undefined") {
+                        window.addEventListener?.("keydown", keyHandler);
+                    }
+                    domTarget?.addEventListener?.("click", domClickHandler);
+                    domTarget?.addEventListener?.("touchend", domClickHandler);
                     const target = getAdvanceInteractionTarget(gameInstance);
-                    target?.on("click touchstart", clickHandler);
+                    target?.on?.("click touchstart", clickHandler);
 
                     // Auto-play handling
                     if (playback && playback.isAutoPlayActive()) {
@@ -723,7 +907,6 @@ function input(message, placeholder = undefined, params = {}) {
             });
             throw new Error("Failed to create AlertWindow");
         }
-        alertwin.btns.classList.replace("justify-between", "justify-end");
 
         const isPortrait = getIsPortrait();
         let documentClickHandler = null;
@@ -782,7 +965,6 @@ function input(message, placeholder = undefined, params = {}) {
                 setResizeSuppressedUntil(Date.now() + 900);
                 
                 alertwin.close();
-                alertwin.btns.classList.replace("justify-end", "justify-between");
                 if (state) {
                     state.history = state.history || {};
                     state.history[`${activeScene}-${id}`] = inp.value;
@@ -909,7 +1091,6 @@ function choice(message, opts, params = {}, choiceOptions = {}) {
         let userExitedFullscreen = false;
 
         const alertwin = new AlertWindow(displayMessage, [proceedBtn], config, "choice", { opts: choicesElem });
-        alertwin.btns.classList.replace("justify-between", "justify-end");
 
         // Track if user manually exits fullscreen
         const fullscreenChangeHandler = () => {
@@ -946,7 +1127,6 @@ function choice(message, opts, params = {}, choiceOptions = {}) {
             const value = multiSelect ? selected.map((item) => item.value) : selected[0].value;
             setResizeSuppressedUntil(Date.now() + 900);
             alertwin.close();
-            alertwin.btns.classList.replace("justify-end", "justify-between");
 
             try {
                 await restoreFullscreen({

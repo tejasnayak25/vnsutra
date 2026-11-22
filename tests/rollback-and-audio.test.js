@@ -70,10 +70,26 @@ describe("RollbackManager & Audio Engine 2.0", () => {
         globalThis.AudioContext = class MockAudioCtx {
             constructor() { this.currentTime = 0; this.destination = {}; }
             createOscillator() {
-                return { type: "", frequency: { setValueAtTime: oscFreq }, connect: jest.fn(), start: oscStart, stop: jest.fn() };
+                return {
+                    type: "",
+                    frequency: {
+                        setValueAtTime: oscFreq,
+                        exponentialRampToValueAtTime: jest.fn()
+                    },
+                    connect: jest.fn(),
+                    start: oscStart,
+                    stop: jest.fn()
+                };
             }
             createGain() {
-                return { gain: { setValueAtTime: jest.fn(), exponentialRampToValueAtTime: jest.fn() }, connect: jest.fn() };
+                return {
+                    gain: {
+                        setValueAtTime: jest.fn(),
+                        linearRampToValueAtTime: jest.fn(),
+                        exponentialRampToValueAtTime: jest.fn()
+                    },
+                    connect: jest.fn()
+                };
             }
         };
 
@@ -108,10 +124,12 @@ describe("RollbackManager & Audio Engine 2.0", () => {
         expect(mockActor.attachVoice).toHaveBeenCalled();
         expect(createdAudios[createdAudios.length - 1].src).toBe("voice_line1.mp3");
 
-        // Rate=2 plays only on even character indices
-        expect(game.playBlip({ pitchHz: 400, rate: 2, charIndex: 0 })).toBe(true);
-        expect(game.playBlip({ pitchHz: 400, rate: 2, charIndex: 1 })).toBe(false);
-        expect(oscStart).toHaveBeenCalledTimes(1);
+        // Rate=2 plays only on even character indices, supports vocal, click, synth modes
+        expect(game.playBlip({ mode: "vocal", pitchHz: 400, rate: 2, charIndex: 0 })).toBe(true);
+        expect(game.playBlip({ mode: "vocal", pitchHz: 400, rate: 2, charIndex: 1 })).toBe(false);
+        expect(game.playBlip({ mode: "click", pitchHz: 600, rate: 1, charIndex: 2 })).toBe(true);
+        expect(game.playBlip({ mode: "synth", pitchHz: 520, rate: 1, charIndex: 3 })).toBe(true);
+        expect(oscStart).toHaveBeenCalledTimes(3);
     });
 });
 

@@ -2,28 +2,25 @@
 transition: fade #000000 250
 # Note: For arrays/objects inside @ tags, the current generic KV parser treats them as strings. 
 # You may want to tweak the compiler to parse JSON literals for fields like args=[0.5,1] later!
-@background reset=true asset="futon_room"
+@stage reset=true asset="cherry_park" options={"mouseTilt":true}
 @actor.reset actor="mary" fields=["scale"]
 @sprite.apply actor="mary" sprite="casualSmile"
 @actor.set actor="mary" props={"x":-0.25,"y":{"portrait":0.1,"android":0.1,"default":0.1}}
 @actor.call actor="mary" method="slideIn" args=[0.18,0.8]
 
-@actor.reset actor="nanami" fields=["scale"]
-@sprite.apply actor="nanami" sprite="smiling"
-@actor.set actor="nanami" props={"x":1.25,"y":{"portrait":0.1,"android":0.1,"default":0.1}}
-@actor.call actor="nanami" method="slideIn" args=[0.82,0.8]
+@actor.reset actor="sakura" fields=["scale"]
+@sprite.apply actor="sakura" sprite="smiling"
+@actor.set actor="sakura" props={"x":1.25,"y":{"portrait":0.1,"android":0.1,"default":0.1}}
+@actor.call actor="sakura" method="slideIn" args=[0.82,0.8]
 
 mary: @scene1.hello
-nanami: Hi! I'm Nanami, running live from a single .vnsprite binary bundle — watch me blink, breathe, sway in the wind, and lip-sync as I speak!
-@sprite.apply actor="nanami" sprite="happy"
-@camera.focus actor="nanami" zoom=1.22 duration=0.6
-@actor.call actor="nanami" method="hop"
-nanami: Woohoo! Notice how a single spring hop ripples through my hair and outfit while keeping every seam locked!
-@sprite.apply actor="nanami" sprite="shocked"
-@actor.call actor="nanami" method="shake"
-nanami: Eek! Shock shake triggers full-body physics too! Now I'll let Mary take it from here!
+sakura: Hi! I'm Sakura, running live from a single .vnsprite binary bundle on a 2.5D .vnstage — {fx=sparkles}tilt your mouse to see the cherry blossoms and park benches parallax around me!
+@camera.focus actor="sakura" zoom=1.22 duration=0.6
+sakura: {hop}Woohoo! Notice how the camera zoom separates the foreground cherry blossoms from the background park while keeping every seam locked!
+sakura: {mood=happy}{fx=sweat}Wait... {w=0.4}{shake}Eek!{/shake} Did the camera just shake?! {shake=screen}
+sakura: {mood=smiling}{fx=blush}Hehe, now I'll let Mary take it from here!
 @camera.reset duration=0.5
-@actor.call actor="nanami" method="slideOut" args=[1.35,0.6]
+@actor.call actor="sakura" method="slideOut" args=[1.35,0.6]
 @actor.call actor="mary" method="to" args=[{"x":0.5,"duration":0.6}]
 mary: @scene1.intro
 mary: @scene1.introduction
@@ -50,13 +47,12 @@ else:
     mary: @scene1.rightAnswer
 
 mary: @scene1.question2
-flash screen #ffffff 120
 jump: scene2
 
 
 [scene: scene2]
-transition: fade #111111 250
-@background reset=true asset="apartment_ext"
+transition: crossfade 800
+@stage asset="apartment_stage" options={"mouseTilt":true} duration=0.8
 @actor.reset actor="mary" fields=["scale","y"]
 @sprite.apply actor="mary" sprite="casualOpenSmile" options={"duration":0}
 @actor.set actor="mary" props={"x":0.5}
@@ -80,6 +76,11 @@ if $tourFocus === "Characters":
     mary: @scene2.charactersFollowup
 else:
     if $tourFocus === "Visual effects":
+        mary: @scene2.bgCrossfadeDemo
+        @stage asset="rainy_cafe" options={"mouseTilt":true} duration=0.8
+        mary: @scene2.bgCrossfadeCafe
+        @stage asset="apartment_stage" options={"mouseTilt":true} duration=0.8
+        mary: @scene2.bgCrossfadeReturn
         @actor.prop actor="mary" prop="grayscale" value=true
         mary: @scene2.grayscale
         @background.prop prop="grayscale" value=true
@@ -94,5 +95,4 @@ else:
 
 mary: @scene2.goodbye
 @actor.call actor="mary" method="slideOut"
-flash screen #f8f8ff 140
 jump: scene3

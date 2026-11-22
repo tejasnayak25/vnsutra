@@ -420,11 +420,11 @@ function initAudioSystem(gameInstance) {
     };
 
     /**
-     * Play a lightweight typewriter speech blip (custom URL or Web Audio synth tone).
+     * Play a lightweight typewriter speech blip (custom URL or Web Audio acoustic tone).
      * Rate-throttled per character index so fast typing stays crisp.
-     * @param {{ sound?: string, pitchHz?: number, pitchVariation?: number, rate?: number, volume?: number, charIndex?: number }} [options]
+     * @param {{ sound?: string, mode?: "vocal" | "click" | "typewriter" | "synth", pitchHz?: number, pitchVariation?: number, rate?: number, volume?: number, charIndex?: number }} [options]
      */
-    gameInstance.playBlip = function({ sound = null, pitchHz = 420, pitchVariation = 0.08, rate = 2, volume = 0.25, charIndex = 0 } = {}) {
+    gameInstance.playBlip = function({ sound = null, mode = "vocal", pitchHz = 420, pitchVariation = 0.08, rate = 2, volume = 0.25, charIndex = 0 } = {}) {
         const step = Math.max(1, Math.round(Number(rate) || 1));
         if (charIndex % step !== 0) {
             return false;
@@ -451,18 +451,65 @@ function initAudioSystem(gameInstance) {
             this._blipAudioCtx = new AudioCtx();
         }
         const ctx = this._blipAudioCtx;
+        if (ctx.state === "suspended" && typeof ctx.resume === "function") {
+            ctx.resume().catch?.(() => {});
+        }
         const now = ctx.currentTime;
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         const jitter = 1 + ((Math.random() * 2 - 1) * Math.max(0, Number(pitchVariation) || 0));
-        osc.type = "triangle";
-        osc.frequency.setValueAtTime(Math.max(80, (Number(pitchHz) || 420) * jitter), now);
-        gain.gain.setValueAtTime(safeVol * 0.35, now);
-        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.045);
+
+        let duration = 0.038;
+        let peakVol = safeVol * 0.22;
+        let startFreq = Math.max(80, (Number(pitchHz) || 420) * jitter);
+        let endFreq = startFreq * 0.72; // natural 28% downward pitch drop
+
+        if (mode === "click" || mode === "typewriter") {
+            // Crisp mechanical key click transient
+            osc.type = "sine";
+            duration = 0.024;
+            peakVol = safeVol * 0.18;
+            startFreq = Math.max(120, (Number(pitchHz) || 680) * jitter);
+            endFreq = startFreq * 0.35;
+        } else if (mode === "synth") {
+            // Clean 8-bit retro blip
+            osc.type = "triangle";
+            duration = 0.045;
+            peakVol = safeVol * 0.25;
+            endFreq = startFreq;
+        } else {
+            // Default "vocal": warm, round speech blip (Celeste / Animal Crossing style)
+            osc.type = "sine";
+            duration = 0.036;
+            peakVol = safeVol * 0.20;
+            endFreq = startFreq * 0.75;
+        }
+
+        // Soft micro-attack (2.5ms) prevents harsh DC discontinuity pop/click
+        gain.gain.setValueAtTime(0.0001, now);
+        if (typeof gain.gain.linearRampToValueAtTime === "function") {
+            gain.gain.linearRampToValueAtTime(peakVol, now + 0.0025);
+        } else {
+            gain.gain.setValueAtTime(peakVol, now);
+        }
+        if (typeof gain.gain.exponentialRampToValueAtTime === "function") {
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+        }
+
+        // Pitch slide envelope gives percussive warmth
+        osc.frequency.setValueAtTime(startFreq, now);
+        if (typeof osc.frequency.exponentialRampToValueAtTime === "function" && endFreq !== startFreq) {
+            try {
+                osc.frequency.exponentialRampToValueAtTime(Math.max(20, endFreq), now + duration * 0.85);
+            } catch {
+                // fallback
+            }
+        }
+
         osc.connect(gain);
         gain.connect(ctx.destination);
         osc.start(now);
-        osc.stop(now + 0.05);
+        osc.stop(now + duration + 0.005);
         return true;
     };
 

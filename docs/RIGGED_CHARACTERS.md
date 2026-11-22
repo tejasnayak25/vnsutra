@@ -10,13 +10,15 @@ Place your character mood PNGs under `assets/game-assets/characters/<Character>/
 npm run assets:rig
 ```
 
-This runs [`scripts/build-semantic-block-atlas.py`](../scripts/build-semantic-block-atlas.py) across every outfit directory (`--all --install`), generating:
+This runs [`scripts/rig-characters.py`](../scripts/rig-characters.py) across every outfit directory (`--all --install`), generating:
+
 - `<Outfit>.vnsprite` next to the outfit folder (`[4B "VNSR" | u16 version=1 | u16 flags=0 | u32 jsonLen | UTF-8 manifest | raw WebP atlas]`)
 - Cached intermediates in `dist/.cache/frame-decomp` and interactive previews at `dist/sprite-experiment/unified_<char>_<outfit>/preview.html`
 
 Useful CLI flags:
-- `python -u scripts/build-semantic-block-atlas.py nanami --install` — build one preset character cleanly with 4 parallel ORT workers (`--workers N`, `--no-cache` to bypass disk cache)
-- `python scripts/build-semantic-block-atlas.py --pack-only --install` — repack existing `character.manifest.json` + `blocks_atlas.webp` into `.vnsprite` without re-running ML decomposition
+
+- `python -u scripts/rig-characters.py sakura --install` — build one preset character cleanly with 4 parallel ORT workers (`--workers N`, `--no-cache` to bypass disk cache)
+- `python scripts/rig-characters.py --pack-only --install` — repack existing `character.manifest.json` + `blocks_atlas.webp` into `.vnsprite` without re-running ML decomposition
 
 ## 2. Using `RiggedCharacter` in Story Scripts
 
@@ -26,21 +28,21 @@ Import `RiggedCharacter` from `vnsutra_modules/assets/index.js` just like `Chara
 import { RiggedCharacter } from "../vnsutra_modules/assets/index.js";
 import DynamicSprites from "../vnsutra_modules/dynamic-sprites.js";
 
-const nanami = new RiggedCharacter({
-    name: "Nanami",
-    folder: "characters/Nanami"
+const sakura = new RiggedCharacter({
+    name: "Sakura",
+    folder: "characters/Sakura",
 });
-await nanami.loadOutfit("Casual");
+await sakura.loadOutfit("Casual");
 
-nanami.sprites = new DynamicSprites(nanami);
-nanami.sprites.defineMany({
-    neutral: { outfit: "Casual", mood: "Neutral" },
+sakura.sprites = new DynamicSprites(sakura);
+sakura.sprites.defineMany({
+    smiling: { outfit: "Casual", mood: "Smiling" },
     happy: { outfit: "Casual", mood: "Happy" },
-    shocked: { outfit: "Casual", mood: "Shocked" }
 });
 ```
 
 ### Runtime Features & Controls
+
 - **Konva Parity:** `show()`, `hide()`, `fadeIn()`, `fadeOut()`, `slideIn()`, `slideOut()`, `to({ x, y, scale, opacity, mood, duration, ...filters })`, `reset()`, and `dispose()`.
 - **WebGL2 Mesh Deformation + Canvas2D Fallback:** Uses a `24x32` GPU triangle grid (`WebGLRigRenderer`) for smooth hair waves, skirt flutter, localized torso breathing, and seamless mood crossfades, falling back cleanly to Canvas2D where WebGL2 is unavailable.
 - **Quintic Mood Crossfading & Shader Layer Mixing:** Mood transitions (`to({ mood, duration })`) use a $C^2$ quintic smootherstep curve (`evalMorphCurve`), non-dipping asymmetric organ blending, a subtle `10%` eyelid cushion, single-pass `uTexPrev`/`uMorphMix` GPU mixing for changed eyebrow/blush/cloth layers, rapid-interrupt continuity, and subtle expression-matched micro-spring impulses.
@@ -54,6 +56,6 @@ nanami.sprites.defineMany({
 ## 3. Preview Studio (`preview.html`)
 
 Open any generated `preview.html` in a browser to:
+
 - Switch moods with **Mood Crossfade** and tune **Crossfade Time** (`0.15s–0.90s`, default `0.45s`), toggle `WebGL2 Mesh Deformation` or `Cursor Gaze (2.5D)`, inspect quadtree blocks (`64/32/16`) and split compare (`Hard` vs `4px WOLA`).
 - Check **Edit Pivots on Canvas** to drag `head`, `neck`, `waist`, or `hairSplit` live, click **Lock Talk Mouth** to bind a preferred lip-sync mouth to the current mood (`manifest.talkMouthMap`), and export an updated `.vnsprite` directly from the browser.
-

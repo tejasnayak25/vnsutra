@@ -23,6 +23,7 @@ function parseKineticDialogue(rawText = "", { naturalPunctuation = true } = {}) 
     const pauses = new Map();
     const speeds = [];
     const shakes = [];
+    const styles = [];
     const actions = new Map();
     let plainText = "";
 
@@ -34,8 +35,9 @@ function parseKineticDialogue(rawText = "", { naturalPunctuation = true } = {}) 
     };
 
     const speedStack = [];
+    const styleStack = [];
     let shakeStart = null;
-    const tagRegex = /\{(w=[0-9.]+|wait=[0-9.]+|speed=[0-9.]+|\/speed|shake(?::screen|=screen)?|\/shake|hop(?:=[0-9]+)?|fx=[a-zA-Z0-9_,]+|mood=[a-zA-Z0-9_-]+)\}/gi;
+    const tagRegex = /\{(w=[0-9.]+|wait=[0-9.]+|speed=[0-9.]+|\/speed|shake(?::screen|=screen)?|\/shake|hop(?:=[0-9]+)?|\/hop|fx=[a-zA-Z0-9_,]+|mood=[a-zA-Z0-9_-]+|b|\/b|i|\/i|u|\/u|color=[^}]+|\/color|size=[0-9.]+|\/size)\}/gi;
     let lastIdx = 0;
     let match;
 
@@ -44,7 +46,9 @@ function parseKineticDialogue(rawText = "", { naturalPunctuation = true } = {}) 
             plainText += src.slice(lastIdx, match.index);
         }
         const tag = match[1].toLowerCase();
-        if (tag.startsWith("w=") || tag.startsWith("wait=")) {
+        if (tag === "/hop") {
+            // Self-closing / paired tag convenience; no-op on closing tag
+        } else if (tag.startsWith("w=") || tag.startsWith("wait=")) {
             const val = tag.startsWith("w=") ? tag.slice(2) : tag.slice(5);
             const sec = Math.max(0, Number(val) || 0);
             if (sec > 0) {
@@ -56,6 +60,48 @@ function parseKineticDialogue(rawText = "", { naturalPunctuation = true } = {}) 
         } else if (tag === "/speed" && speedStack.length > 0) {
             const open = speedStack.pop();
             speeds.push({ start: open.start, end: plainText.length, mult: open.mult });
+        } else if (tag === "b") {
+            styleStack.push({ type: "b", start: plainText.length });
+        } else if (tag === "/b") {
+            const idx = styleStack.findLastIndex?.((s) => s.type === "b") ?? -1;
+            if (idx !== -1) {
+                const [open] = styleStack.splice(idx, 1);
+                styles.push({ start: open.start, end: plainText.length, bold: true });
+            }
+        } else if (tag === "i") {
+            styleStack.push({ type: "i", start: plainText.length });
+        } else if (tag === "/i") {
+            const idx = styleStack.findLastIndex?.((s) => s.type === "i") ?? -1;
+            if (idx !== -1) {
+                const [open] = styleStack.splice(idx, 1);
+                styles.push({ start: open.start, end: plainText.length, italic: true });
+            }
+        } else if (tag === "u") {
+            styleStack.push({ type: "u", start: plainText.length });
+        } else if (tag === "/u") {
+            const idx = styleStack.findLastIndex?.((s) => s.type === "u") ?? -1;
+            if (idx !== -1) {
+                const [open] = styleStack.splice(idx, 1);
+                styles.push({ start: open.start, end: plainText.length, underline: true });
+            }
+        } else if (tag.startsWith("color=")) {
+            const color = match[1].slice(6).trim();
+            styleStack.push({ type: "color", start: plainText.length, color });
+        } else if (tag === "/color") {
+            const idx = styleStack.findLastIndex?.((s) => s.type === "color") ?? -1;
+            if (idx !== -1) {
+                const [open] = styleStack.splice(idx, 1);
+                styles.push({ start: open.start, end: plainText.length, color: open.color });
+            }
+        } else if (tag.startsWith("size=")) {
+            const size = Number(tag.slice(5)) || 1;
+            styleStack.push({ type: "size", start: plainText.length, size });
+        } else if (tag === "/size") {
+            const idx = styleStack.findLastIndex?.((s) => s.type === "size") ?? -1;
+            if (idx !== -1) {
+                const [open] = styleStack.splice(idx, 1);
+                styles.push({ start: open.start, end: plainText.length, size: open.size });
+            }
         } else if (tag === "shake" && shakeStart === null) {
             shakeStart = plainText.length;
         } else if (tag === "/shake" && shakeStart !== null) {
@@ -82,6 +128,14 @@ function parseKineticDialogue(rawText = "", { naturalPunctuation = true } = {}) 
     while (speedStack.length > 0) {
         const open = speedStack.pop();
         speeds.push({ start: open.start, end: plainText.length, mult: open.mult });
+    }
+    while (styleStack.length > 0) {
+        const open = styleStack.pop();
+        if (open.type === "b") styles.push({ start: open.start, end: plainText.length, bold: true });
+        else if (open.type === "i") styles.push({ start: open.start, end: plainText.length, italic: true });
+        else if (open.type === "u") styles.push({ start: open.start, end: plainText.length, underline: true });
+        else if (open.type === "color") styles.push({ start: open.start, end: plainText.length, color: open.color });
+        else if (open.type === "size") styles.push({ start: open.start, end: plainText.length, size: open.size });
     }
     if (shakeStart !== null) {
         shakes.push({ start: shakeStart, end: plainText.length });
@@ -135,7 +189,7 @@ function parseKineticDialogue(rawText = "", { naturalPunctuation = true } = {}) 
         }
     }
 
-    return { plainText, pauses, speeds, shakes, actions };
+    return { plainText, pauses, speeds, shakes, styles, actions };
 }
 
 /**

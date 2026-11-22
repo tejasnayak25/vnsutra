@@ -1,5 +1,28 @@
 import { getActiveLayer, getGameKeyboardActions } from "./runtime-state.js";
 
+function isTextInputTarget(target) {
+    if (!target) {
+        return false;
+    }
+
+    if (target.isContentEditable) {
+        return true;
+    }
+
+    const tag = target.tagName ? target.tagName.toUpperCase() : "";
+    if (tag === "TEXTAREA") {
+        return true;
+    }
+
+    if (tag === "INPUT") {
+        const textTypes = ["text", "password", "email", "number", "search", "tel", "url"];
+        const inputType = (target.type || "text").toLowerCase();
+        return textTypes.includes(inputType);
+    }
+
+    return false;
+}
+
 class KeyboardControls {
     constructor() {
         this.isBound = false;
@@ -16,11 +39,7 @@ class KeyboardControls {
     }
 
     isTextInputTarget(target) {
-        if (!target) {
-            return false;
-        }
-
-        return target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable;
+        return isTextInputTarget(target);
     }
 
     handleKeydown(event) {
@@ -37,7 +56,18 @@ class KeyboardControls {
 
         if ((event.key === "Enter" || event.key === " ") && isGameLayer) {
             event.preventDefault();
-            const syntheticEvent = new KeyboardEvent("keydown", {
+            if (event.target && typeof event.target.blur === "function" && event.target !== document.body) {
+                event.target.blur();
+            }
+            const KeyboardEventCtor = typeof KeyboardEvent !== "undefined"
+                ? KeyboardEvent
+                : (globalThis.KeyboardEvent || class {
+                    constructor(type, init = {}) {
+                        this.type = type;
+                        Object.assign(this, init);
+                    }
+                });
+            const syntheticEvent = new KeyboardEventCtor("keydown", {
                 key: "Enter",
                 code: "Enter",
                 keyCode: 13,
@@ -48,6 +78,9 @@ class KeyboardControls {
             // Mark as synthetic to prevent re-handling
             Object.defineProperty(syntheticEvent, "_synthetic", { value: true, enumerable: false });
             document.body.dispatchEvent(syntheticEvent);
+            if (typeof window !== "undefined" && window.dispatchEvent && window !== document.body) {
+                window.dispatchEvent(syntheticEvent);
+            }
             return;
         }
 
@@ -57,7 +90,18 @@ class KeyboardControls {
             const isAlertVisible = alertWin && !alertWin.classList.contains("hidden");
 
             if (isAlertVisible) {
-                alertWin.classList.replace("flex", "hidden");
+                const buttons = Array.from(alertWin.querySelectorAll("#alert-btns button") || []);
+                const cancelBtn = buttons.find((btn) => {
+                    const txt = (btn.innerText || btn.textContent || "").trim().toLowerCase();
+                    return txt === "cancel" || txt === "close" || txt === "no";
+                });
+                if (cancelBtn) {
+                    cancelBtn.click();
+                } else if (buttons[0]) {
+                    buttons[0].click();
+                } else {
+                    alertWin.classList.replace("flex", "hidden");
+                }
                 return;
             }
 
@@ -101,5 +145,5 @@ class KeyboardControls {
 const keyboardControls = new KeyboardControls();
 
 // Export as ES module
-export { keyboardControls, KeyboardControls };
+export { keyboardControls, KeyboardControls, isTextInputTarget };
 export default keyboardControls;

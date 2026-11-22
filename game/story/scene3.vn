@@ -1,6 +1,6 @@
 [scene: scene3]
-transition: fade #000000 250
-@background reset=true asset="futon_room"
+transition: crossfade 800
+@stage asset="futon_stage" options={"mouseTilt":true} duration=0.8
 @actor.reset actor="mary" fields='["scale"]'
 @sprite.apply actor="mary" sprite="casualSmile" options='{"duration":0}' fallback='{"outfit":"Casual","mood":"Rin_Casual_Smile"}'
 @actor.set actor="mary" props='{"x":-0.25,"y":{"portrait":0.1,"android":0.2,"default":0.1}}'

@@ -4,7 +4,7 @@ import fs from "fs-extra";
 
 export const UI_LAYOUT_ENGINE_VERSION = "0.1.0";
 
-const SUPPORTED_NODE_TYPES = new Set(["view", "rect", "text", "image"]);
+const SUPPORTED_NODE_TYPES = new Set(["view", "rect", "text", "image", "nine-slice", "nineslice"]);
 
 const STYLE_TO_KONVA_ATTR = Object.freeze({
     x: "x",
@@ -32,10 +32,22 @@ const STYLE_TO_KONVA_ATTR = Object.freeze({
     align: "align",
     padding: "padding",
     wrap: "wrap",
+    "line-height": "lineHeight",
     "scale-x": "scaleX",
     "scale-y": "scaleY",
     src: "src",
+    slice: "slice",
+    "slice-top": "sliceTop",
+    "slice-right": "sliceRight",
+    "slice-bottom": "sliceBottom",
+    "slice-left": "sliceLeft",
+    "shadow-color": "shadowColor",
+    "shadow-blur": "shadowBlur",
+    "shadow-opacity": "shadowOpacity",
+    "shadow-offset-x": "shadowOffsetX",
+    "shadow-offset-y": "shadowOffsetY",
     "fill-after-stroke-enabled": "fillAfterStrokeEnabled",
+    "perfect-draw-enabled": "perfectDrawEnabled",
     visible: "visible",
     "z-index": "zIndex"
 });
@@ -559,11 +571,69 @@ function normalizeFontStyle(rawValue) {
     return "normal";
 }
 
+function parseSliceValue(rawValue) {
+    if (Array.isArray(rawValue)) return rawValue.map(Number);
+    const parts = String(rawValue || "").trim().split(/\s+/).map((p) => {
+        const num = parseFloat(p);
+        return Number.isFinite(num) ? num : 0;
+    });
+    if (parts.length === 1) {
+        return [parts[0], parts[0], parts[0], parts[0]];
+    }
+    if (parts.length === 2) {
+        return [parts[0], parts[1], parts[0], parts[1]];
+    }
+    if (parts.length === 3) {
+        return [parts[0], parts[1], parts[2], parts[1]];
+    }
+    if (parts.length >= 4) {
+        return [parts[0], parts[1], parts[2], parts[3]];
+    }
+    return [0, 0, 0, 0];
+}
+
+function parseCornerRadiusValue(rawValue) {
+    if (Array.isArray(rawValue)) {
+        return rawValue.map((n) => Number(n) || 0);
+    }
+    const str = String(rawValue || "").trim();
+    if (str.startsWith("[") && str.endsWith("]")) {
+        try {
+            const parsed = JSON.parse(str);
+            if (Array.isArray(parsed) && (parsed.length === 2 || parsed.length === 4)) {
+                return parsed.map((n) => Number(n) || 0);
+            }
+        } catch {}
+    }
+    const parts = str.split(/\s+/).map((p) => {
+        const num = parseFloat(p);
+        return Number.isFinite(num) ? num : NaN;
+    });
+    if (parts.length === 4 && parts.every((p) => !Number.isNaN(p))) {
+        return [parts[0], parts[1], parts[2], parts[3]];
+    }
+    if (parts.length === 2 && parts.every((p) => !Number.isNaN(p))) {
+        return [parts[0], parts[1], parts[0], parts[1]];
+    }
+    return null;
+}
+
 function coerceLiteralValue(rawValue, attrName) {
     const value = String(rawValue || "").trim();
 
     if (value.length === 0) {
         return "";
+    }
+
+    if (attrName === "slice") {
+        return parseSliceValue(value);
+    }
+
+    if (attrName === "cornerRadius") {
+        const multiCorner = parseCornerRadiusValue(value);
+        if (multiCorner !== null) {
+            return multiCorner;
+        }
     }
 
     if (attrName === "visible" || attrName === "fillAfterStrokeEnabled") {
@@ -785,9 +855,13 @@ export function compileUiLayout({
             }
         }
 
+        const normalizedTag = (nodeContext.tag === "nineslice" || nodeContext.tag === "nine-slice")
+            ? "nine-slice"
+            : nodeContext.tag;
+
         compiledNodes.push({
             id: nodeContext.id,
-            type: nodeContext.tag,
+            type: normalizedTag,
             parentId: nodeContext.parent ? nodeContext.parent.id : null,
             classes: nodeContext.classNames,
             attrs,

@@ -1,29 +1,29 @@
 {
     "engineVersion": "0.1.0",
-    "generatedAt": "2026-11-12T14:28:37.143Z",
+    "generatedAt": "2026-11-22T13:37:46.996Z",
     "artifacts": [
         {
             "screen": "actionbar",
             "file": "actionbar.ui.json",
-            "hash": "sha256:a67b8f358b94b39fe8f434628d90db47e0b7da20f0cbfe12be916dc3ecf8cda8",
+            "hash": "sha256:10bf1f0527dd855c4386f168458093e0771bf043f96ce0bb3af3248644a8ef89",
             "xmlHash": "sha256:4907292631a6682093d6d3b5ca6a486656f8beeccee852ff26267abb418b897d",
-            "cssHash": "sha256:f1d591d60e5e0cf55545d823b4cf421ecb5cc26186a44dac472746b2cfe53d66",
+            "cssHash": "sha256:6c6cc2b3499d9616c2d7ae36d1f70a566af805ad1ef1149aa2a23443606612ed",
             "nodeCount": 5
         },
         {
             "screen": "gameui",
             "file": "gameui.ui.json",
-            "hash": "sha256:ad3ee9c05081b16f5f40121dcdeefb401ffe597239bfde7834d2d366305cbc16",
+            "hash": "sha256:0ea0050b4fff0bee3208d3bae48d2b939ac45332ac00c4a7f767477bb78f5b2e",
             "xmlHash": "sha256:95a5c1f2adfa24d7f704223f7013b9a532eb971d99006b5778fb5980ee4e9ecc",
-            "cssHash": "sha256:1bfc63366260b362d3aaa0d1d7b20d88242d403fe1db9e39b3290bbb98900d0f",
+            "cssHash": "sha256:b7ef932ec6a14d7ea89af45f7733b42ba6287897488ee3483873baa2fb4df860",
             "nodeCount": 11
         },
         {
             "screen": "home",
             "file": "home.ui.json",
-            "hash": "sha256:f73532350138e240fdd9dbd659658dd20f70e1512166eb3a4dab807090552937",
-            "xmlHash": "sha256:6f7a65c6c8f36f6501b3e15982badbdeea5e3a18b8e5ea9fb9ac15cf8968c8a5",
-            "cssHash": "sha256:24e67e7a29ce95f203a503152dc12f05085e4163265e952bb237969af06ab439",
+            "hash": "sha256:c4fa586e73c2916c9f024b6375ae5ea651d36627b727c8cb914b59ceaa5a1928",
+            "xmlHash": "sha256:68a194592b7c251509dcc1a277458fb23185fc5d0442a130958ccbc733141a7e",
+            "cssHash": "sha256:89a8e52e73e4edb3f32d38eb00e560f4258e717ab7f26864bcc3ab8291aa9546",
             "nodeCount": 15
         }
     ]
