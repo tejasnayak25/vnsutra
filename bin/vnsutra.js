@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-disable no-console */
 
 /**
  * VN-Sutra CLI (`vnsutra` & `create-vnsutra`)
@@ -14,11 +15,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execSync, spawn } from "node:child_process";
-import https from "node:https";
 
 const VERSION = "3.0.0";
 const REPO_URL = "https://github.com/tejasnayak25/vnsutra.git";
-const TARBALL_URL = "https://codeload.github.com/tejasnayak25/vnsutra/tar.gz/main";
 
 // Dark Amethyst ANSI Palette
 const C = {
@@ -101,7 +100,7 @@ async function cloneRepo(targetDir) {
     }
 }
 
-async function downloadFallback(targetDir) {
+async function downloadFallback(_targetDir) {
     console.log(`  ${C.yellow}!${C.reset} Git clone unavailable, streaming archive directly...`);
     // Fallback: clone with git or instruct user
     throw new Error(`Please ensure git is installed to bootstrap new projects: git clone ${REPO_URL}`);
@@ -124,7 +123,7 @@ async function scaffoldProject(projectName, options = {}) {
         const files = fs.readdirSync(targetDir);
         if (files.length > 0 && !isCurrentDir) {
             console.error(`${C.red}Error:${C.reset} Target directory "${projectName}" already exists and is not empty.`);
-            console.error(`Please specify an empty directory or a new folder name.`);
+            console.error("Please specify an empty directory or a new folder name.");
             process.exit(1);
         }
     } else {
@@ -187,7 +186,7 @@ async function scaffoldProject(projectName, options = {}) {
             console.log(`  ${C.green}✓${C.reset} Dependencies installed successfully`);
         } catch (err) {
             console.error(`  ${C.yellow}!${C.reset} npm install encountered an issue: ${err.message}`);
-            console.log(`  You can manually run "npm install" inside the project.`);
+            console.log("  You can manually run \"npm install\" inside the project.");
         }
     }
 
@@ -229,7 +228,7 @@ async function main() {
         const target = rawArgs[1] || (firstArg === "init" ? "." : null);
         if (!target) {
             console.error(`${C.red}Error:${C.reset} Please specify a project directory name.`);
-            console.log(`Usage: npx vnsutra create <project-name>`);
+            console.log("Usage: npx vnsutra create <project-name>");
             process.exit(1);
         }
         await scaffoldProject(target, { install: isInstall });

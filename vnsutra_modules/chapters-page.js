@@ -170,7 +170,7 @@ function chaptersPage(config, actionbar, fonts, navigate) {
 
     const stopAllTweens = () => {
         activeTweens.forEach(tw => {
-            try { tw.destroy(); } catch {}
+            try { tw.destroy(); } catch { /* ignore */ }
         });
         activeTweens.clear();
     };

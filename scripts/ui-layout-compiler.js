@@ -603,7 +603,7 @@ function parseCornerRadiusValue(rawValue) {
             if (Array.isArray(parsed) && (parsed.length === 2 || parsed.length === 4)) {
                 return parsed.map((n) => Number(n) || 0);
             }
-        } catch {}
+        } catch { /* ignore */ }
     }
     const parts = str.split(/\s+/).map((p) => {
         const num = parseFloat(p);

@@ -68,6 +68,7 @@ function getPlanNode(nodesById, nodeId) {
 
 async function buildHomeCompiledLayout({
     config,
+    fonts,
     stageWidth,
     stageHeight,
     isPortrait,
@@ -117,8 +118,8 @@ async function buildHomeCompiledLayout({
         const sidebarTitleSize = isPortrait ? 26 : (isAndroid ? 22 : 26);
         const titleSize = isPortrait ? 44 : (isAndroid ? 44 : 76);
         const subtitleSize = isPortrait ? 20 : (isAndroid ? 18 : 22);
-        const titleFont = fonts["title"]?.name || fonts["title"] || "Cinzel";
-        const otherFont = fonts["other"]?.name || fonts["other"] || "Inter";
+        const titleFont = fonts?.["title"]?.name || fonts?.["title"] || "Cinzel";
+        const otherFont = fonts?.["other"]?.name || fonts?.["other"] || "Inter";
 
         sidebarTitle.setAttrs({
             text: "🌸 Visual Novel",
@@ -505,6 +506,7 @@ async function home(config, fonts, navigate) {
     const compiledHomeLayout = xmlLayoutEnabled
         ? await buildHomeCompiledLayout({
             config,
+            fonts,
             stageWidth: width,
             stageHeight: height,
             isPortrait,

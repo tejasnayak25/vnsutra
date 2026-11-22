@@ -133,7 +133,7 @@ async function loadgame(config, actionbar, title, fonts, remove_img, click = () 
 
     const stopAllTweens = () => {
         activeTweens.forEach(tw => {
-            try { tw.destroy(); } catch {}
+            try { tw.destroy(); } catch { /* ignore */ }
         });
         activeTweens.clear();
     };
@@ -238,7 +238,7 @@ async function loadgame(config, actionbar, title, fonts, remove_img, click = () 
         const timeBarHeight = isPortrait ? 44 : 40;
         const cardHeight = aspectHeight + timeBarHeight;
 
-        let slotCards = [];
+        const slotCards = [];
         let regularSaveCounter = 1;
 
         // In Save Game mode, create a prominent "Create New Save" slot card at the top

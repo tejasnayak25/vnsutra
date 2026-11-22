@@ -183,8 +183,6 @@ class Character {
             if(game) {
                 if (duration <= 0) {
                     this.img.opacity(0);
-                    this.img.x(this.getValue("x", x));
-                    this.data.x = x;
                     this.img.remove();
                     this.img.getLayer()?.batchDraw?.();
                     resolve();
@@ -256,8 +254,6 @@ class Character {
             if(game) {
                 if (duration <= 0) {
                     this.img.opacity(0);
-                    this.img.x(this.getValue("x", x));
-                    this.data.x = x;
                     this.img.remove();
                     this.img.getLayer()?.batchDraw?.();
                     resolve();
@@ -922,8 +918,6 @@ class IMG {
             if(game) {
                 if (duration <= 0) {
                     this.img.opacity(0);
-                    this.img.x(this.getValue("x", x));
-                    this.data.x = x;
                     this.img.remove();
                     this.img.getLayer()?.batchDraw?.();
                     resolve();
@@ -992,8 +986,6 @@ class IMG {
             if(game) {
                 if (duration <= 0) {
                     this.img.opacity(0);
-                    this.img.x(this.getValue("x", x));
-                    this.data.x = x;
                     this.img.remove();
                     this.img.getLayer()?.batchDraw?.();
                     resolve();

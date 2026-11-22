@@ -111,7 +111,7 @@ function settings(config, actionbar, fonts, credit_details) {
 
     const stopAllTweens = () => {
         activeTweens.forEach(tw => {
-            try { tw.destroy(); } catch {}
+            try { tw.destroy(); } catch { /* ignore */ }
         });
         activeTweens.clear();
     };

@@ -101,7 +101,7 @@ function achievementsPage(config, actionbar, fonts) {
 
     const stopAllTweens = () => {
         activeTweens.forEach(tw => {
-            try { tw.destroy(); } catch {}
+            try { tw.destroy(); } catch { /* ignore */ }
         });
         activeTweens.clear();
     };

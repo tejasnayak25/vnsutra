@@ -42,7 +42,7 @@
     "url": "https://github.com/tejasnayak25/vnsutra/issues"
   },
   "engines": {
-    "node": "26.x",
+    "node": ">=20.0.0",
     "npm": ">=8.0.0"
   },
   "scripts": {

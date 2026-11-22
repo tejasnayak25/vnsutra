@@ -520,7 +520,7 @@ async function actionBar(config, siderect, width, height, fonts, close_square_im
             }
 
             if (viewTransitionTween) {
-                try { viewTransitionTween.destroy(); } catch {}
+                try { viewTransitionTween.destroy(); } catch { /* ignore */ }
                 viewTransitionTween = null;
             }
 
@@ -585,7 +585,7 @@ async function actionBar(config, siderect, width, height, fonts, close_square_im
         close(done = () => { }, options = {}) {
             const { animateButton = true } = options;
             if (viewTransitionTween) {
-                try { viewTransitionTween.destroy(); } catch {}
+                try { viewTransitionTween.destroy(); } catch { /* ignore */ }
                 viewTransitionTween = null;
             }
             cleanupActionbarScroll(this);

@@ -85,13 +85,13 @@ class Game {
         if (this._bgTransitionTween) {
             try {
                 this._bgTransitionTween.destroy();
-            } catch (_) {}
+            } catch (_) { /* ignore */ }
             this._bgTransitionTween = null;
         }
         if (this._bgCrossfadeNode) {
             try {
                 this._bgCrossfadeNode.destroy();
-            } catch (_) {}
+            } catch (_) { /* ignore */ }
             this._bgCrossfadeNode = null;
         }
 
@@ -195,13 +195,13 @@ class Game {
                         applyTargetAttributes(image);
                         this.clearParallaxBackground();
                         if (this._bgCrossfadeNode === crossfadeNode) {
-                            try { crossfadeNode.destroy(); } catch (_) {}
+                            try { crossfadeNode.destroy(); } catch (_) { /* ignore */ }
                             this._bgCrossfadeNode = null;
                         }
                         this._bgTransitionTween = null;
                         bgGroup?.getLayer?.()?.batchDraw?.();
                     } else {
-                        try { crossfadeNode.destroy(); } catch (_) {}
+                        try { crossfadeNode.destroy(); } catch (_) { /* ignore */ }
                     }
                     resolve();
                 }
