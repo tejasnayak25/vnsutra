@@ -1,0 +1,12 @@
+scripts/__pycache__/
+**/*.pyc
+.git/
+.github/
+.husky/
+node_modules/
+dist/
+research/
+scratch/
+coverage/
+*.log
+.DS_Store
