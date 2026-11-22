@@ -40,10 +40,10 @@ jobs:
         run: npm pack
 
       - name: Create GitHub Release
-        uses: softprops/action-github-release@v2
-        with:
-          files: "*.tgz"
-          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ github.ref_name }}" *.tgz --title "VN-Sutra ${{ github.ref_name }}" --generate-notes
 
       - name: Publish to npm
         if: env.NPM_TOKEN != ''
