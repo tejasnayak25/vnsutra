@@ -14,6 +14,7 @@ All notable changes to **VN-Sutra** are documented in this file.
 - **Character Evolution & Sakura Integration:**
   - Integrated `Sakura` as the flagship intro rigged character with `Casual.vnsprite` bundle, secondary spring physics, eyelid blinks, lip-sync, and quintic mood crossfades.
 - **Model Downloader & Production Asset Tooling:**
+  - Added official CLI executable (`bin/vnsutra.js`) supporting `npm create vnsutra <project>` and `npx vnsutra create <project>`.
   - Added `scripts/download_stage_models.py` (`npm run models:download:stages`) for pre-caching and verifying SegFormer B0 ADE20K and Depth-Anything-V2 models.
   - Standardized pipeline scripts in `package.json`: `assets:stages`, `assets:rig`, `models:download`, and `assets:backgrounds`.
 - **Modernized UI & Dark Amethyst Theme:**

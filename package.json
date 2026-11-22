@@ -3,6 +3,10 @@
   "version": "3.0.0",
   "description": "Modular Visual Novel SDK for the Web",
   "main": "api/index.js",
+  "bin": {
+    "vnsutra": "./bin/vnsutra.js",
+    "create-vnsutra": "./bin/vnsutra.js"
+  },
   "type": "module",
   "exports": {
     ".": "./api/index.js",
@@ -10,6 +14,7 @@
     "./rigged": "./vnsutra_modules/assets/rigged-character.js"
   },
   "files": [
+    "bin/",
     "api/",
     "vnsutra_modules/",
     "scripts/",

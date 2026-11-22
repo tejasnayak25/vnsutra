@@ -43,7 +43,24 @@ It is built specifically for `.vn` files and provides:
 
 ## Quick Start
 
-Install dependencies and run the full local development environment:
+### 1. Create a New Visual Novel Project
+Scaffold a fresh visual novel project in seconds using `npm create` or `npx`:
+
+```bash
+npm create vnsutra my-visual-novel
+```
+*(Or `npx vnsutra create my-visual-novel`)*
+
+Then enter the project and start the live dev server:
+
+```bash
+cd my-visual-novel
+npm install
+npm run dev
+```
+
+### 2. Developing in this Repository
+If you cloned the source repository directly:
 
 ```bash
 npm install
