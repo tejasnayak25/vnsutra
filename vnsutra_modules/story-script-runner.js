@@ -22,63 +22,67 @@ function resolveResponsive(value, { isPortrait = false, isAndroid = false } = {}
     }
 
     if (Object.prototype.hasOwnProperty.call(value, "portrait") && isPortrait) {
-        return value.portrait;
+        return resolveResponsive(value.portrait, { isPortrait, isAndroid });
     }
 
     if (Object.prototype.hasOwnProperty.call(value, "android") && isAndroid) {
-        return value.android;
+        return resolveResponsive(value.android, { isPortrait, isAndroid });
     }
 
     if (Object.prototype.hasOwnProperty.call(value, "default")) {
-        return value.default;
+        return resolveResponsive(value.default, { isPortrait, isAndroid });
     }
 
     return value;
 }
 
-function resolveVarRef(value, vars = {}) {
+function resolveVarRef(value, vars = {}, runtime = {}) {
     if (!value || typeof value !== "object" || Array.isArray(value)) {
+        if (value === "$isPortrait") return Boolean(runtime?.isPortrait);
+        if (value === "$isAndroid") return Boolean(runtime?.isAndroid);
         return value;
     }
 
     if (Object.prototype.hasOwnProperty.call(value, "fromVar")) {
+        if (value.fromVar === "$isPortrait") return Boolean(runtime?.isPortrait);
+        if (value.fromVar === "$isAndroid") return Boolean(runtime?.isAndroid);
         return vars[value.fromVar];
     }
 
     return value;
 }
 
-function evaluateCondition(test, vars = {}) {
+function evaluateCondition(test, vars = {}, runtime = {}) {
     if (!test || typeof test !== "object") {
         return Boolean(test);
     }
 
     if (test.op === "and" || test.op === "all") {
         const list = Array.isArray(test.conditions) ? test.conditions : [];
-        return list.every((cond) => evaluateCondition(cond, vars));
+        return list.every((cond) => evaluateCondition(cond, vars, runtime));
     }
 
     if (test.op === "or" || test.op === "any") {
         const list = Array.isArray(test.conditions) ? test.conditions : [];
-        return list.some((cond) => evaluateCondition(cond, vars));
+        return list.some((cond) => evaluateCondition(cond, vars, runtime));
     }
 
     if (test.op === "not" || test.op === "!") {
-        return !evaluateCondition(test.test ?? test.condition, vars);
+        return !evaluateCondition(test.test ?? test.condition, vars, runtime);
     }
 
     if (test.op === "truthy" || (!test.op && test.fromVar)) {
-        const val = resolveVarRef(test.value ?? test, vars);
+        const val = resolveVarRef(test.value ?? test, vars, runtime);
         return Boolean(val);
     }
 
     if (test.op === "falsy") {
-        const val = resolveVarRef(test.value ?? test, vars);
+        const val = resolveVarRef(test.value ?? test, vars, runtime);
         return !val;
     }
 
-    const left = resolveVarRef(test.left, vars);
-    const right = resolveVarRef(test.right, vars);
+    const left = resolveVarRef(test.left, vars, runtime);
+    const right = resolveVarRef(test.right, vars, runtime);
     const op = test.op || "===";
 
     switch (op) {
@@ -498,7 +502,7 @@ async function executeActions(actions = [], runtime) {
             break;
         }
         case "if": {
-            const conditionMet = evaluateCondition(action.test, runtime.vars);
+            const conditionMet = evaluateCondition(action.test, runtime.vars, runtime);
             const branch = conditionMet ? action.then : action.else;
             if (Array.isArray(branch)) {
                 const result = await executeActions(branch, runtime);
@@ -509,12 +513,12 @@ async function executeActions(actions = [], runtime) {
             break;
         }
         case "switch": {
-            const value = resolveVarRef(action.value, runtime.vars);
+            const value = resolveVarRef(action.value, runtime.vars, runtime);
             let matchedBranch = null;
 
             if (Array.isArray(action.cases)) {
                 for (const caseItem of action.cases) {
-                    const caseValue = resolveVarRef(caseItem.value, runtime.vars);
+                    const caseValue = resolveVarRef(caseItem.value, runtime.vars, runtime);
                     if (value === caseValue) {
                         matchedBranch = caseItem.actions;
                         break;

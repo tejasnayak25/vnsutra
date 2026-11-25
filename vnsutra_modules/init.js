@@ -23,6 +23,9 @@ import {
     setConfiguration,
     getIsPortrait,
     setIsPortrait,
+    setIsLandscape,
+    getIsMobile,
+    setIsMobile,
     setIsAndroid,
     getIsAndroid,
     setResizeSuppressedUntil,
@@ -514,8 +517,12 @@ async function loadChapterDefinitions(config) {
         return;
     }
     setConfiguration(CONFIG);
-    setIsAndroid(mobileCheck());
-    setIsPortrait(checkPortrait());
+    const initialMobile = mobileCheck();
+    const initialPortrait = checkPortrait();
+    setIsMobile(initialMobile);
+    setIsAndroid(initialMobile);
+    setIsPortrait(initialPortrait);
+    setIsLandscape(!initialPortrait);
 
     const chapterDefinitions = await loadChapterDefinitions(CONFIG);
     const chaptersEnabled = Boolean(CONFIG?.ui?.chapters?.enabled) && chapterDefinitions.length > 0;
@@ -1935,9 +1942,10 @@ async function loadChapterDefinitions(config) {
 
         const { docWidth, docHeight, stageWidth, stageHeight } = getRoundedStageAndDocSize();
         const nextPortrait = checkPortrait();
+        const nextMobile = mobileCheck();
         const isDimensionNoop = Math.abs(docWidth - stageWidth) <= RESIZE_EPSILON_PX
             && Math.abs(docHeight - stageHeight) <= RESIZE_EPSILON_PX;
-        const isOrientationNoop = nextPortrait === getIsPortrait();
+        const isOrientationNoop = nextPortrait === getIsPortrait() && nextMobile === getIsMobile();
         const arePagesMounted = Boolean(pages.home?.ui?.layer) && Boolean(pages.game?.ui?.layer);
 
         if (!forceRefresh && isDimensionNoop && isOrientationNoop && arePagesMounted) {
@@ -1946,7 +1954,8 @@ async function loadChapterDefinitions(config) {
                 docHeight,
                 stageWidth,
                 stageHeight,
-                nextPortrait
+                nextPortrait,
+                nextMobile
             });
             return;
         }
@@ -1997,7 +2006,12 @@ async function loadChapterDefinitions(config) {
                     console.warn("Failed to set Konva container DOM size:", err);
                 }
 
-                setIsPortrait(checkPortrait());
+                const currentMobile = mobileCheck();
+                const currentPortrait = checkPortrait();
+                setIsMobile(currentMobile);
+                setIsAndroid(currentMobile);
+                setIsPortrait(currentPortrait);
+                setIsLandscape(!currentPortrait);
 
                 if (pages.home?.ui?.layer) {
                     pages.home.ui.layer.removeChildren();

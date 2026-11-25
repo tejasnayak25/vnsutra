@@ -53,6 +53,15 @@ function dispatchGameEvent(name, detail) {
 let fullscreenTransitionTs = 0;
 let fullscreenTransitionTrackingBound = false;
 let pendingSceneSwitchToken = 0;
+let lastInteractionTs = 0;
+
+function markAdvanceInteraction() {
+    lastInteractionTs = Date.now();
+}
+
+function markSkipInteraction() {
+    lastInteractionTs = Date.now();
+}
 
 function ensureFullscreenTransitionTracking() {
     if (fullscreenTransitionTrackingBound || typeof document === "undefined") {
@@ -69,7 +78,14 @@ function ensureFullscreenTransitionTracking() {
 }
 
 function shouldIgnoreAdvanceInteraction() {
-    return (Date.now() - fullscreenTransitionTs) < 320;
+    const now = Date.now();
+    if ((now - fullscreenTransitionTs) < 320) {
+        return true;
+    }
+    if ((now - lastInteractionTs) < 250) {
+        return true;
+    }
+    return false;
 }
 
 function getAdvanceInteractionTarget(gameInstance) {
@@ -308,6 +324,8 @@ function dialog(speaker, text = "", wait = true, params = {}) {
                     } else {
                         completed = true;
                         clearStepTimer();
+                        data.message.text(text);
+                        data.message.fire("update");
                         cleanup();
                         resolve(userSkipped);
                     }
@@ -336,9 +354,11 @@ function dialog(speaker, text = "", wait = true, params = {}) {
                     e.preventDefault();
                     e.stopPropagation();
                     userSkipped = true;
+                    markSkipInteraction();
                     clearStepTimer();
                     applyPendingKineticActions(time);
                     data.message.text(text);
+                    data.message.fire("update");
                     cleanup();
                     resolve(userSkipped);
                 }
@@ -365,9 +385,11 @@ function dialog(speaker, text = "", wait = true, params = {}) {
 
                 completed = true;
                 userSkipped = true;
+                markSkipInteraction();
                 clearStepTimer();
                 applyPendingKineticActions(time);
                 data.message.text(text);
+                data.message.fire("update");
                 cleanup();
                 resolve(userSkipped);
             };
@@ -382,6 +404,7 @@ function dialog(speaker, text = "", wait = true, params = {}) {
                 if (typeof document !== "undefined" && document.activeElement && document.activeElement !== document.body && !isTextInputTarget(document.activeElement)) {
                     document.activeElement.blur?.();
                 }
+                e?.stopPropagation?.();
                 clickHandler();
             };
 
@@ -447,6 +470,7 @@ function dialog(speaker, text = "", wait = true, params = {}) {
                     e.preventDefault();
                     e.stopPropagation();
                     completed = true;
+                    markAdvanceInteraction();
                     cleanup();
                     resolve();
                 }
@@ -467,6 +491,7 @@ function dialog(speaker, text = "", wait = true, params = {}) {
                     return;
                 }
                 completed = true;
+                markAdvanceInteraction();
                 cleanup();
                 resolve();
             };
@@ -481,6 +506,7 @@ function dialog(speaker, text = "", wait = true, params = {}) {
                 if (typeof document !== "undefined" && document.activeElement && document.activeElement !== document.body && !isTextInputTarget(document.activeElement)) {
                     document.activeElement.blur?.();
                 }
+                e?.stopPropagation?.();
                 clickHandler();
             };
 
@@ -562,8 +588,9 @@ function dialog(speaker, text = "", wait = true, params = {}) {
     
         const speakerX = typeof speaker?.data?.x === "number" ? speaker.data.x : null;
         if(gameSettings && gameSettings["text_animation"]) {
-            data.message.text("");
+            data.message.text(displayText);
             data.message.fire("update");
+            data.message.text("");
             const speakerName = speaker?.data?.name ?? null;
             dispatchGameEvent(EVENTS.DIALOG, { speaker: speakerName, speakerX, text: displayText, animating: true });
             
@@ -580,7 +607,7 @@ function dialog(speaker, text = "", wait = true, params = {}) {
 
                 animateText(displayText, (cleanup) => {
                     abortCleanup = cleanup;
-                }).then((skipped) => {
+                }).then(async (skipped) => {
                     dispatchGameEvent(EVENTS.DIALOG_END, { speaker: speakerName });
                     if (aborted) {
                         return;
@@ -592,6 +619,14 @@ function dialog(speaker, text = "", wait = true, params = {}) {
                         return;
                     }
 
+                    if (skipped) {
+                        markSkipInteraction();
+                        await new Promise((r) => setTimeout(r, 80));
+                        if (aborted) {
+                            return;
+                        }
+                    }
+
                     waitForInput(!skipped, (cleanup) => {
                         abortCleanup = cleanup;
                     }).then(() => {
@@ -599,7 +634,8 @@ function dialog(speaker, text = "", wait = true, params = {}) {
                             return;
                         }
                         clearAbort();
-                        resolve();
+                        markAdvanceInteraction();
+                        setTimeout(resolve, 50);
                     });
                 });
             });
@@ -1295,4 +1331,4 @@ function wait(time) {
     });
 }
 
-export { dialog, next, loading, input, choice, storage, end, wait };
+export { dialog, next, loading, input, choice, storage, end, wait, markSkipInteraction, markAdvanceInteraction };

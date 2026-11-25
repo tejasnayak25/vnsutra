@@ -68,5 +68,19 @@ describe("Story Conditionals & Rich Text Tags", () => {
             expect(evaluateCondition(orTest, { score: 12, vip: false })).toBe(true);
             expect(evaluateCondition(orTest, { score: 3, vip: true })).toBe(true);
         });
+
+        it("evaluates $isPortrait and $isAndroid runtime environment pseudo-variables", () => {
+            const portraitTest = { fromVar: "$isPortrait" };
+            expect(evaluateCondition(portraitTest, {}, { isPortrait: true })).toBe(true);
+            expect(evaluateCondition(portraitTest, {}, { isPortrait: false })).toBe(false);
+
+            const androidTest = {
+                left: { fromVar: "$isAndroid" },
+                op: "===",
+                right: true
+            };
+            expect(evaluateCondition(androidTest, {}, { isAndroid: true })).toBe(true);
+            expect(evaluateCondition(androidTest, {}, { isAndroid: false })).toBe(false);
+        });
     });
 });

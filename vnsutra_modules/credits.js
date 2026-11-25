@@ -115,7 +115,31 @@ function credits(config, actionbar, fonts) {
     });
 
     // 1. Hero Acknowledgement Banner
-    const bannerHeight = isPortrait ? 82 : 80;
+    const bannerTitle = new Konva.Text({
+        x: 20,
+        y: 12,
+        width: Math.max(120, mainContainer.width() - 40),
+        text: `🌸  ${config.title || "VN-Sutra"} • Production & Creative Credits`,
+        fontFamily: fonts["other"]?.name || "Inter",
+        fontStyle: "bold",
+        fontSize: scaleFontSize(isPortrait ? 17 : 20),
+        letterSpacing: 0.5,
+        fill: "#F8F2FF"
+    });
+
+    const bannerSubtitleY = bannerTitle.y() + bannerTitle.height() + 6;
+    const bannerSubtitle = new Konva.Text({
+        x: 20,
+        y: bannerSubtitleY,
+        width: Math.max(120, mainContainer.width() - 40),
+        text: "Special thanks to all the talented artists, composers, and developers who contributed to this journey.",
+        fontFamily: fonts["other"]?.name || "Inter",
+        fontSize: scaleFontSize(isPortrait ? 12.5 : 13),
+        fill: "#D8CCE8",
+        lineHeight: 1.3
+    });
+
+    const bannerHeight = Math.max(isPortrait ? 82 : 80, bannerSubtitle.y() + bannerSubtitle.height() + 14);
     const banner = new Konva.Group({
         x: 0,
         y: 0,
@@ -133,28 +157,6 @@ function credits(config, actionbar, fonts) {
         stroke: "rgba(184, 138, 239, 0.35)",
         strokeWidth: 1.2,
         perfectDrawEnabled: false
-    });
-
-    const bannerTitle = new Konva.Text({
-        x: 20,
-        y: 12,
-        width: mainContainer.width() - 40,
-        text: `🌸  ${config.title || "VN-Sutra"} • Production & Creative Credits`,
-        fontFamily: fonts["other"]?.name || "Inter",
-        fontStyle: "bold",
-        fontSize: scaleFontSize(isPortrait ? 18 : 20),
-        letterSpacing: 0.5,
-        fill: "#F8F2FF"
-    });
-
-    const bannerSubtitle = new Konva.Text({
-        x: 20,
-        y: isPortrait ? 48 : 46,
-        width: mainContainer.width() - 40,
-        text: "Special thanks to all the talented artists, composers, and developers who contributed to this journey.",
-        fontFamily: fonts["other"]?.name || "Inter",
-        fontSize: scaleFontSize(isPortrait ? 13 : 13),
-        fill: "#D8CCE8"
     });
 
     banner.add(bannerBg, bannerTitle, bannerSubtitle);

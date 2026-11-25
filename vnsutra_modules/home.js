@@ -1,6 +1,6 @@
 import "https://unpkg.com/konva@10.0.0-1/konva.min.js";
 import { konvaStage } from "./stage.js";
-import { getIsPortrait, getIsAndroid, getExitApp, getOpenWindow, scaleFontSize, getGameSettings } from "./runtime-state.js";
+import { getIsPortrait, getIsMobile, getIsAndroid, getExitApp, getOpenWindow, scaleFontSize, getGameSettings } from "./runtime-state.js";
 import { STORAGE_KEYS } from "./constants.js";
 import { animateBtn, openBar, closeBar } from "./ui/utils.js";
 import actionBar from "./ui/actionbar.js";
@@ -115,13 +115,26 @@ async function buildHomeCompiledLayout({
             return null;
         }
 
-        const sidebarTitleSize = isPortrait ? 26 : (isAndroid ? 22 : 26);
-        const titleSize = isPortrait ? 44 : (isAndroid ? 44 : 76);
-        const subtitleSize = isPortrait ? 20 : (isAndroid ? 18 : 22);
+        const sidebarTitleSize = isPortrait ? (isAndroid ? 21 : 24) : (isAndroid ? 20 : 26);
+        const titleSize = isPortrait ? 44 : (isAndroid ? 38 : 76);
+        const subtitleSize = isPortrait ? 20 : (isAndroid ? 16 : 22);
         const titleFont = fonts?.["title"]?.name || fonts?.["title"] || "Cinzel";
         const otherFont = fonts?.["other"]?.name || fonts?.["other"] || "Inter";
 
+        const closeBtnMargin = isPortrait ? 70 : 55;
+        const curSidebarWidth = sidebar.width();
+        const curSidebarTitleHeight = sidebarTitle.height();
+        const sidebarTitleX = isPortrait ? 20 : 0;
+        const sidebarTitleWidth = isPortrait
+            ? Math.max(120, curSidebarWidth - sidebarTitleX - closeBtnMargin - 12)
+            : curSidebarWidth;
+
         sidebarTitle.setAttrs({
+            x: sidebarTitleX,
+            y: 0,
+            width: sidebarTitleWidth,
+            height: curSidebarTitleHeight,
+            align: isPortrait ? "left" : "center",
             text: "🌸 Visual Novel",
             fontSize: scaleFontSize(sidebarTitleSize),
             fontFamily: titleFont,
@@ -234,9 +247,9 @@ function buildHomeImperativeLayout({
         ? configuredMobileTitleScale
         : 1.5;
 
-    const sidebarTitleHeight = isPortrait ? 100 : (isAndroid ? 70 : 105);
-    const sidebarTitleBorderPadding = isPortrait ? 24 : (isAndroid ? 18 : 24);
-    const sidebarTitleBorderTop = isPortrait ? 90 : (isAndroid ? 62 : 96);
+    const sidebarTitleHeight = isPortrait ? 100 : (isAndroid ? 62 : 105);
+    const sidebarTitleBorderPadding = isPortrait ? 24 : (isAndroid ? 16 : 24);
+    const sidebarTitleBorderTop = isPortrait ? 90 : (isAndroid ? 54 : 96);
 
     const sidebarRoot = new Konva.Group({
         id: "home-sidebar-root",
@@ -276,17 +289,23 @@ function buildHomeImperativeLayout({
         perfectDrawEnabled: false
     });
 
+    const closeBtnMargin = isPortrait ? 70 : 55;
+    const sidebarTitleX = isPortrait ? 20 : 0;
+    const sidebarTitleWidth = isPortrait
+        ? Math.max(120, sidebarWidth - sidebarTitleX - closeBtnMargin - 12)
+        : sidebarWidth;
+
     const sidebarTitle = new Konva.Text({
         id: "home-sidebar-title",
-        x: 0,
+        x: sidebarTitleX,
         y: 0,
-        width: sidebarWidth,
+        width: sidebarTitleWidth,
         height: sidebarTitleHeight,
         text: "🌸 Visual Novel",
-        fontSize: scaleFontSize(isPortrait ? 26 : (isAndroid ? 22 : 26)),
+        fontSize: scaleFontSize(isPortrait ? (isAndroid ? 21 : 24) : (isAndroid ? 22 : 26)),
         fontFamily: fonts["title"]?.name || fonts["title"] || "Cinzel",
         fontStyle: "bold",
-        align: "center",
+        align: isPortrait ? "left" : "center",
         verticalAlign: "middle",
         fill: "#F8F2FF",
         fillAfterStrokeEnabled: true,
@@ -356,9 +375,9 @@ function buildHomeImperativeLayout({
     const titleGroup = new Konva.Group({
         id: "home-title-group",
         x: 0,
-        y: isPortrait ? (stageHeight * 0.2) : Math.max(0, stageHeight - 260),
+        y: isPortrait ? (stageHeight * 0.2) : Math.max(0, stageHeight - (isAndroid ? 200 : 260)),
         width: mainRootWidth,
-        height: isPortrait ? (stageHeight * 0.6) : 260
+        height: isPortrait ? (stageHeight * 0.6) : (isAndroid ? 200 : 260)
     });
 
     const title = new Konva.Text({
@@ -367,7 +386,7 @@ function buildHomeImperativeLayout({
         y: 0,
         width: mainRootWidth,
         text: config.title,
-        fontSize: scaleFontSize(isPortrait ? 44 : (isAndroid ? 44 : 76)),
+        fontSize: scaleFontSize(isPortrait ? 44 : (isAndroid ? 38 : 76)),
         fontFamily: fonts["title"]?.name || fonts["title"] || "Cinzel",
         align: isPortrait ? "center" : titleAlign,
         padding: isPortrait ? 0 : (isAndroid ? 30 : 60),
@@ -680,7 +699,9 @@ async function home(config, fonts, navigate) {
 
     globalThis.addEventListener("vnsutra:overlay-closed", homeOverlayClosedHandler);
 
-    const optionRowHeight = isPortrait ? 78 : (isAndroid ? 56 : 64);
+    const isMobile = getIsMobile();
+    const isMobileLandscape = isMobile && !isPortrait;
+    const optionRowHeight = isPortrait ? 78 : (isMobileLandscape ? 44 : (isAndroid ? 56 : 64));
 
     const optsViewport = homeLayout?.optsViewport;
     const optsGroup = homeLayout?.optsGroup;
@@ -1340,7 +1361,12 @@ async function home(config, fonts, navigate) {
     title_group.visible(true);
 
     if (!isPortrait) {
-        title_group.y(height - (subtitle.y() + subtitle.height()));
+        if (isMobile) {
+            const contentH = (subtitle.y() + subtitle.height());
+            title_group.y(Math.max(16, height - contentH - 24));
+        } else {
+            title_group.y(height - (subtitle.y() + subtitle.height()));
+        }
     } else {
         title_group.y((height / 2) - ((title.height() * title.scaleX()) + subtitle.height()));
     }

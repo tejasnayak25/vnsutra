@@ -268,12 +268,15 @@ export function parseCssStyles(cssSource, options = {}) {
 
     // Extract conditional blocks by tracking brace depth.
     function extractAtBlocks(src) {
-        const atRegex = /@(android-landscape|android-portrait|portrait|landscape|android)\s*\{/gi;
+        const atRegex = /@(mobile-landscape|mobile-portrait|mobile|android-landscape|android-portrait|portrait|landscape|android)\s*\{/gi;
         const blocks = [];
         let match;
 
         while ((match = atRegex.exec(src)) !== null) {
-            const condition = match[1].toLowerCase();
+            let condition = match[1].toLowerCase();
+            if (condition === "mobile") condition = "android";
+            else if (condition === "mobile-portrait") condition = "android-portrait";
+            else if (condition === "mobile-landscape") condition = "android-landscape";
             let depth = 1;
             let i = match.index + match[0].length;
 

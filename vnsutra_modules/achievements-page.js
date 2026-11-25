@@ -72,7 +72,7 @@ function achievementsPage(config, actionbar, fonts) {
     const outerPadding = isPortrait ? 6 : 10;
     const cardGap = isPortrait ? 14 : 16;
     const columnGap = isPortrait ? 0 : 16;
-    const columnCount = (isPortrait || isAndroid) ? 1 : 2;
+    const columnCount = (isPortrait || (actionContent.width() < 560)) ? 1 : 2;
 
     const titleSize = scaleFontSize(isPortrait ? 17 : 18);
     const bodySize = scaleFontSize(isPortrait ? 13 : 14);
@@ -206,7 +206,8 @@ function achievementsPage(config, actionbar, fonts) {
         const isMastered = unlockedCount === totalCount && totalCount > 0;
 
         // 1. Hero Summary Banner
-        const summaryCardHeight = isPortrait ? 96 : 88;
+        const isNarrow = isPortrait || mainContainer.width() < 480;
+        const summaryCardHeight = isNarrow ? 104 : 88;
         const summaryCard = new Konva.Group({
             x: 0,
             y: 0,
@@ -237,9 +238,9 @@ function achievementsPage(config, actionbar, fonts) {
         });
 
         // Left Emblem Badge
-        const summaryEmblemSize = isPortrait ? 58 : 52;
-        const summaryEmblemX = 18;
-        const summaryEmblemY = (summaryCardHeight - summaryEmblemSize) / 2;
+        const summaryEmblemSize = isNarrow ? 44 : 52;
+        const summaryEmblemX = isNarrow ? 12 : 18;
+        const summaryEmblemY = isNarrow ? 14 : ((summaryCardHeight - summaryEmblemSize) / 2);
 
         const summaryEmblemBox = new Konva.Rect({
             x: summaryEmblemX,
@@ -253,7 +254,7 @@ function achievementsPage(config, actionbar, fonts) {
             perfectDrawEnabled: false
         });
 
-        const trophyIconSize = isPortrait ? 28 : 26;
+        const trophyIconSize = isNarrow ? 22 : 26;
         const summaryIcon = createVectorIcon(
             ICONS.trophy,
             summaryEmblemX + (summaryEmblemSize - trophyIconSize) / 2,
@@ -263,11 +264,11 @@ function achievementsPage(config, actionbar, fonts) {
             "🏆"
         );
 
-        const summaryTextX = summaryEmblemX + summaryEmblemSize + 16;
-        const pillWidth = isPortrait ? 130 : 145;
-        const pillHeight = 26;
-        const pillX = mainContainer.width() - pillWidth - 18;
-        const pillY = 16;
+        const summaryTextX = summaryEmblemX + summaryEmblemSize + (isNarrow ? 10 : 16);
+        const pillWidth = isNarrow ? Math.min(115, Math.max(88, Math.floor(mainContainer.width() * 0.28))) : (isPortrait ? 130 : 145);
+        const pillHeight = isNarrow ? 22 : 26;
+        const pillX = mainContainer.width() - pillWidth - (isNarrow ? 12 : 18);
+        const pillY = isNarrow ? 12 : 16;
 
         // Top Right Count & Percentage Pill
         const countPillBg = new Konva.Rect({
@@ -275,7 +276,7 @@ function achievementsPage(config, actionbar, fonts) {
             y: pillY,
             width: pillWidth,
             height: pillHeight,
-            cornerRadius: 13,
+            cornerRadius: isNarrow ? 11 : 13,
             fill: "rgba(184, 138, 239, 0.18)",
             stroke: "rgba(242, 169, 213, 0.40)",
             strokeWidth: 1,
@@ -291,9 +292,9 @@ function achievementsPage(config, actionbar, fonts) {
             verticalAlign: "middle",
             text: `${unlockedCount} / ${totalCount}  •  ${Math.round(progressRatioAll * 100)}%`,
             fontFamily: fontOther,
-            fontSize: scaleFontSize(isPortrait ? 13 : 14),
+            fontSize: scaleFontSize(isNarrow ? 11.5 : (isPortrait ? 13 : 14)),
             fontStyle: "bold",
-            letterSpacing: 0.5,
+            letterSpacing: isNarrow ? 0.2 : 0.5,
             fill: textColor,
             perfectDrawEnabled: false
         });
@@ -301,33 +302,33 @@ function achievementsPage(config, actionbar, fonts) {
         // Banner Title & Subtitle
         const summaryTitle = new Konva.Text({
             x: summaryTextX,
-            y: 16,
-            width: pillX - summaryTextX - 10,
+            y: isNarrow ? 12 : 16,
+            width: pillX - summaryTextX - 6,
             text: "ACHIEVEMENTS",
             fontFamily: fontOther,
-            fontSize: scaleFontSize(isPortrait ? 18 : 20),
+            fontSize: scaleFontSize(isNarrow ? 16 : (isPortrait ? 18 : 20)),
             fontStyle: "bold",
             fill: primaryColor,
-            letterSpacing: 2,
+            letterSpacing: isNarrow ? 1.2 : 2,
             perfectDrawEnabled: false
         });
 
         const summarySubtitle = new Konva.Text({
             x: summaryTextX,
-            y: 42,
-            width: pillX - summaryTextX - 10,
+            y: isNarrow ? 36 : 42,
+            width: mainContainer.width() - summaryTextX - 12,
             text: isMastered
                 ? "All story trophies mastered!"
                 : "Complete milestones to unlock story badges",
             fontFamily: fontOther,
-            fontSize: scaleFontSize(isPortrait ? 13 : 14),
+            fontSize: scaleFontSize(isNarrow ? 12 : (isPortrait ? 13 : 14)),
             fill: "#D8CCE8",
             perfectDrawEnabled: false
         });
 
         // Overall Progress Bar Track & Fill
-        const summaryTrackY = summaryCardHeight - 16;
-        const summaryTrackWidth = mainContainer.width() - summaryTextX - 18;
+        const summaryTrackY = summaryCardHeight - (isNarrow ? 14 : 16);
+        const summaryTrackWidth = mainContainer.width() - summaryTextX - (isNarrow ? 12 : 18);
 
         const summaryTrack = new Konva.Rect({
             x: summaryTextX,

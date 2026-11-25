@@ -2926,9 +2926,6 @@
       cursor: not-allowed;
     }
   }
-  .isolate {
-    isolation: isolate;
-  }
   .stack {
     display: inline-grid;
     grid-template-columns: 3px 4px 1fr 4px 3px;

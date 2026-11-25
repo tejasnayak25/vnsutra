@@ -43,7 +43,9 @@ class Outfit {
 
             if (nextScale === null) {
                 const { width, height } = getGame().ui.game.container.getAttrs();
-                nextScale = getIsPortrait() ? width / mood.width : height / mood.height;
+                nextScale = getIsPortrait()
+                    ? Math.min((height / mood.height) * 0.85, (width * 0.70) / mood.width)
+                    : (height / mood.height);
             }
 
             // preserve visual center when swapping images so actor doesn't "jump"
@@ -116,7 +118,9 @@ class Outfit {
 
                 if (nextScale === null) {
                     const { width, height } = getGame().ui.game.container.getAttrs();
-                    nextScale = getIsPortrait() ? width / mood.width : height / mood.height;
+                    nextScale = getIsPortrait()
+                        ? Math.min((height / mood.height) * 0.85, (width * 0.70) / mood.width)
+                        : (height / mood.height);
                 }
 
                 // preserve visual center similar to the setter above

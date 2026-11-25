@@ -194,7 +194,8 @@ export function evaluateDynamicValue(dynamicValue, context) {
 
 export function resolvePlanNodeAttrs(nodePlan, context) {
     const isPortrait = Boolean(context.isPortrait);
-    const isAndroid = Boolean(context.isAndroid);
+    const isAndroid = Boolean(context.isAndroid || context.isMobile);
+    const isMobile = Boolean(context.isMobile || context.isAndroid);
 
     // Base static attrs
     const attrs = { ...(nodePlan.attrs || {}) };
@@ -231,17 +232,20 @@ export function resolvePlanNodeAttrs(nodePlan, context) {
     );
 
     // Platform overrides
-    if (isAndroid) {
+    if (isAndroid || isMobile) {
         applyOverrides(nodePlan.androidAttrs, nodePlan.androidDynamic);
+        applyOverrides(nodePlan.mobileAttrs, nodePlan.mobileDynamic);
     }
 
     // Combo overrides (most specific)
-    if (isAndroid && isPortrait) {
+    if ((isAndroid || isMobile) && isPortrait) {
         applyOverrides(nodePlan.androidPortraitAttrs, nodePlan.androidPortraitDynamic);
+        applyOverrides(nodePlan.mobilePortraitAttrs, nodePlan.mobilePortraitDynamic);
     }
 
-    if (isAndroid && !isPortrait) {
+    if ((isAndroid || isMobile) && !isPortrait) {
         applyOverrides(nodePlan.androidLandscapeAttrs, nodePlan.androidLandscapeDynamic);
+        applyOverrides(nodePlan.mobileLandscapeAttrs, nodePlan.mobileLandscapeDynamic);
     }
 
     return attrs;

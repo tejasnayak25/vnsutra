@@ -1,5 +1,5 @@
 import "https://unpkg.com/konva@10.0.0-1/konva.min.js";
-import { getIsPortrait, getIsAndroid, setOpenWindow, scaleFontSize } from "./runtime-state.js";
+import { getIsPortrait, getIsAndroid, getIsMobileLandscape, setOpenWindow, scaleFontSize } from "./runtime-state.js";
 import { bindActionbarScroll, bindHorizontalScroll } from "./ui/scrollable-content.js";
 import chapters from "./chapters.js";
 
@@ -105,9 +105,17 @@ function chaptersPage(config, actionbar, fonts, navigate) {
         return null;
     }
 
-    const isPortrait = getIsPortrait();
+    const actionContent = actionbar?.actionContent;
+    const isPortrait = getIsPortrait() || Boolean(
+        actionContent &&
+        typeof actionContent.width === "function" &&
+        typeof actionContent.height === "function" &&
+        actionContent.width() < actionContent.height() &&
+        actionContent.width() <= 768
+    );
     const isAndroid = getIsAndroid();
-    const actionContent = actionbar.actionContent;
+    const isMobileLandscape = typeof getIsMobileLandscape === "function" ? getIsMobileLandscape() : false;
+    const isMobile = isPortrait || isMobileLandscape;
     const title = config?.ui?.chapters?.title || "Chapters";
     const shouldIgnoreActivation = () => performance.now() < (actionbar.__scrollSuppressTapUntil ?? 0);
     const supportsHover = !isPortrait && !isAndroid;
@@ -225,6 +233,448 @@ function chaptersPage(config, actionbar, fonts, navigate) {
         }, { animateButton: false });
     };
 
+    function createBottomSheet() {
+        const rootContainer = (actionbar && actionbar.actionrect) ? actionbar.actionrect : actionContent;
+        const sheetW = rootContainer.width();
+        const totalH = rootContainer.height();
+        const sheetH = Math.min(320, Math.max(260, Math.floor(totalH * 0.48)));
+        const layer = new Konva.Group({
+            x: 0,
+            y: 0,
+            width: sheetW,
+            height: totalH,
+            visible: false,
+            listening: true
+        });
+
+        const scrim = new Konva.Rect({
+            x: 0,
+            y: 0,
+            width: sheetW,
+            height: totalH,
+            fill: "rgba(10, 8, 22, 0.72)",
+            opacity: 0,
+            listening: true
+        });
+
+        const sheetGroup = new Konva.Group({
+            x: 0,
+            y: totalH,
+            width: sheetW,
+            height: sheetH
+        });
+
+        const sheetBg = new Konva.Rect({
+            x: 0,
+            y: 0,
+            width: sheetW,
+            height: sheetH,
+            cornerRadius: [24, 24, 0, 0],
+            fill: "rgba(28, 22, 48, 0.98)",
+            stroke: "rgba(184, 138, 239, 0.40)",
+            strokeWidth: 1.5,
+            perfectDrawEnabled: false
+        });
+
+        const sheetGlow = new Konva.Rect({
+            x: 24,
+            y: 0,
+            width: Math.max(0, sheetW - 48),
+            height: 1.5,
+            fill: "rgba(242, 169, 213, 0.50)",
+            perfectDrawEnabled: false
+        });
+
+        const dragHandle = new Konva.Rect({
+            x: (sheetW - 36) / 2,
+            y: 8,
+            width: 36,
+            height: 4,
+            cornerRadius: 2,
+            fill: "rgba(255, 255, 255, 0.30)",
+            perfectDrawEnabled: false
+        });
+
+        const closeBtn = new Konva.Group({
+            x: sheetW - 44,
+            y: 10,
+            width: 32,
+            height: 32
+        });
+        const closeBtnHit = new Konva.Rect({
+            width: 32,
+            height: 32,
+            fill: "rgba(0,0,0,0)"
+        });
+        const closeBtnTxt = new Konva.Text({
+            width: 32,
+            height: 32,
+            align: "center",
+            verticalAlign: "middle",
+            text: "✕",
+            fontFamily: fontOther,
+            fontSize: 16,
+            fontStyle: "bold",
+            fill: "rgba(255, 255, 255, 0.70)",
+            perfectDrawEnabled: false
+        });
+        closeBtn.add(closeBtnHit, closeBtnTxt);
+
+        const padX = 18;
+        const badgeY = 22;
+        const tagBox = new Konva.Rect({
+            x: padX,
+            y: badgeY,
+            width: 96,
+            height: 24,
+            cornerRadius: 6,
+            fill: "rgba(184, 138, 239, 0.20)",
+            stroke: "rgba(184, 138, 239, 0.45)",
+            strokeWidth: 1,
+            perfectDrawEnabled: false
+        });
+        const tagTxt = new Konva.Text({
+            x: padX,
+            y: badgeY,
+            width: 96,
+            height: 24,
+            align: "center",
+            verticalAlign: "middle",
+            text: "CHAPTER 1",
+            fontFamily: fontOther,
+            fontSize: 11,
+            fontStyle: "bold",
+            letterSpacing: 1,
+            fill: "#FFFFFF",
+            perfectDrawEnabled: false
+        });
+
+        const statusBox = new Konva.Rect({
+            x: padX + 104,
+            y: badgeY,
+            width: 82,
+            height: 24,
+            cornerRadius: 6,
+            fill: "rgba(35, 26, 62, 0.60)",
+            stroke: primaryColor,
+            strokeWidth: 1,
+            perfectDrawEnabled: false
+        });
+        const statusTxt = new Konva.Text({
+            x: padX + 104,
+            y: badgeY,
+            width: 82,
+            height: 24,
+            align: "center",
+            verticalAlign: "middle",
+            text: "Unlocked",
+            fontFamily: fontOther,
+            fontSize: 11,
+            fontStyle: "bold",
+            letterSpacing: 0.8,
+            fill: primaryColor,
+            perfectDrawEnabled: false
+        });
+
+        const titleY = badgeY + 30;
+        const titleW = sheetW - (padX * 2);
+        const titleTxt = new Konva.Text({
+            x: padX,
+            y: titleY,
+            width: titleW,
+            text: "",
+            fontFamily: fontOther,
+            fontSize: scaleFontSize(17),
+            fontStyle: "bold",
+            letterSpacing: 0.5,
+            fill: "#FFFFFF",
+            lineHeight: 1.25,
+            perfectDrawEnabled: false
+        });
+
+        const descTxt = new Konva.Text({
+            x: padX,
+            y: titleY + 28,
+            width: titleW,
+            text: "",
+            fontFamily: fontOther,
+            fontSize: scaleFontSize(12.5),
+            fill: subtextColor,
+            lineHeight: 1.3,
+            perfectDrawEnabled: false
+        });
+
+        const footerH = 38;
+        const footerY = sheetH - footerH - 14;
+
+        const scenePillBox = new Konva.Rect({
+            x: padX,
+            y: footerY,
+            width: 92,
+            height: footerH,
+            cornerRadius: 10,
+            fill: "rgba(25, 20, 48, 0.70)",
+            stroke: "rgba(184, 138, 239, 0.28)",
+            strokeWidth: 1,
+            perfectDrawEnabled: false
+        });
+        const sceneIcon = createVectorIcon(
+            ICONS.book,
+            padX + 8,
+            footerY + (footerH - 16) / 2,
+            16,
+            primaryColor,
+            "📖"
+        );
+        const sceneCountTxt = new Konva.Text({
+            x: padX + 28,
+            y: footerY,
+            width: 60,
+            height: footerH,
+            verticalAlign: "middle",
+            text: "1 Scene",
+            fontFamily: fontOther,
+            fontSize: 11.5,
+            fontStyle: "bold",
+            fill: "#FFFFFF",
+            perfectDrawEnabled: false
+        });
+
+        const ctaBtnW = Math.min(130, sheetW - padX - (padX + 92 + 12));
+        const ctaBtnX = sheetW - padX - ctaBtnW;
+        const ctaBtn = new Konva.Group({
+            x: ctaBtnX,
+            y: footerY,
+            width: ctaBtnW,
+            height: footerH
+        });
+        const ctaBox = new Konva.Rect({
+            width: ctaBtnW,
+            height: footerH,
+            cornerRadius: 10,
+            fill: "rgba(242, 169, 213, 0.35)",
+            stroke: secondaryColor,
+            strokeWidth: 1.2,
+            perfectDrawEnabled: false
+        });
+        const ctaTxt = new Konva.Text({
+            width: ctaBtnW,
+            height: footerH,
+            align: "center",
+            verticalAlign: "middle",
+            text: "Continue",
+            fontFamily: fontOther,
+            fontSize: 13,
+            fontStyle: "bold",
+            letterSpacing: 1,
+            fill: "#FFFFFF",
+            perfectDrawEnabled: false
+        });
+        ctaBtn.add(ctaBox, ctaTxt);
+
+        sheetGroup.add(
+            sheetBg,
+            sheetGlow,
+            dragHandle,
+            closeBtn,
+            tagBox,
+            tagTxt,
+            statusBox,
+            statusTxt,
+            titleTxt,
+            descTxt,
+            scenePillBox,
+            sceneIcon,
+            sceneCountTxt,
+            ctaBtn
+        );
+
+        layer.add(scrim, sheetGroup);
+
+        let currentTargetChapter = null;
+
+        function close(instant = false) {
+            const currentRoot = (actionbar && actionbar.actionrect) ? actionbar.actionrect : actionContent;
+            const currentH = currentRoot.height();
+            if (instant) {
+                if (typeof scrim?.opacity === "function") {
+                    scrim.opacity(0);
+                }
+                sheetGroup.y(currentH);
+                if (typeof layer?.visible === "function") {
+                    layer.visible(false);
+                }
+                return;
+            }
+            runTween(scrim, { opacity: 0, duration: 0.15 });
+            runTween(sheetGroup, {
+                y: currentH,
+                duration: 0.18,
+                onFinish: () => {
+                    layer.visible(false);
+                }
+            });
+        }
+
+        scrim.on("click tap", () => close(false));
+        closeBtn.on("click tap", () => close(false));
+
+        ctaBtn.on("click tap", () => {
+            if (!currentTargetChapter) return;
+            const isNotice = currentTargetChapter.type === "notice" || currentTargetChapter.playable === false;
+            const isUnlocked = isNotice ? true : Boolean(currentTargetChapter.unlocked);
+            if (!isNotice && isUnlocked) {
+                close(true);
+                startChapter(currentTargetChapter);
+            }
+        });
+
+        function open(chapter) {
+            currentTargetChapter = chapter;
+            const currentRoot = (actionbar && actionbar.actionrect) ? actionbar.actionrect : actionContent;
+            const curW = currentRoot.width();
+            const curH = currentRoot.height();
+            const curSheetH = Math.min(320, Math.max(260, Math.floor(curH * 0.48)));
+
+            // Re-sync dimensions for true edge-to-edge display
+            layer.width(curW);
+            layer.height(curH);
+            scrim.width(curW);
+            scrim.height(curH);
+            sheetGroup.width(curW);
+            sheetGroup.height(curSheetH);
+            sheetBg.width(curW);
+            sheetBg.height(curSheetH);
+            sheetGlow.width(Math.max(0, curW - 48));
+            dragHandle.x(Math.floor((curW - 36) / 2));
+            closeBtn.x(curW - 44);
+
+            const padX = 18;
+            const titleW = curW - (padX * 2);
+            titleTxt.width(titleW);
+            descTxt.width(titleW);
+
+            const footerH = 38;
+            const footerY = curSheetH - footerH - 14;
+            scenePillBox.y(footerY);
+            if (typeof sceneIcon.y === "function") {
+                sceneIcon.y(footerY + (footerH - 16) / 2);
+            }
+            sceneCountTxt.y(footerY);
+
+            const ctaBtnW = Math.min(130, curW - padX - (padX + 92 + 12));
+            const ctaBtnX = curW - padX - ctaBtnW;
+            ctaBtn.x(ctaBtnX);
+            ctaBtn.y(footerY);
+            ctaBtn.width(ctaBtnW);
+            ctaBox.width(ctaBtnW);
+            ctaTxt.width(ctaBtnW);
+
+            const isNotice = chapter.type === "notice" || chapter.playable === false;
+            const isUnlocked = isNotice ? true : Boolean(chapter.unlocked);
+            const isCompleted = isNotice ? false : Boolean(chapter.completed);
+            const isCurrent = isNotice ? false : Boolean(chapter.current);
+
+            let statusLabel = "Locked";
+            let statusColor = "rgba(184, 138, 239, 0.45)";
+            if (isNotice) {
+                const np = getNoticePresentation(chapter, config, secondaryColor);
+                statusLabel = np.label;
+                statusColor = np.color;
+            } else if (isCurrent) {
+                statusLabel = "Current";
+                statusColor = secondaryColor;
+            } else if (isCompleted) {
+                statusLabel = "Completed";
+                statusColor = goldColor;
+            } else if (isUnlocked) {
+                statusLabel = "Unlocked";
+                statusColor = primaryColor;
+            }
+
+            const badgeLabel = isNotice ? "✦ SPECIAL NOTICE" : `CHAPTER ${chapter.index}`;
+            tagTxt.text(badgeLabel);
+            const tagMeasure = new Konva.Text({ text: badgeLabel, fontFamily: fontOther, fontSize: 11, fontStyle: "bold" });
+            const tagW = Math.max(84, Math.ceil(tagMeasure.width()) + 18);
+            tagBox.width(tagW);
+            tagTxt.width(tagW);
+
+            statusTxt.text(statusLabel);
+            statusTxt.fill(statusColor);
+            statusBox.stroke(statusColor);
+            const statusMeasure = new Konva.Text({ text: statusLabel, fontFamily: fontOther, fontSize: 11, fontStyle: "bold" });
+            const stW = Math.max(76, Math.ceil(statusMeasure.width()) + 16);
+            statusBox.x(padX + tagW + 8);
+            statusTxt.x(padX + tagW + 8);
+            statusBox.width(stW);
+            statusTxt.width(stW);
+
+            titleTxt.text(chapter.title || "Untitled Chapter");
+
+            const desc = typeof chapter.description === "string" && chapter.description.trim().length > 0
+                ? chapter.description.trim()
+                : (isNotice ? "No notice details provided." : "No quest notes available.");
+            descTxt.text(desc);
+            descTxt.y(titleTxt.y() + titleTxt.height() + 6);
+
+            const sceneCount = Number.isFinite(chapter.sceneCount) ? chapter.sceneCount : 1;
+            sceneCountTxt.text(sceneCount === 1 ? "1 Scene" : `${sceneCount} Scenes`);
+
+            const actionLabel = isUnlocked
+                ? (isCurrent ? "Continue" : (isCompleted ? "Replay" : "Start"))
+                : "Locked";
+            ctaTxt.text(actionLabel);
+            ctaBox.fill(isUnlocked
+                ? (isCurrent ? "rgba(242, 169, 213, 0.35)" : "rgba(184, 138, 239, 0.28)")
+                : "rgba(255, 255, 255, 0.04)"
+            );
+            ctaBox.stroke(isUnlocked ? (isCurrent ? secondaryColor : primaryColor) : "rgba(184, 138, 239, 0.20)");
+            ctaTxt.fill(isUnlocked ? "#FFFFFF" : "rgba(184, 138, 239, 0.45)");
+
+            layer.visible(true);
+            if (typeof layer.moveToTop === "function") {
+                layer.moveToTop();
+            }
+            sheetGroup.y(curH);
+            scrim.opacity(0);
+            runTween(scrim, { opacity: 1, duration: 0.18 });
+            runTween(sheetGroup, { y: curH - curSheetH, duration: 0.22 });
+        }
+
+        return { layer, open, close };
+    }
+
+    let bottomSheet = null;
+    let bottomSheetLayer = null;
+    let openChapterBottomSheet = null;
+    let closeChapterBottomSheet = null;
+
+    if (isPortrait) {
+        bottomSheet = createBottomSheet();
+        bottomSheetLayer = bottomSheet.layer;
+        openChapterBottomSheet = bottomSheet.open;
+        closeChapterBottomSheet = bottomSheet.close;
+
+        if (typeof actionbar.clear === "function") {
+            const origClear = actionbar.clear.bind(actionbar);
+            actionbar.clear = () => {
+                if (bottomSheetLayer && typeof bottomSheetLayer.remove === "function") {
+                    bottomSheetLayer.remove();
+                }
+                origClear();
+            };
+        }
+        if (typeof actionbar.close === "function") {
+            const origClose = actionbar.close.bind(actionbar);
+            actionbar.close = (done) => {
+                if (bottomSheetLayer) {
+                    bottomSheetLayer.visible(false);
+                }
+                return origClose(done);
+            };
+        }
+    }
+
     // =========================================================================
     // Shared: Unified Route Progress Hero Banner
     // Used across ALL 4 layouts for complete visual consistency
@@ -240,7 +690,314 @@ function chaptersPage(config, actionbar, fonts, navigate) {
         currentChapter,
         icon = ICONS.map
     }) => {
-        const heroHeight = isPortrait ? 122 : 112;
+        const isMobileLandscape = typeof getIsMobileLandscape === "function" ? getIsMobileLandscape() : false;
+        const isPortraitMobile = isPortrait && !isMobileLandscape;
+
+        if (isPortraitMobile) {
+            const padX = 14;
+            const topY = 12;
+            const contentW = Math.max(120, width - (padX * 2));
+
+            // 1. Top Header Row: Emblem + Title on left, percentage badge chip on right
+            const emblemSize = 32;
+            const emblemBox = new Konva.Rect({
+                x: padX,
+                y: topY,
+                width: emblemSize,
+                height: emblemSize,
+                cornerRadius: 10,
+                fill: "rgba(184, 138, 239, 0.20)",
+                stroke: primaryColor,
+                strokeWidth: 1.2,
+                perfectDrawEnabled: false
+            });
+
+            const emblemIcon = createVectorIcon(
+                icon,
+                padX + (emblemSize - 18) / 2,
+                topY + (emblemSize - 18) / 2,
+                18,
+                secondaryColor,
+                "🗺"
+            );
+
+            const badgeW = 52;
+            const badgeH = 22;
+            const badgeX = width - padX - badgeW;
+            const badgeY = topY + (emblemSize - badgeH) / 2;
+
+            const percentBadge = new Konva.Rect({
+                x: badgeX,
+                y: badgeY,
+                width: badgeW,
+                height: badgeH,
+                cornerRadius: 11,
+                fill: "rgba(242, 169, 213, 0.18)",
+                stroke: secondaryColor,
+                strokeWidth: 1,
+                perfectDrawEnabled: false
+            });
+
+            const percentText = new Konva.Text({
+                x: badgeX,
+                y: badgeY,
+                width: badgeW,
+                height: badgeH,
+                align: "center",
+                verticalAlign: "middle",
+                text: `${Math.round(progressRatio * 100)}%`,
+                fontFamily: fontOther,
+                fontSize: 11.5,
+                fontStyle: "bold",
+                fill: secondaryColor,
+                perfectDrawEnabled: false
+            });
+
+            const titleX = padX + emblemSize + 10;
+            const titleW = Math.max(40, badgeX - titleX - 8);
+            const heroTitle = new Konva.Text({
+                x: titleX,
+                y: topY + (emblemSize - 16) / 2,
+                width: titleW,
+                height: 16,
+                verticalAlign: "middle",
+                text: "ROUTE PROGRESS & MILESTONES",
+                fontFamily: fontOther,
+                fontSize: 12,
+                fontStyle: "bold",
+                letterSpacing: 0.8,
+                fill: primaryColor,
+                perfectDrawEnabled: false
+            });
+
+            // 2. Full-Width Progress Bar
+            const barY = topY + emblemSize + 12;
+            const barHeight = 6;
+            const barWidth = contentW;
+
+            const barTrack = new Konva.Rect({
+                x: padX,
+                y: barY,
+                width: barWidth,
+                height: barHeight,
+                cornerRadius: 3,
+                fill: "rgba(25, 20, 48, 0.75)",
+                stroke: "rgba(184, 138, 239, 0.30)",
+                strokeWidth: 1,
+                perfectDrawEnabled: false
+            });
+
+            const barFillWidth = Math.max(progressRatio > 0 ? 6 : 0, barWidth * Math.min(1, Math.max(0, progressRatio)));
+            const barFill = new Konva.Rect({
+                x: padX,
+                y: barY,
+                width: barFillWidth,
+                height: barHeight,
+                cornerRadius: 3,
+                fill: secondaryColor,
+                perfectDrawEnabled: false
+            });
+
+            // 3. Stats Row (Completed chapters on left, scenes on right)
+            const statsY = barY + barHeight + 8;
+            const leftStatsW = Math.floor(contentW * 0.65);
+            const heroProgress = new Konva.Text({
+                x: padX,
+                y: statsY,
+                width: leftStatsW,
+                text: totalPlayableCount > 0
+                    ? `${completedCount}/${totalPlayableCount} Chapters Completed`
+                    : "No playable chapters yet",
+                fontFamily: fontOther,
+                fontSize: 11.5,
+                fontStyle: "bold",
+                fill: "#FFFFFF",
+                perfectDrawEnabled: false
+            });
+
+            const scenesText = new Konva.Text({
+                x: padX + leftStatsW,
+                y: statsY,
+                width: contentW - leftStatsW,
+                align: "right",
+                text: `${totalScenes} Scenes`,
+                fontFamily: fontOther,
+                fontSize: 11,
+                fill: subtextColor,
+                perfectDrawEnabled: false
+            });
+
+            // 4. Active Chapter Pill (Full width, subtle background)
+            const activeY = statsY + 18 + 8;
+            const activeTextWidth = contentW - 20;
+            const heroActive = new Konva.Text({
+                x: padX + 10,
+                y: activeY + 6,
+                width: activeTextWidth,
+                text: currentChapter
+                    ? `Active: Chapter ${currentChapter.index} • ${currentChapter.title}`
+                    : "Active: None",
+                fontFamily: fontOther,
+                fontSize: 11.5,
+                fontStyle: "bold",
+                fill: secondaryColor,
+                perfectDrawEnabled: false
+            });
+
+            const pillH = Math.max(26, heroActive.height() + 10);
+            const activePill = new Konva.Rect({
+                x: padX,
+                y: activeY,
+                width: contentW,
+                height: pillH,
+                cornerRadius: 8,
+                fill: "rgba(184, 138, 239, 0.12)",
+                stroke: "rgba(184, 138, 239, 0.25)",
+                strokeWidth: 1,
+                perfectDrawEnabled: false
+            });
+
+            const heroHeight = activeY + pillH + 12;
+
+            const heroGroup = new Konva.Group({
+                x,
+                y,
+                width,
+                height: heroHeight,
+                name: "chapters-hero-banner"
+            });
+
+            const heroBg = new Konva.Rect({
+                x: 0,
+                y: 0,
+                width,
+                height: heroHeight,
+                cornerRadius: 16,
+                fill: "rgba(35, 26, 62, 0.85)",
+                stroke: "rgba(184, 138, 239, 0.40)",
+                strokeWidth: 1.2,
+                perfectDrawEnabled: false
+            });
+
+            const heroTopGlow = new Konva.Rect({
+                x: 24,
+                y: 0,
+                width: Math.max(0, width - 48),
+                height: 1.2,
+                fill: "rgba(242, 169, 213, 0.45)",
+                perfectDrawEnabled: false
+            });
+
+            heroGroup.add(
+                heroBg,
+                heroTopGlow,
+                emblemBox,
+                emblemIcon,
+                heroTitle,
+                percentBadge,
+                percentText,
+                barTrack,
+                barFill,
+                heroProgress,
+                scenesText,
+                activePill,
+                heroActive
+            );
+
+            return { heroGroup, heroHeight };
+        }
+
+        const emblemSize = isMobileLandscape ? 40 : 56;
+        const emblemX = 14;
+        const heroTextX = emblemX + emblemSize + 14;
+        const heroTextWidth = Math.max(40, width - heroTextX - 16);
+
+        const heroTitle = new Konva.Text({
+            x: heroTextX,
+            y: isMobileLandscape ? 8 : 15,
+            width: heroTextWidth,
+            text: "ROUTE PROGRESS & MILESTONES",
+            fontFamily: fontOther,
+            fontSize: isMobileLandscape ? 12 : heroTitleSize,
+            fontStyle: "bold",
+            letterSpacing: isMobileLandscape ? 0.8 : 1.6,
+            fill: primaryColor,
+            perfectDrawEnabled: false
+        });
+
+        const heroProgressY = heroTitle.y() + heroTitle.height() + 6;
+        const heroProgress = new Konva.Text({
+            x: heroTextX,
+            y: heroProgressY,
+            width: heroTextWidth,
+            text: totalPlayableCount > 0
+                ? `${completedCount}/${totalPlayableCount} Chapters Completed • ${totalScenes} Scenes`
+                : "No playable chapters yet",
+            fontFamily: fontOther,
+            fontSize: isMobileLandscape ? 11 : heroProgressSize,
+            fontStyle: "bold",
+            fill: "#FFFFFF",
+            perfectDrawEnabled: false
+        });
+
+        const barY = heroProgress.y() + heroProgress.height() + 8;
+        const barHeight = isMobileLandscape ? 6 : 8;
+        const barWidth = Math.max(50, heroTextWidth - 52);
+
+        const barTrack = new Konva.Rect({
+            x: heroTextX,
+            y: barY,
+            width: barWidth,
+            height: barHeight,
+            cornerRadius: 4,
+            fill: "rgba(25, 20, 48, 0.75)",
+            stroke: "rgba(184, 138, 239, 0.30)",
+            strokeWidth: 1,
+            perfectDrawEnabled: false
+        });
+
+        const barFillWidth = Math.max(progressRatio > 0 ? 6 : 0, barWidth * Math.min(1, Math.max(0, progressRatio)));
+        const barFill = new Konva.Rect({
+            x: heroTextX,
+            y: barY,
+            width: barFillWidth,
+            height: barHeight,
+            cornerRadius: 4,
+            fill: secondaryColor,
+            perfectDrawEnabled: false
+        });
+
+        const percentText = new Konva.Text({
+            x: heroTextX + barWidth + 6,
+            y: barY - 4,
+            width: 44,
+            text: `${Math.round(progressRatio * 100)}%`,
+            fontFamily: fontOther,
+            fontSize: scaleFontSize(isMobileLandscape ? 11 : 13),
+            fontStyle: "bold",
+            fill: textColor,
+            perfectDrawEnabled: false
+        });
+
+        const heroActiveY = barY + barHeight + 6;
+        const heroActive = new Konva.Text({
+            x: heroTextX,
+            y: heroActiveY,
+            width: heroTextWidth,
+            text: currentChapter
+                ? `Active: Chapter ${currentChapter.index} • ${currentChapter.title}`
+                : "Active: None",
+            fontFamily: fontOther,
+            fontSize: heroActiveSize,
+            fill: secondaryColor,
+            perfectDrawEnabled: false
+        });
+
+        const heroHeight = Math.max(
+            isMobileLandscape ? 80 : 112,
+            heroActive.y() + heroActive.height() + 14
+        );
+
         const heroGroup = new Konva.Group({
             x,
             y,
@@ -270,10 +1027,7 @@ function chaptersPage(config, actionbar, fonts, navigate) {
             perfectDrawEnabled: false
         });
 
-        const emblemSize = isPortrait ? 52 : 56;
-        const emblemX = 14;
         const emblemY = (heroHeight - emblemSize) / 2;
-
         const emblemBox = new Konva.Rect({
             x: emblemX,
             y: emblemY,
@@ -288,94 +1042,12 @@ function chaptersPage(config, actionbar, fonts, navigate) {
 
         const emblemIcon = createVectorIcon(
             icon,
-            emblemX + (emblemSize - 28) / 2,
-            emblemY + (emblemSize - 28) / 2,
-            28,
+            emblemX + (emblemSize - (isMobileLandscape ? 20 : 28)) / 2,
+            emblemY + (emblemSize - (isMobileLandscape ? 20 : 28)) / 2,
+            isMobileLandscape ? 20 : 28,
             secondaryColor,
             "🗺"
         );
-
-        const heroTextX = emblemX + emblemSize + 14;
-        const heroTextWidth = Math.max(40, width - heroTextX - 16);
-
-        const heroTitle = new Konva.Text({
-            x: heroTextX,
-            y: isPortrait ? 14 : 15,
-            width: heroTextWidth,
-            text: "ROUTE PROGRESS & MILESTONES",
-            fontFamily: fontOther,
-            fontSize: heroTitleSize,
-            fontStyle: "bold",
-            letterSpacing: 1.6,
-            fill: primaryColor,
-            perfectDrawEnabled: false
-        });
-
-        const heroProgress = new Konva.Text({
-            x: heroTextX,
-            y: heroTitle.y() + 20,
-            width: heroTextWidth,
-            text: totalPlayableCount > 0
-                ? `${completedCount}/${totalPlayableCount} Chapters Completed • ${totalScenes} Scenes`
-                : "No playable chapters yet",
-            fontFamily: fontOther,
-            fontSize: heroProgressSize,
-            fontStyle: "bold",
-            fill: "#FFFFFF",
-            perfectDrawEnabled: false
-        });
-
-        const barY = heroProgress.y() + 28;
-        const barHeight = 8;
-        const barWidth = Math.max(60, heroTextWidth - 54);
-
-        const barTrack = new Konva.Rect({
-            x: heroTextX,
-            y: barY,
-            width: barWidth,
-            height: barHeight,
-            cornerRadius: 4,
-            fill: "rgba(25, 20, 48, 0.75)",
-            stroke: "rgba(184, 138, 239, 0.30)",
-            strokeWidth: 1,
-            perfectDrawEnabled: false
-        });
-
-        const barFillWidth = Math.max(progressRatio > 0 ? 6 : 0, barWidth * Math.min(1, Math.max(0, progressRatio)));
-        const barFill = new Konva.Rect({
-            x: heroTextX,
-            y: barY,
-            width: barFillWidth,
-            height: barHeight,
-            cornerRadius: 4,
-            fill: secondaryColor,
-            perfectDrawEnabled: false
-        });
-
-        const percentText = new Konva.Text({
-            x: heroTextX + barWidth + 8,
-            y: barY - 4,
-            width: 44,
-            text: `${Math.round(progressRatio * 100)}%`,
-            fontFamily: fontOther,
-            fontSize: scaleFontSize(isPortrait ? 13 : 14),
-            fontStyle: "bold",
-            fill: textColor,
-            perfectDrawEnabled: false
-        });
-
-        const heroActive = new Konva.Text({
-            x: heroTextX,
-            y: barY + barHeight + 6,
-            width: heroTextWidth,
-            text: currentChapter
-                ? `Active: Chapter ${currentChapter.index} • ${currentChapter.title}`
-                : "Active: None",
-            fontFamily: fontOther,
-            fontSize: heroActiveSize,
-            fill: secondaryColor,
-            perfectDrawEnabled: false
-        });
 
         heroGroup.add(
             heroBg,
@@ -403,11 +1075,13 @@ function chaptersPage(config, actionbar, fonts, navigate) {
         const cardGap = isPortrait ? 14 : 16;
         const cardPadding = isPortrait ? 16 : 18;
 
-        // 1. Hero Route Progress Banner
+        // 1. Hero Route Progress Banner — full width on mobile
+        const bannerX = isMobile ? 0 : cardX;
+        const bannerW = isMobile ? mainContainer.width() : cardWidth;
         const { heroGroup, heroHeight } = buildHeroProgressBanner({
-            x: cardX,
+            x: bannerX,
             y: 0,
-            width: cardWidth,
+            width: bannerW,
             completedCount,
             totalPlayableCount,
             totalScenes,
@@ -835,26 +1509,7 @@ function chaptersPage(config, actionbar, fonts, navigate) {
             currentY += cardHeight + cardGap;
         });
 
-        // Connect hero banner to the first chapter node
-        if (nodePositions.length > 0) {
-            const firstNode = nodePositions[0];
-            const emblemSize = isPortrait ? 52 : 56;
-            const emblemY = (heroHeight - emblemSize) / 2;
-            const heroConnector = new Konva.Line({
-                points: [
-                    railX,
-                    emblemY + (emblemSize / 2),
-                    railX,
-                    firstNode.y - nodeRadius
-                ],
-                stroke: "rgba(184, 138, 239, 0.50)",
-                strokeWidth: 2,
-                perfectDrawEnabled: false
-            });
-            mainContainer.add(heroConnector);
-        }
-
-        // Connect successive chapter nodes
+        // Connect successive chapter nodes (track line starts from first chapter)
         for (let i = 0; i < nodePositions.length - 1; i++) {
             const current = nodePositions[i];
             const next = nodePositions[i + 1];
@@ -1450,9 +2105,10 @@ function chaptersPage(config, actionbar, fonts, navigate) {
         const heroW = viewportW - (horizontalPadding * 2);
 
         // 1. Unified Hero Progress Banner — pinned to mainContainer top (never scrolls horizontally, never stretches)
+        const bannerY = isPortrait ? 8 : 10;
         const { heroGroup, heroHeight } = buildHeroProgressBanner({
             x: horizontalPadding,
-            y: isPortrait ? 8 : 10,
+            y: bannerY,
             width: heroW,
             completedCount,
             totalPlayableCount,
@@ -1462,26 +2118,32 @@ function chaptersPage(config, actionbar, fonts, navigate) {
         });
         mainContainer.add(heroGroup);
 
+        const bannerBottom = bannerY + heroHeight;
+        const scrollGroupGap = isPortrait ? 14 : 20;
+        const scrollGroupY = bannerBottom + scrollGroupGap;
+
         // 2. Horizontal Scroll Group — holds the bus line and 2-row cards
         const scrollGroup = new Konva.Group({
             x: 0,
-            y: heroHeight + (isPortrait ? 18 : 22),
+            y: scrollGroupY,
             listening: true,
             name: "chapters-scroll-content"
         });
 
-        // Large, impactful cards
-        const cardWidth = isPortrait ? 310 : 350;
-        const cardHeight = isPortrait ? 210 : 230;
-        const stepX = isPortrait ? 330 : 380;
-        const startX = 28;
+        // Large, impactful cards (compact on mobile portrait to fit both rows without overflowing or touching header)
+        const cardWidth = isPortrait ? 270 : 350;
+        const cardHeight = isPortrait ? 155 : 230;
+        const stepX = isPortrait ? 290 : 380;
+        const startX = isPortrait ? 20 : 28;
         const totalWidth = startX + chapterMap.length * stepX + 64;
 
-        // Central Bus spine — vertically centered in remaining space below banner
-        const availableH = viewportH - (heroHeight + (isPortrait ? 18 : 22)) - 24;
-        const busY = Math.max(140, Math.floor(availableH / 2));
-        const branchGap = isPortrait ? 28 : 34;
-        const rowUpY = busY - branchGap - cardHeight;
+        // Central Bus spine — vertically centered if space permits, but strictly constrained so rowUpY >= topMargin
+        const availableH = viewportH - scrollGroupY - 24;
+        const topMargin = isPortrait ? 12 : 16;
+        const branchGap = isPortrait ? 20 : 34;
+        const neededTotalH = (cardHeight * 2) + (branchGap * 2) + (topMargin * 2);
+        const rowUpY = Math.max(topMargin, topMargin + Math.floor((availableH - neededTotalH) / 2));
+        const busY = rowUpY + cardHeight + branchGap;
         const rowDownY = busY + branchGap;
 
         const junctions = [];
@@ -1515,7 +2177,7 @@ function chaptersPage(config, actionbar, fonts, navigate) {
                 statusColor = primaryColor;
             }
 
-            const cardPadding = 18;
+            const cardPadding = isPortrait ? 12 : 18;
             const card = new Konva.Group({
                 x: cardX,
                 y: cardY,
@@ -1529,7 +2191,7 @@ function chaptersPage(config, actionbar, fonts, navigate) {
                 y: 0,
                 width: cardWidth,
                 height: cardHeight,
-                cornerRadius: 16,
+                cornerRadius: isPortrait ? 12 : 16,
                 fill: isNotice
                     ? "rgba(30, 24, 52, 0.88)"
                     : isCurrent
@@ -1551,9 +2213,9 @@ function chaptersPage(config, actionbar, fonts, navigate) {
             });
 
             const topGlowLine = new Konva.Rect({
-                x: 18,
+                x: isPortrait ? 12 : 18,
                 y: 0,
-                width: cardWidth - 36,
+                width: cardWidth - (isPortrait ? 24 : 36),
                 height: 1.2,
                 fill: isCurrent ? "rgba(242, 169, 213, 0.55)" : "rgba(184, 138, 239, 0.30)",
                 perfectDrawEnabled: false
@@ -1567,15 +2229,15 @@ function chaptersPage(config, actionbar, fonts, navigate) {
                 fontStyle: "bold",
                 letterSpacing: 1.2
             });
-            const chapterTagWidth = Math.max(isPortrait ? 96 : 108, Math.ceil(chapterTagMeasure.width()) + 20);
-            const badgeHeight = 26;
+            const chapterTagWidth = Math.max(isPortrait ? 84 : 108, Math.ceil(chapterTagMeasure.width()) + (isPortrait ? 14 : 20));
+            const badgeHeight = isPortrait ? 22 : 26;
 
             const chapterTagBox = new Konva.Rect({
                 x: cardPadding,
                 y: cardPadding,
                 width: chapterTagWidth,
                 height: badgeHeight,
-                cornerRadius: 7,
+                cornerRadius: isPortrait ? 6 : 7,
                 fill: isNotice ? "rgba(184, 138, 239, 0.16)" : "rgba(184, 138, 239, 0.22)",
                 stroke: isNotice ? statusColor : "rgba(184, 138, 239, 0.45)",
                 strokeWidth: 1,
@@ -1605,7 +2267,7 @@ function chaptersPage(config, actionbar, fonts, navigate) {
                 fontStyle: "bold",
                 letterSpacing: 1
             });
-            const statusBadgeWidth = Math.max(isPortrait ? 84 : 92, Math.ceil(statusMeasure.width()) + 20);
+            const statusBadgeWidth = Math.max(isPortrait ? 72 : 92, Math.ceil(statusMeasure.width()) + (isPortrait ? 14 : 20));
             const statusBadgeX = cardWidth - cardPadding - statusBadgeWidth;
 
             const statusBadgeBox = new Konva.Rect({
@@ -1613,7 +2275,7 @@ function chaptersPage(config, actionbar, fonts, navigate) {
                 y: cardPadding,
                 width: statusBadgeWidth,
                 height: badgeHeight,
-                cornerRadius: 7,
+                cornerRadius: isPortrait ? 6 : 7,
                 fill: isCurrent
                     ? "rgba(242, 169, 213, 0.22)"
                     : isCompleted
@@ -1640,7 +2302,7 @@ function chaptersPage(config, actionbar, fonts, navigate) {
                 perfectDrawEnabled: false
             });
 
-            const headingY = cardPadding + badgeHeight + 10;
+            const headingY = cardPadding + badgeHeight + (isPortrait ? 8 : 10);
             const headingWidth = cardWidth - (cardPadding * 2);
 
             const headingText = new Konva.Text({
@@ -1649,7 +2311,7 @@ function chaptersPage(config, actionbar, fonts, navigate) {
                 width: headingWidth,
                 text: chapter.title,
                 fontFamily: fontOther,
-                fontSize: scaleFontSize(isPortrait ? 17 : 18),
+                fontSize: scaleFontSize(isPortrait ? 14.5 : 18),
                 fontStyle: "bold",
                 letterSpacing: 0.6,
                 fill: "#FFFFFF",
@@ -1657,7 +2319,7 @@ function chaptersPage(config, actionbar, fonts, navigate) {
                 perfectDrawEnabled: false
             });
 
-            const descY = headingY + headingText.height() + 6;
+            const descY = headingY + headingText.height() + (isPortrait ? 4 : 6);
             const chapterDescription = typeof chapter.description === "string" && chapter.description.trim().length > 0
                 ? chapter.description.trim()
                 : (isNotice ? "No notice details." : "No quest notes.");
@@ -1668,15 +2330,15 @@ function chaptersPage(config, actionbar, fonts, navigate) {
                 width: headingWidth,
                 text: chapterDescription,
                 fontFamily: fontOther,
-                fontSize: scaleFontSize(isPortrait ? 12.5 : 13),
+                fontSize: scaleFontSize(isPortrait ? 11 : 13),
                 fill: isUnlocked ? subtextColor : "rgba(184, 138, 239, 0.55)",
                 lineHeight: 1.3,
                 perfectDrawEnabled: false
             });
 
-            const footerY = cardHeight - cardPadding - 34;
-            const actionBtnWidth = isPortrait ? 104 : 112;
-            const actionBtnHeight = 34;
+            const actionBtnHeight = isPortrait ? 28 : 34;
+            const footerY = cardHeight - cardPadding - actionBtnHeight;
+            const actionBtnWidth = isPortrait ? 88 : 112;
             let actionBtnGroup = null;
 
             if (isNotice) {
@@ -1710,7 +2372,7 @@ function chaptersPage(config, actionbar, fonts, navigate) {
                 const sceneCount = Number.isFinite(chapter.sceneCount) ? chapter.sceneCount : 1;
                 const sceneCountLabel = sceneCount === 1 ? "1 Scene" : `${sceneCount} Scenes`;
 
-                const scenePillWidth = isPortrait ? 92 : 100;
+                const scenePillWidth = isPortrait ? 76 : 100;
                 const scenePillBox = new Konva.Rect({
                     x: cardPadding,
                     y: footerY,
@@ -1960,12 +2622,13 @@ function chaptersPage(config, actionbar, fonts, navigate) {
             scrollGroup.add(haloRing, coreCircle, numeralText);
         });
 
+        const totalContentH = rowDownY + cardHeight + topMargin;
         scrollGroup.width(totalWidth);
-        scrollGroup.height(viewportH - (heroHeight + 24));
+        scrollGroup.height(Math.max(viewportH - scrollGroupY, totalContentH));
         mainContainer.add(scrollGroup);
         mainContainer.__horizontalScrollNode = scrollGroup;
         mainContainer.width(viewportW);
-        mainContainer.height(viewportH);
+        mainContainer.height(Math.max(viewportH, scrollGroupY + totalContentH));
     };
 
     // =========================================================================
@@ -1995,35 +2658,45 @@ function chaptersPage(config, actionbar, fonts, navigate) {
         mainContainer.add(heroGroup);
 
         // Responsive layout geometry
-        const isNarrow = isPortrait || mapWidth < 680;
+        const isPortraitMobile = isPortrait;
+        const isMobileLandscape = typeof getIsMobileLandscape === "function" ? getIsMobileLandscape() : false;
+        const isNarrow = !isPortraitMobile && (mapWidth < 680);
         const cardH = isNarrow ? 204 : 210;
         const cardHalfH = Math.floor(cardH / 2);
-
-        // Safe clearance below progress header: header is at y: 10..10+heroHeight
-        // First card top starts at (10 + heroHeight + 36) -> wpY is (firstCardTop + cardHalfH)
-        const firstCardTopY = 10 + heroHeight + (isNarrow ? 28 : 36);
-        const startY = firstCardTopY + cardHalfH;
-        const stepY = isNarrow ? 240 : 252;
-        const nodeRadius = isNarrow ? 22 : 26;
 
         let leftX = 0;
         let rightX = 0;
         let cardW = 0;
         let cardGap = 16;
+        let startY = 0;
+        let stepY = 0;
+        let nodeRadius = 26;
 
-        if (isNarrow) {
-            // Narrow / Mobile: Nodes snake gently along the left corridor [40..64],
-            // all cards neatly aligned on the right [104..mapWidth-14] -> 0% overlap with curves
-            leftX = 42;
-            rightX = 66;
-            cardGap = 14;
+        if (isPortraitMobile) {
+            // Mobile Portrait: Trail snakes down the center with clean circle markers only
+            const centerX = Math.floor(mapWidth / 2);
+            const swing = Math.min(64, Math.max(34, Math.floor(mapWidth * 0.18)));
+            leftX = centerX - swing;
+            rightX = centerX + swing;
+            stepY = 120;
+            nodeRadius = 26;
+            const nodeHaloRadius = nodeRadius + 7;
+            const mapTopClearance = 44;
+            startY = 10 + heroHeight + mapTopClearance + nodeHaloRadius;
+        } else if (isNarrow) {
+            // Narrow / Mobile Landscape: Nodes along left corridor, compact cards on the right
+            leftX = 26;
+            rightX = 48;
+            cardGap = 10;
             const rightEdgeOfNodes = rightX + nodeRadius;
             const cardStartX = rightEdgeOfNodes + cardGap;
-            cardW = Math.max(220, mapWidth - cardStartX - 16);
+            cardW = Math.max(220, mapWidth - cardStartX - 14);
+            const firstCardTopY = 10 + heroHeight + 24;
+            startY = firstCardTopY + cardHalfH;
+            stepY = isMobileLandscape ? 195 : 236;
+            nodeRadius = 18;
         } else {
-            // Wide / Desktop: Nodes zigzag down central corridor [centerX-75..centerX+75],
-            // cards placed on the outer wings (Left node has card on Left, Right node has card on Right)
-            // Curves travel strictly in the center corridor [centerX-75..centerX+75] -> 0% overlap with cards
+            // Wide / Desktop: Nodes zigzag down central corridor, cards placed on outer wings
             const centerX = Math.floor(mapWidth / 2);
             const trailOffset = Math.min(75, Math.floor(mapWidth * 0.10));
             leftX = centerX - trailOffset;
@@ -2031,13 +2704,15 @@ function chaptersPage(config, actionbar, fonts, navigate) {
             cardGap = 18;
             const availableHalfW = Math.floor(mapWidth / 2) - trailOffset - nodeRadius - cardGap - 16;
             cardW = Math.min(340, Math.max(280, availableHalfW));
+            const firstCardTopY = 10 + heroHeight + 36;
+            startY = firstCardTopY + cardHalfH;
+            stepY = isMobileLandscape ? 195 : 252;
+            nodeRadius = 26;
         }
 
         const waypoints = chapterMap.map((chapter, index) => {
             const isLeft = (index % 2 === 0);
-            const wpX = isNarrow
-                ? (isLeft ? leftX : rightX)
-                : (isLeft ? leftX : rightX);
+            const wpX = isLeft ? leftX : rightX;
             const wpY = startY + index * stepY;
             return {
                 x: wpX,
@@ -2048,7 +2723,9 @@ function chaptersPage(config, actionbar, fonts, navigate) {
             };
         });
 
-        const totalHeight = startY + (chapterMap.length - 1) * stepY + cardHalfH + 60;
+        const totalHeight = isPortraitMobile
+            ? (startY + (chapterMap.length - 1) * stepY + nodeRadius + 50)
+            : (startY + (chapterMap.length - 1) * stepY + cardHalfH + 60);
 
         // 2. Smooth cubic Bezier S-curves connecting milestone nodes
         // Dual-layer trail: soft amethyst underglow + crisp sakura/primary path
@@ -2158,6 +2835,55 @@ function chaptersPage(config, actionbar, fonts, navigate) {
                 perfectDrawEnabled: false
             });
 
+            if (isPortraitMobile) {
+                // Chapter Pill below node for mobile
+                const pillW = 82;
+                const pillH = 22;
+                const pillBox = new Konva.Rect({
+                    x: wpX - (pillW / 2),
+                    y: wpY + nodeRadius + 4,
+                    width: pillW,
+                    height: pillH,
+                    cornerRadius: 11,
+                    fill: "rgba(22, 17, 38, 0.90)",
+                    stroke: isCurrent ? secondaryColor : (isUnlocked ? "rgba(184, 138, 239, 0.35)" : "rgba(184, 138, 239, 0.18)"),
+                    strokeWidth: 1,
+                    perfectDrawEnabled: false
+                });
+
+                const pillTxt = new Konva.Text({
+                    x: wpX - (pillW / 2),
+                    y: wpY + nodeRadius + 4,
+                    width: pillW,
+                    height: pillH,
+                    align: "center",
+                    verticalAlign: "middle",
+                    text: isNotice ? "✦ Notice" : `Ch. ${chapter.index}`,
+                    fontFamily: fontOther,
+                    fontSize: 10.5,
+                    fontStyle: "bold",
+                    fill: isCurrent ? secondaryColor : (isUnlocked ? "#FFFFFF" : "rgba(184, 138, 239, 0.45)"),
+                    perfectDrawEnabled: false
+                });
+
+                // Touch target covering circle + pill
+                const hitTarget = new Konva.Circle({
+                    x: wpX,
+                    y: wpY + 6,
+                    radius: nodeRadius + 16,
+                    fill: "rgba(0,0,0,0)",
+                    listening: true
+                });
+
+                hitTarget.on("click tap", () => {
+                    if (shouldIgnoreActivation()) return;
+                    openChapterBottomSheet?.(chapter);
+                });
+
+                mainContainer.add(outerHalo, midRing, innerFill, pinNumeral, pillBox, pillTxt, hitTarget);
+                return;
+            }
+
             mainContainer.add(outerHalo, midRing, innerFill, pinNumeral);
 
             // Card position:
@@ -2245,7 +2971,8 @@ function chaptersPage(config, actionbar, fonts, navigate) {
                 fontStyle: "bold",
                 letterSpacing: 1.2
             });
-            const badgeW = Math.max(isNarrow ? 96 : 108, Math.ceil(badgeMeasure.width()) + 24);
+            const maxBadgeW = Math.floor((cardW - (cardPad * 2) - 8) / 2);
+            const badgeW = Math.min(maxBadgeW, Math.max(isNarrow ? 80 : 108, Math.ceil(badgeMeasure.width()) + 16));
             const badgeH = 28;
 
             const chTagBox = new Konva.Rect({
@@ -2284,7 +3011,7 @@ function chaptersPage(config, actionbar, fonts, navigate) {
                 fontStyle: "bold",
                 letterSpacing: 1
             });
-            const statusBadgeW = Math.max(isNarrow ? 80 : 92, Math.ceil(statusMeas.width()) + 22);
+            const statusBadgeW = Math.min(maxBadgeW, Math.max(isNarrow ? 74 : 92, Math.ceil(statusMeas.width()) + 16));
             const statusBadgeX = cardW - cardPad - statusBadgeW;
 
             const stBadgeBox = new Konva.Rect({
@@ -2356,7 +3083,6 @@ function chaptersPage(config, actionbar, fonts, navigate) {
 
             // Footer
             const actionBtnH = 38;
-            const actionBtnW = isNotice ? headW : (isNarrow ? 104 : 116);
             const footerY = cardH - cardPad - actionBtnH;
             let actionBtnGroup = null;
 
@@ -2399,7 +3125,7 @@ function chaptersPage(config, actionbar, fonts, navigate) {
             } else {
                 const sceneCount = Number.isFinite(chapter.sceneCount) ? chapter.sceneCount : 1;
                 const sceneLbl = sceneCount === 1 ? "1 Scene" : `${sceneCount} Scenes`;
-                const sceneW = isNarrow ? 98 : 108;
+                const sceneW = isNarrow ? Math.min(90, Math.floor((headW - 8) / 2)) : 108;
 
                 const scenePill = new Konva.Rect({
                     x: cardPad,
@@ -2415,7 +3141,7 @@ function chaptersPage(config, actionbar, fonts, navigate) {
 
                 const sceneIcon = createVectorIcon(
                     ICONS.book,
-                    cardPad + 10,
+                    cardPad + 8,
                     footerY + (actionBtnH - 16) / 2,
                     16,
                     primaryColor,
@@ -2423,9 +3149,9 @@ function chaptersPage(config, actionbar, fonts, navigate) {
                 );
 
                 const sceneT = new Konva.Text({
-                    x: cardPad + 30,
+                    x: cardPad + 28,
                     y: footerY,
-                    width: sceneW - 34,
+                    width: sceneW - 30,
                     height: actionBtnH,
                     verticalAlign: "middle",
                     text: sceneLbl,
@@ -2440,6 +3166,7 @@ function chaptersPage(config, actionbar, fonts, navigate) {
                     ? (isCurrent ? "Continue" : (isCompleted ? "Replay" : "Start"))
                     : "Locked";
 
+                const actionBtnW = isNotice ? headW : (isNarrow ? Math.min(100, headW - sceneW - 8) : 116);
                 actionBtnGroup = new Konva.Group({
                     x: cardW - cardPad - actionBtnW,
                     y: footerY,
@@ -2549,6 +3276,7 @@ function chaptersPage(config, actionbar, fonts, navigate) {
     // =========================================================================
     const buildContent = () => {
         stopAllTweens();
+        closeChapterBottomSheet?.(true);
         contentSignature = getContentSignature();
         mainContainer.removeChildren();
         mainContainer.__horizontalScrollNode = null;
@@ -2656,6 +3384,19 @@ function chaptersPage(config, actionbar, fonts, navigate) {
             buildContent();
         }
 
+        if (bottomSheetLayer) {
+            const rootTarget = (actionbar && actionbar.actionrect) ? actionbar.actionrect : actionContent;
+            const currentParent = typeof bottomSheetLayer.getParent === "function" ? bottomSheetLayer.getParent() : null;
+            if (currentParent !== rootTarget) {
+                if (currentParent && typeof bottomSheetLayer.remove === "function") {
+                    bottomSheetLayer.remove();
+                }
+                rootTarget.add(bottomSheetLayer);
+            }
+            if (typeof bottomSheetLayer.moveToTop === "function") {
+                bottomSheetLayer.moveToTop();
+            }
+        }
         actionContent.add(scrollTouchArea, mainContainer);
 
         const isHorizontal = (

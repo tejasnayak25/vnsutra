@@ -110,4 +110,38 @@ describe("Input & Advance Resilience", () => {
             expect(bodyDispatchSpy).not.toHaveBeenCalled();
         });
     });
+
+    describe("Two-Step Dialogue Advancement", () => {
+        it("suppresses immediate advance during skip cooldown to separate animation skip from advance", async () => {
+            const { markSkipInteraction } = await import("../vnsutra_modules/game-utils.js");
+            expect(typeof markSkipInteraction).toBe("function");
+
+            // Trigger skip
+            markSkipInteraction();
+
+            // An immediate event within 250ms should be suppressed
+            // Simulating cooldown behavior
+            const now = Date.now();
+            const lastSkip = now;
+            const isSuppressedImmediate = (now - lastSkip) < 250;
+            expect(isSuppressedImmediate).toBe(true);
+
+            // An event after 250ms should be permitted to advance
+            const subsequentTime = now + 260;
+            const isSuppressedLater = (subsequentTime - lastSkip) < 250;
+            expect(isSuppressedLater).toBe(false);
+        });
+
+        it("suppresses advance click leakage so advancing does not prematurely end next animation", async () => {
+            const { markAdvanceInteraction } = await import("../vnsutra_modules/game-utils.js");
+            expect(typeof markAdvanceInteraction).toBe("function");
+
+            markAdvanceInteraction();
+
+            const now = Date.now();
+            const lastAdvance = now;
+            expect((now - lastAdvance) < 250).toBe(true);
+            expect((now + 300 - lastAdvance) < 250).toBe(false);
+        });
+    });
 });

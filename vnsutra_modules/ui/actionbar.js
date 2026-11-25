@@ -1,7 +1,7 @@
 import "https://unpkg.com/konva@10.0.0-1/konva.min.js";
 import { animateBtn, closeBar, openBar } from "./utils.js";
 import { cleanupActionbarScroll } from "./scrollable-content.js";
-import { getIsPortrait, getIsAndroid, setOpenWindow, scaleFontSize, getGameSettings } from "../runtime-state.js";
+import { getIsPortrait, getIsMobile, getIsAndroid, setOpenWindow, scaleFontSize, getGameSettings } from "../runtime-state.js";
 import { STORAGE_KEYS } from "../constants.js";
 import errorTracking from "../error-tracking.js";
 import { createKonvaNodesFromPlan } from "../ui-layout/runtime.js";
@@ -119,9 +119,12 @@ async function actionBar(config, siderect, width, height, fonts, close_square_im
     }
 
     const isPortrait = getIsPortrait();
+    const isMobile = getIsMobile();
     const isAndroid = getIsAndroid();
+    const isMobileLandscape = isMobile && !isPortrait;
+    const isFullWidthMobile = isPortrait || isMobileLandscape;
     const sidebarRight = (siderect?.x?.() || 0) + (siderect?.width?.() || 0);
-    const actionWidth = isPortrait ? width : Math.max(300, width - sidebarRight);
+    const actionWidth = isFullWidthMobile ? width : Math.max(300, width - sidebarRight);
 
     const compiledActionbarLayout = isXmlLayoutEnabled(config)
         ? await buildActionbarCompiledLayout({
@@ -137,17 +140,17 @@ async function actionBar(config, siderect, width, height, fonts, close_square_im
     const actionrect = compiledActionbarLayout?.actionRoot ?? new Konva.Group({
         width: actionWidth,
         height: height,
-        x: isPortrait ? 0 : sidebarRight,
+        x: isFullWidthMobile ? 0 : sidebarRight,
         visible: false
     });
     actionrect.width(actionWidth);
     actionrect.height(height);
-    actionrect.x(isPortrait ? 0 : sidebarRight);
+    actionrect.x(isFullWidthMobile ? 0 : sidebarRight);
     actionrect.visible(false);
     actionrect.__vnsutraHistoryOverlay = "actionbar";
 
-    const cardMarginX = isPortrait ? 0 : 24;
-    const cardMarginY = isPortrait ? 0 : 20;
+    const cardMarginX = isPortrait ? 0 : (isMobileLandscape ? 12 : 24);
+    const cardMarginY = isPortrait ? 0 : (isMobileLandscape ? 8 : 20);
     const cardWidth = isPortrait ? actionWidth : (actionWidth - cardMarginX * 2);
     const cardHeight = isPortrait ? height : (height - cardMarginY * 2);
 
@@ -164,11 +167,11 @@ async function actionBar(config, siderect, width, height, fonts, close_square_im
         height: cardHeight,
         fill: config.colors.menu || "#141126",
         opacity: 0.92,
-        cornerRadius: isPortrait ? [24, 24, 0, 0] : 24,
-        stroke: "rgba(184, 138, 239, 0.40)",
-        strokeWidth: 1.5,
+        cornerRadius: isPortrait ? 0 : (isMobileLandscape ? 16 : 24),
+        stroke: isPortrait ? "rgba(0, 0, 0, 0)" : "rgba(184, 138, 239, 0.40)",
+        strokeWidth: isPortrait ? 0 : 1.5,
         shadowColor: "#080612",
-        shadowBlur: 32,
+        shadowBlur: isPortrait ? 0 : 32,
         shadowOpacity: 0.70,
         shadowOffsetX: -4,
         shadowOffsetY: 4,
@@ -176,45 +179,50 @@ async function actionBar(config, siderect, width, height, fonts, close_square_im
     });
 
     const actionbar_border = compiledActionbarLayout?.actionTopBorder ?? new Konva.Rect({
-        x: (isPortrait ? 0 : cardMarginX) + 36,
+        x: (isPortrait ? 0 : cardMarginX) + (isMobileLandscape ? 20 : 36),
         y: isPortrait ? 0 : cardMarginY,
-        width: cardWidth - 72,
+        width: cardWidth - (isMobileLandscape ? 40 : 72),
         height: 2
     });
     actionbar_border.setAttrs({
-        x: (isPortrait ? 0 : cardMarginX) + 36,
+        x: (isPortrait ? 0 : cardMarginX) + (isMobileLandscape ? 20 : 36),
         y: isPortrait ? 0 : cardMarginY,
-        width: cardWidth - 72,
+        width: cardWidth - (isMobileLandscape ? 40 : 72),
         height: 2,
         fill: config.colors.secondary || "#F2A9D5",
         cornerRadius: 1,
-        opacity: 0.85,
+        opacity: isPortrait ? 0 : 0.85,
+        visible: !isPortrait,
         perfectDrawEnabled: false
     });
 
-    const titleHeight = isPortrait ? 80 : 80;
+    const titleHeight = isPortrait ? 80 : (isMobileLandscape ? 52 : 80);
+    const titleFontSize = isPortrait ? 28 : (isMobileLandscape ? 22 : (isAndroid ? 24 : 32));
+    const titleMarginLeft = isPortrait ? 16 : (isMobileLandscape ? 20 : 32);
+    const titleBaseX = (isPortrait ? 0 : cardMarginX) + titleMarginLeft;
+    const titleAvailableWidth = Math.max(80, (isPortrait ? cardWidth - 106 : cardWidth - 170) - titleMarginLeft);
     const actionbar_title = compiledActionbarLayout?.actionTitle ?? new Konva.Text({
         align: "left",
         verticalAlign: "middle",
-        x: (isPortrait ? 0 : cardMarginX) + 32,
+        x: titleBaseX,
         y: isPortrait ? 0 : cardMarginY,
-        width: cardWidth - (isPortrait ? 130 : 170),
+        width: titleAvailableWidth,
         height: titleHeight,
         text: "🌸  Action Menu",
         fontFamily: fonts["title"]?.name || "LavishlyYours",
         fontStyle: "italic",
-        fontSize: scaleFontSize(isPortrait ? 28 : (isAndroid ? 24 : 32)),
+        fontSize: scaleFontSize(titleFontSize),
         fill: "#F8F2FF"
     });
     actionbar_title.setAttrs({
-        x: (isPortrait ? 0 : cardMarginX) + 32,
+        x: titleBaseX,
         y: isPortrait ? 0 : cardMarginY,
-        width: cardWidth - (isPortrait ? 130 : 170),
+        width: titleAvailableWidth,
         height: titleHeight,
         text: "🌸  Action Menu",
         fontFamily: fonts["title"]?.name || "LavishlyYours",
         fontStyle: "italic",
-        fontSize: scaleFontSize(isPortrait ? 28 : (isAndroid ? 24 : 32)),
+        fontSize: scaleFontSize(titleFontSize),
         verticalAlign: "middle",
         fill: "#F8F2FF",
         shadowColor: "#0D0B18",
@@ -225,7 +233,7 @@ async function actionBar(config, siderect, width, height, fonts, close_square_im
         perfectDrawEnabled: false
     });
 
-    const borderPadding = isPortrait ? 20 : 28;
+    const borderPadding = isPortrait ? 20 : (isMobileLandscape ? 16 : 28);
     const actionbar_title_border = compiledActionbarLayout?.actionTitleBorder ?? new Konva.Rect({
         x: (isPortrait ? 0 : cardMarginX) + borderPadding,
         y: (isPortrait ? 0 : cardMarginY) + titleHeight,
@@ -243,9 +251,9 @@ async function actionBar(config, siderect, width, height, fonts, close_square_im
     });
 
     // Sleek Back Pill Button matching mockup with crisp vector arrow
-    const backBtnWidth = isPortrait ? 90 : 96;
-    const backBtnHeight = 36;
-    const backBtnX = (isPortrait ? 0 : cardMarginX) + cardWidth - backBtnWidth - (isPortrait ? 16 : 28);
+    const backBtnWidth = isPortrait ? 90 : (isMobileLandscape ? 84 : 96);
+    const backBtnHeight = isMobileLandscape ? 32 : 36;
+    const backBtnX = (isPortrait ? 0 : cardMarginX) + cardWidth - backBtnWidth - (isPortrait ? 16 : (isMobileLandscape ? 16 : 28));
     const backBtnY = (isPortrait ? 0 : cardMarginY) + (titleHeight - backBtnHeight) / 2;
     const backBtnGroup = new Konva.Group({
         x: backBtnX,
@@ -369,9 +377,9 @@ async function actionBar(config, siderect, width, height, fonts, close_square_im
         document.body.style.cursor = "auto";
     });
 
-    const contentPaddingX = isPortrait ? 16 : 28;
-    const contentPaddingTop = 16;
-    const contentPaddingBottom = 20;
+    const contentPaddingX = isPortrait ? 16 : (isMobileLandscape ? 16 : 28);
+    const contentPaddingTop = isMobileLandscape ? 10 : 16;
+    const contentPaddingBottom = isMobileLandscape ? 12 : 20;
     const contentWidth = cardWidth - contentPaddingX * 2;
     const contentHeight = cardHeight - titleHeight - contentPaddingTop - contentPaddingBottom;
     const contentY = (isPortrait ? 0 : cardMarginY) + titleHeight + contentPaddingTop;

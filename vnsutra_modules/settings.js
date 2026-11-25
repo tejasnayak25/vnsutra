@@ -7,7 +7,7 @@ import accessibility from "./accessibility.js";
 import errorTracking from "./error-tracking.js";
 import { bindActionbarScroll } from "./ui/scrollable-content.js";
 
-const { getIsPortrait, getIsAndroid, getOpenWindow, setOpenWindow } = runtimeState;
+const { getIsPortrait, getIsAndroid, getIsMobile, getOpenWindow, setOpenWindow } = runtimeState;
 const scaleFontSize = runtimeState.scaleFontSize ?? ((n) => Number(n) || 0);
 const Konva = globalThis.Konva;
 
@@ -87,7 +87,7 @@ function settings(config, actionbar, fonts, credit_details) {
     const outerPadding = isPortrait ? 6 : 10;
     const cardGap = isPortrait ? 14 : 16;
     const columnGap = isPortrait ? 0 : 16;
-    const columnCount = (isPortrait || isAndroid) ? 1 : 2;
+    const columnCount = (isPortrait || (actionContent.width() < 560)) ? 1 : 2;
     const toggleScale = isPortrait ? 0.88 : 0.86;
 
     // Tween tracking for clean teardown
@@ -340,7 +340,9 @@ function settings(config, actionbar, fonts, credit_details) {
         ? (a11yY + a11yHeight + cardGap)
         : (topRowCardHeight + cardGap);
 
-    const fontScaleCardHeight = isPortrait ? 162 : 152;
+    const isMobile = typeof getIsMobile === "function" ? getIsMobile() : false;
+    const isStackedFontScale = isPortrait || isMobile || mainContainer.width() < 520;
+    const fontScaleCardHeight = isStackedFontScale ? 186 : 152;
     const fontScaleCard = createCardContainer(0, afterTopY, mainContainer.width(), fontScaleCardHeight);
 
     const fontScaleHeader = createSectionHeader("FONT & DISPLAY SCALE", ICONS.font, mainContainer.width() - 36, 18, 16);
@@ -360,12 +362,45 @@ function settings(config, actionbar, fonts, credit_details) {
         x: 18,
         y: 74,
         width: mainContainer.width() - 36,
-        height: 64
+        height: isStackedFontScale ? 96 : 64
     });
+
+    const isPortraitMobile = isPortrait;
+    const scaleBtnWidth = 54;
+    const scaleBtnGap = 8;
+    const stepperWidth = 220;
+    const pillHeight = 44;
+
+    let stepperX = 0;
+    let stepperY = 2;
+    let pillX = 0;
+    let pillWidth = 92;
+    let incBtnX = 0;
+
+    if (isPortraitMobile) {
+        stepperX = 0;
+        stepperY = 54;
+        pillX = scaleBtnWidth + scaleBtnGap;
+        pillWidth = Math.max(70, fontScaleGroup.width() - (2 * scaleBtnWidth) - (2 * scaleBtnGap));
+        incBtnX = fontScaleGroup.width() - scaleBtnWidth;
+    } else if (isStackedFontScale) {
+        stepperX = 0;
+        stepperY = 54;
+        pillWidth = 92;
+        pillX = stepperX + scaleBtnWidth + scaleBtnGap;
+        incBtnX = pillX + pillWidth + scaleBtnGap;
+    } else {
+        stepperX = fontScaleGroup.width() - stepperWidth;
+        stepperY = 2;
+        pillWidth = 92;
+        pillX = stepperX + 62;
+        incBtnX = pillX + pillWidth + 8;
+    }
 
     const fontScaleLabel = new Konva.Text({
         x: 0,
         y: 0,
+        width: isStackedFontScale ? fontScaleGroup.width() : Math.max(120, stepperX - 12),
         text: "Interface & Text Scale",
         fontFamily: fontOther,
         fontSize: scaleFontSize(isPortrait ? 16 : 17),
@@ -376,7 +411,8 @@ function settings(config, actionbar, fonts, credit_details) {
 
     const fontScaleHint = new Konva.Text({
         x: 0,
-        y: 28,
+        y: isStackedFontScale ? 26 : 28,
+        width: isStackedFontScale ? fontScaleGroup.width() : Math.max(120, stepperX - 12),
         text: "Adjust dialogue and HUD scaling for readability",
         fontFamily: fontOther,
         fontSize: scaleFontSize(isPortrait ? 13 : 13),
@@ -385,15 +421,10 @@ function settings(config, actionbar, fonts, credit_details) {
     });
 
     const currentScale = accessibility?.getSettings().fontScale ?? 1;
-    const stepperWidth = 220;
-    const stepperX = fontScaleGroup.width() - stepperWidth;
-    const pillWidth = 92;
-    const pillHeight = 44;
-    const pillX = stepperX + 62;
 
     const fontScalePill = new Konva.Rect({
         x: pillX,
-        y: 2,
+        y: stepperY,
         width: pillWidth,
         height: pillHeight,
         cornerRadius: 12,
@@ -405,7 +436,7 @@ function settings(config, actionbar, fonts, credit_details) {
 
     const fontScaleValue = new Konva.Text({
         x: pillX,
-        y: 2,
+        y: stepperY,
         width: pillWidth,
         height: pillHeight,
         align: "center",
@@ -436,12 +467,12 @@ function settings(config, actionbar, fonts, credit_details) {
         }
     }
 
-    function createScaleButton(label, x, onClick) {
+    function createScaleButton(label, x, y, onClick) {
         const btnWidth = 54;
         const btnHeight = 44;
         const group = new Konva.Group({
             x,
-            y: 2,
+            y,
             width: btnWidth,
             height: btnHeight
         });
@@ -498,11 +529,11 @@ function settings(config, actionbar, fonts, credit_details) {
         return group;
     }
 
-    const decreaseBtn = createScaleButton("A-", stepperX, () => {
+    const decreaseBtn = createScaleButton("A-", stepperX, stepperY, () => {
         accessibility?.decreaseFontScale(0.1);
     });
 
-    const increaseBtn = createScaleButton("A+", pillX + pillWidth + 8, () => {
+    const increaseBtn = createScaleButton("A+", incBtnX, stepperY, () => {
         accessibility?.increaseFontScale(0.1);
     });
 

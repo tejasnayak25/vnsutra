@@ -99,6 +99,22 @@ function createMockKonva() {
             return Number(this.attrs.y ?? 0);
         }
 
+        opacity(value) {
+            if (arguments.length > 0) {
+                this.attrs.opacity = value;
+                return this;
+            }
+            return Number(this.attrs.opacity ?? 1);
+        }
+
+        visible(value) {
+            if (arguments.length > 0) {
+                this.attrs.visible = Boolean(value);
+                return this;
+            }
+            return this.attrs.visible !== false;
+        }
+
         text(value) {
             if (arguments.length > 0) {
                 this.attrs.text = value;
@@ -364,6 +380,71 @@ describe("Chapters Page", () => {
         }).not.toThrow();
     });
 
+    it("starts the track line from the first chapter in vertical layout without hero connector", async () => {
+        const sampleChapters = [
+            { id: "ch-1", title: "Introduction", scenes: ["start"] },
+            { id: "ch-2", title: "Second Chapter", scenes: ["scene2"] },
+            { id: "ch-3", title: "Third Chapter", scenes: ["scene3"] }
+        ];
+
+        await chapters.configure({ enabled: true, mode: "all", chapters: sampleChapters });
+
+        const actionbar = createMockActionbar();
+        const navigate = jest.fn();
+
+        const page = chaptersPage(mockConfig, actionbar, mockFonts, navigate);
+        page.render();
+
+        const card1 = findNodeByName(page.container, "chapter-card-ch-1");
+        expect(card1).toBeTruthy();
+
+        // page.container is mainContainer, which contains the hero banner, cards, and track connector lines
+        const trackLines = page.container.children.filter((c) => c.className === "Line" && Array.isArray(c.attrs?.points));
+
+        // For 3 chapters, there should be exactly 2 track connector lines (ch1->ch2, ch2->ch3)
+        expect(trackLines.length).toBe(2);
+
+        // Every track line must start at or below card1's top Y position (starting from first chapter node)
+        trackLines.forEach((line) => {
+            const startY = line.attrs.points[1];
+            expect(startY).toBeGreaterThanOrEqual(card1.attrs.y);
+        });
+    });
+
+    it("makes the hero header banner full width on mobile in vertical layout", async () => {
+        const sampleChapters = [
+            { id: "ch-1", title: "Introduction", scenes: ["start"] },
+            { id: "ch-2", title: "Second Chapter", scenes: ["scene2"] }
+        ];
+
+        await chapters.configure({ enabled: true, mode: "all", chapters: sampleChapters });
+
+        const portraitActionbar = {
+            actionContent: new globalThis.Konva.Group({ width: 360, height: 640 }),
+            scrollbar: new globalThis.Konva.Rect({ width: 8, height: 100 }),
+            addBtn: { visible: jest.fn() },
+            clear: jest.fn(),
+            close: jest.fn((cb) => cb?.()),
+            title: ""
+        };
+        const navigate = jest.fn();
+
+        const page = chaptersPage(mockConfig, portraitActionbar, mockFonts, navigate);
+        page.render();
+
+        const heroBanner = findNodeByName(page.container, "chapters-hero-banner");
+        expect(heroBanner).toBeTruthy();
+
+        // In mobile vertical layout, hero banner must start at x = 0 and match mainContainer width
+        expect(heroBanner.attrs.x).toBe(0);
+        expect(heroBanner.attrs.width).toBe(page.container.width());
+
+        // Chapter cards below remain aligned with the rail at cardX > 0
+        const card1 = findNodeByName(page.container, "chapter-card-ch-1");
+        expect(card1).toBeTruthy();
+        expect(card1.attrs.x).toBeGreaterThan(heroBanner.attrs.x);
+    });
+
     it("renders horizontal single-row timeline layout when configured by developer", async () => {
         const sampleChapters = [
             { id: "ch-1", title: "Introduction", scenes: ["start"] },
@@ -444,6 +525,62 @@ describe("Chapters Page", () => {
             scene: "scene2",
             chapterId: "ch-2"
         });
+    });
+
+    it("prevents 2-row layout from overlapping header banner on mobile portrait", async () => {
+        const sampleChapters = [
+            { id: "ch-1", title: "Introduction", scenes: ["start"] },
+            { id: "ch-2", title: "Rising Tension", scenes: ["scene2"] },
+            { id: "ch-3", title: "Climax", scenes: ["scene3"] }
+        ];
+
+        await chapters.configure({ enabled: true, mode: "all", chapters: sampleChapters });
+
+        const dualRowConfig = {
+            ...mockConfig,
+            ui: {
+                ...mockConfig.ui,
+                chapters: {
+                    ...mockConfig.ui.chapters,
+                    layout: "2-row"
+                }
+            }
+        };
+
+        // Mobile portrait dimensions (e.g. 360 x 640)
+        const portraitActionbar = {
+            actionContent: new globalThis.Konva.Group({ width: 360, height: 640 }),
+            scrollbar: new globalThis.Konva.Rect({ width: 8, height: 100 }),
+            addBtn: { visible: jest.fn() },
+            clear: jest.fn(),
+            close: jest.fn((cb) => cb?.()),
+            title: ""
+        };
+        const navigate = jest.fn();
+
+        const page = chaptersPage(dualRowConfig, portraitActionbar, mockFonts, navigate);
+        page.render();
+
+        const scrollGroup = findNodeByName(page.container, "chapters-scroll-content");
+        expect(scrollGroup).toBeTruthy();
+
+        const card1 = findNodeByName(page.container, "chapter-card-ch-1");
+        const card2 = findNodeByName(page.container, "chapter-card-ch-2");
+        expect(card1).toBeTruthy();
+        expect(card2).toBeTruthy();
+
+        // Cards must have compact mobile portrait dimensions
+        expect(card1.attrs.width).toBe(270);
+        expect(card1.attrs.height).toBe(155);
+
+        // Header clearance check: top row card absolute Y must be comfortably below banner
+        const heroGroup = findNodeByName(page.container, "chapters-hero-banner");
+        expect(heroGroup).toBeTruthy();
+        const bannerBottom = (heroGroup.attrs.y || 0) + (heroGroup.attrs.height || 0);
+        const card1AbsoluteY = scrollGroup.attrs.y + card1.attrs.y;
+
+        expect(card1AbsoluteY).toBeGreaterThan(bannerBottom + 16);
+        expect(card2.attrs.y).toBeGreaterThan(card1.attrs.y);
     });
 
     it("renders adventure-map timeline layout when configured by developer", async () => {

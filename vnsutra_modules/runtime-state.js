@@ -70,6 +70,10 @@ let instruction_count = 0;
 /** @type {boolean} */
 let isPortrait = false;
 /** @type {boolean} */
+let isLandscape = true;
+/** @type {boolean} */
+let isMobile = false;
+/** @type {boolean} */
 let isAndroid = false;
 
 /** @type {any} */
@@ -155,11 +159,39 @@ export function scaleFontSize(baseSize) {
 /** @returns {boolean} */
 export const getIsPortrait = () => isPortrait;
 /** @param {boolean} value */
-export const setIsPortrait = (value) => { isPortrait = value; };
+export const setIsPortrait = (value) => {
+    isPortrait = Boolean(value);
+    isLandscape = !isPortrait;
+};
 /** @returns {boolean} */
-export const getIsAndroid = () => isAndroid;
+export const getIsLandscape = () => isLandscape;
 /** @param {boolean} value */
-export const setIsAndroid = (value) => { isAndroid = value; };
+export const setIsLandscape = (value) => {
+    isLandscape = Boolean(value);
+    isPortrait = !isLandscape;
+};
+/** @returns {boolean} */
+export const getIsMobile = () => isMobile;
+/** @param {boolean} value */
+export const setIsMobile = (value) => {
+    isMobile = Boolean(value);
+    if (value) {
+        isAndroid = true;
+    }
+};
+/** @returns {boolean} */
+export const getIsMobilePortrait = () => isMobile && isPortrait;
+/** @returns {boolean} */
+export const getIsMobileLandscape = () => isMobile && isLandscape;
+/** @returns {boolean} */
+export const getIsAndroid = () => isAndroid || isMobile;
+/** @param {boolean} value */
+export const setIsAndroid = (value) => {
+    isAndroid = Boolean(value);
+    if (value) {
+        isMobile = true;
+    }
+};
 /** @returns {any} */
 export const getStoryDb = () => storyDb;
 /** @param {any} value */

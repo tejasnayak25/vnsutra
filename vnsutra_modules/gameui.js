@@ -1,6 +1,6 @@
 import "https://unpkg.com/konva@10.0.0-1/konva.min.js";
 import { konvaStage } from "./stage.js";
-import { getIsPortrait, getIsAndroid, getState, getActiveScene, getInstructionCount, setGameKeyboardActions, setShouldAbortGame, getAbortInstruction, scaleFontSize } from "./runtime-state.js";
+import { getIsPortrait, getIsMobile, getIsAndroid, getState, getActiveScene, getInstructionCount, setGameKeyboardActions, setShouldAbortGame, getAbortInstruction, scaleFontSize } from "./runtime-state.js";
 import { storage } from "./storage.js";
 import { animateBtn, openBar, closeBar, isBarOpen, animateMenu, loadImg } from "./ui/utils.js";
 import actionBar from "./ui/actionbar.js";
@@ -133,7 +133,10 @@ async function gameUI(config, fonts, navigate) {
     }
 
     const isPortrait = getIsPortrait();
+    const isMobile = getIsMobile();
     const isAndroid = getIsAndroid();
+    const isMobileLandscape = isMobile && !isPortrait;
+    const isMobileLayout = isPortrait || isMobileLandscape;
     const game_layer = new Konva.Layer();
     const origGameDrawScene = game_layer.drawScene;
     game_layer.drawScene = function() {
@@ -163,7 +166,7 @@ async function gameUI(config, fonts, navigate) {
 
     const topbar_container = compiledGameUiLayout?.topbarContainer ?? new Konva.Group({
         width: width,
-        height: isPortrait ? 52 : (isAndroid ? 44 : 52),
+        height: isPortrait ? 52 : (isMobileLandscape ? 44 : (isAndroid ? 44 : 52)),
         id: "topbar-container"
     });
     if (topbar_container && !topbar_container.id()) {
@@ -205,9 +208,9 @@ async function gameUI(config, fonts, navigate) {
     const backicon = new Image();
     backicon.src = config.gui["back-icon"];
 
-    const backBtnHeight = isPortrait ? 36 : (isAndroid ? 32 : 36);
-    const backBtnWidth = isPortrait ? 40 : (isAndroid ? 86 : 94);
-    const backBtnX = isPortrait ? 10 : 16;
+    const backBtnHeight = isPortrait ? 36 : (isMobileLandscape ? 32 : (isAndroid ? 32 : 36));
+    const backBtnWidth = isMobileLayout ? 40 : (isAndroid ? 86 : 94);
+    const backBtnX = isMobileLayout ? 10 : 16;
     const backBtnY = (topbarInnerHeight - backBtnHeight) / 2;
 
     const backBtn = new Konva.Group({
@@ -233,13 +236,13 @@ async function gameUI(config, fonts, navigate) {
     const backIconImg = new Konva.Image({
         width: backIconSize,
         height: backIconSize,
-        x: isPortrait ? (backBtnWidth - backIconSize) / 2 : 11,
+        x: isMobileLayout ? (backBtnWidth - backIconSize) / 2 : 11,
         y: (backBtnHeight - backIconSize) / 2,
         image: backicon.cloneNode(true)
     });
 
     let backText = null;
-    if (!isPortrait) {
+    if (!isMobileLayout) {
         backText = new Konva.Text({
             x: 34,
             y: 0,
@@ -262,10 +265,10 @@ async function gameUI(config, fonts, navigate) {
     const expandIcon = new Image();
     expandIcon.src = config.gui["expand-icon"];
 
-    const expandBtnSize = isPortrait ? 36 : (isAndroid ? 32 : 36);
-    const rightOffset = isPortrait ? 0 : 16;
+    const expandBtnSize = isPortrait ? 36 : (isMobileLandscape ? 32 : (isAndroid ? 32 : 36));
+    const rightOffset = isMobileLayout ? 0 : 16;
 
-    const expandBtnX = isPortrait
+    const expandBtnX = isMobileLayout
         ? (width - (topbarInnerHeight - 8) - expandBtnSize - 12)
         : (width - expandBtnSize - rightOffset);
     const expandBtnY = (topbarInnerHeight - expandBtnSize) / 2;
@@ -276,7 +279,7 @@ async function gameUI(config, fonts, navigate) {
         x: expandBtnX,
         y: expandBtnY,
         visible: true,
-        opacity: isPortrait ? (document.fullscreenElement ? 0.3 : 1) : (!document.fullscreenElement ? 1 : 0)
+        opacity: isMobileLayout ? (document.fullscreenElement ? 0.3 : 1) : (!document.fullscreenElement ? 1 : 0)
     });
 
     const expandPill = new Konva.Rect({
@@ -285,13 +288,13 @@ async function gameUI(config, fonts, navigate) {
         width: expandBtnSize,
         height: expandBtnSize,
         cornerRadius: 8,
-        fill: "rgba(184, 138, 239, 0.14)",
-        stroke: "rgba(184, 138, 239, 0.32)",
+        fill: "rgba(184, 138, 239, 0.12)",
+        stroke: "rgba(184, 138, 239, 0.28)",
         strokeWidth: 1,
         perfectDrawEnabled: false
     });
 
-    const expandIconSize = 18;
+    const expandIconSize = isPortrait ? 22 : 18;
     const expandIconImg = new Konva.Image({
         width: expandIconSize,
         height: expandIconSize,
@@ -323,7 +326,7 @@ async function gameUI(config, fonts, navigate) {
 
         stopTopbarTweens();
 
-        if (isPortrait) {
+        if (isMobileLayout) {
             // On mobile: fade effect, always visible
             const targetOpacity = document.fullscreenElement ? 0.3 : 1;
             expandBtnTween = new Konva.Tween({
@@ -698,12 +701,13 @@ async function gameUI(config, fonts, navigate) {
         }
     ];
 
-    const mobilePadding = isPortrait ? 12 : 0;
+    const useMobileMenu = isMobileLayout || width < 860;
+    const mobilePadding = useMobileMenu ? 12 : 0;
     function calculateMenuHolderX() {
         if (!menuHolder) {
             return 0;
         }
-        if (isPortrait) {
+        if (useMobileMenu) {
             return width - menuHolder.width() - 8;
         }
         // On desktop: adjust menu position based on expand button visibility
@@ -718,16 +722,16 @@ async function gameUI(config, fonts, navigate) {
 
     const pillHeight = isAndroid ? 32 : 36;
     const pillY = (topbarInnerHeight - pillHeight) / 2;
-    const rowHeight = 46;
+    const rowHeight = isPortrait ? 46 : (isMobileLandscape ? 38 : 46);
     const btnGap = 8;
 
     const menuHolder = new Konva.Group({
-        height: isPortrait ? ((menuItems.length * rowHeight) + 2 * mobilePadding) : topbarInnerHeight,
-        y: isPortrait ? topbarInnerHeight : 0,
-        visible: !isPortrait
+        height: useMobileMenu ? ((menuItems.length * rowHeight) + 2 * mobilePadding) : topbarInnerHeight,
+        y: useMobileMenu ? topbarInnerHeight : 0,
+        visible: !useMobileMenu
     });
 
-    if (isPortrait) {
+    if (useMobileMenu) {
         const menuBg = new Konva.Rect({
             fill: "rgba(18, 14, 34, 0.96)",
             cornerRadius: [0, 0, 16, 16],
@@ -780,8 +784,8 @@ async function gameUI(config, fonts, navigate) {
         let btnHolder;
         let btnPill;
 
-        if (isPortrait) {
-            const rowWidth = 180;
+        if (useMobileMenu) {
+            const rowWidth = isMobileLandscape ? 160 : 180;
             btnHolder = new Konva.Group({
                 width: rowWidth,
                 height: rowHeight,
@@ -872,8 +876,8 @@ async function gameUI(config, fonts, navigate) {
 
         btnHolder.on("mouseout", () => {
             btnPill.to({
-                fill: isPortrait ? "rgba(184, 138, 239, 0.12)" : "rgba(184, 138, 239, 0.14)",
-                stroke: isPortrait ? "rgba(184, 138, 239, 0.25)" : "rgba(184, 138, 239, 0.30)",
+                fill: useMobileMenu ? "rgba(184, 138, 239, 0.12)" : "rgba(184, 138, 239, 0.14)",
+                stroke: useMobileMenu ? "rgba(184, 138, 239, 0.25)" : "rgba(184, 138, 239, 0.30)",
                 duration: 0.18,
                 easing: Konva?.Easings?.EaseOut
             });
@@ -892,7 +896,7 @@ async function gameUI(config, fonts, navigate) {
             } else {
                 element.onclick();
             }
-            if (isPortrait) {
+            if (useMobileMenu) {
                 menuBtn.fire("click");
             }
         });
@@ -901,8 +905,8 @@ async function gameUI(config, fonts, navigate) {
         menuHolder.add(btnHolder);
     }
 
-    if (isPortrait) {
-        const menuWidth = 180;
+    if (useMobileMenu) {
+        const menuWidth = isMobileLandscape ? 160 : 180;
         menuHolder.width(menuWidth + 2 * mobilePadding);
         const menuBg = menuHolder.findOne("#game-menu-bg");
         if (menuBg) {
@@ -915,16 +919,13 @@ async function gameUI(config, fonts, navigate) {
 
     menuHolder.x(calculateMenuHolderX());
 
-    const menuicon = new Image();
-    menuicon.src = config.gui["menu-icon"];
-
     const menuBtnSize = isPortrait ? 36 : 36;
     const menuBtn = new Konva.Group({
         width: menuBtnSize,
         height: menuBtnSize,
         x: width - menuBtnSize - 12,
         y: (topbarInnerHeight - menuBtnSize) / 2,
-        visible: isPortrait
+        visible: useMobileMenu
     });
 
     const menuPill = new Konva.Rect({
@@ -933,45 +934,70 @@ async function gameUI(config, fonts, navigate) {
         width: menuBtnSize,
         height: menuBtnSize,
         cornerRadius: 8,
-        fill: "rgba(184, 138, 239, 0.14)",
-        stroke: "rgba(184, 138, 239, 0.32)",
+        fill: "rgba(184, 138, 239, 0.12)",
+        stroke: "rgba(184, 138, 239, 0.28)",
         strokeWidth: 1,
         perfectDrawEnabled: false
     });
 
-    const menuIconSize = 20;
-    const menuIconImg = new Konva.Image({
-        width: menuIconSize,
-        height: menuIconSize,
-        x: (menuBtnSize - menuIconSize) / 2,
-        y: (menuBtnSize - menuIconSize) / 2,
-        image: menuicon.cloneNode(true)
+    // Refined 3-dots vector icon (kebab menu) matching line weight of adjacent icons
+    const dotRadius = 1.65;
+    const dotSpacing = 5.8;
+    const dotCenterX = menuBtnSize / 2;
+    const dotCenterY = menuBtnSize / 2;
+
+    const dotTop = new Konva.Circle({
+        x: dotCenterX,
+        y: dotCenterY - dotSpacing,
+        radius: dotRadius,
+        fill: "rgba(248, 242, 255, 0.85)",
+        perfectDrawEnabled: false
+    });
+    const dotMid = new Konva.Circle({
+        x: dotCenterX,
+        y: dotCenterY,
+        radius: dotRadius,
+        fill: "rgba(248, 242, 255, 0.85)",
+        perfectDrawEnabled: false
+    });
+    const dotBot = new Konva.Circle({
+        x: dotCenterX,
+        y: dotCenterY + dotSpacing,
+        radius: dotRadius,
+        fill: "rgba(248, 242, 255, 0.85)",
+        perfectDrawEnabled: false
     });
 
-    menuBtn.add(menuPill, menuIconImg);
+    menuBtn.add(menuPill, dotTop, dotMid, dotBot);
 
     menuBtn.on("mouseover", () => {
         menuPill.to({
-            fill: "rgba(242, 169, 213, 0.28)",
-            stroke: "rgba(242, 169, 213, 0.70)",
+            fill: "rgba(242, 169, 213, 0.26)",
+            stroke: "rgba(242, 169, 213, 0.65)",
             duration: 0.18,
             easing: Konva?.Easings?.EaseOut
         });
+        dotTop.fill("#FFFFFF");
+        dotMid.fill("#FFFFFF");
+        dotBot.fill("#FFFFFF");
         document.body.style.cursor = "pointer";
     });
 
     menuBtn.on("mouseout", () => {
         menuPill.to({
-            fill: "rgba(184, 138, 239, 0.14)",
-            stroke: "rgba(184, 138, 239, 0.32)",
+            fill: "rgba(184, 138, 239, 0.12)",
+            stroke: "rgba(184, 138, 239, 0.28)",
             duration: 0.18,
             easing: Konva?.Easings?.EaseOut
         });
+        dotTop.fill("rgba(248, 242, 255, 0.85)");
+        dotMid.fill("rgba(248, 242, 255, 0.85)");
+        dotBot.fill("rgba(248, 242, 255, 0.85)");
         document.body.style.cursor = "auto";
     });
 
     menuBtn.on("click touchstart", () => {
-        if (isPortrait) {
+        if (useMobileMenu) {
             animateBtn(menuBtn);
             animateMenu(menuHolder);
         }
@@ -979,7 +1005,7 @@ async function gameUI(config, fonts, navigate) {
 
     setGameKeyboardActions({
         toggleMenu: () => {
-            if (isPortrait) {
+            if (useMobileMenu) {
                 menuBtn.fire("click");
                 return;
             }
@@ -1010,7 +1036,7 @@ async function gameUI(config, fonts, navigate) {
 
     const gameHeight = game_container.height();
 
-    const dialogPadding = isPortrait ? 20 : 30;
+    const dialogPadding = isPortrait ? 10 : (isMobileLandscape ? 10 : 30);
 
     const dialogContainer = compiledGameUiLayout?.dialogBox ?? new Konva.Group({
         width: width,
@@ -1027,7 +1053,7 @@ async function gameUI(config, fonts, navigate) {
         id: "dialog-bg",
         stroke: config.colors.primary,
         strokeWidth: 2,
-        cornerRadius: [14, 14, 0, 0],
+        cornerRadius: isPortrait ? [12, 12, 0, 0] : [14, 14, 0, 0],
         fillAfterStrokeEnabled: true,
         perfectDrawEnabled: false,
     });
@@ -1035,16 +1061,16 @@ async function gameUI(config, fonts, navigate) {
         fill: config.colors.menu,
         stroke: config.colors.primary,
         strokeWidth: 2,
-        cornerRadius: [14, 14, 0, 0],
+        cornerRadius: isPortrait ? [12, 12, 0, 0] : [14, 14, 0, 0],
         fillAfterStrokeEnabled: true,
         perfectDrawEnabled: false
     });
 
     const nameGroup = compiledGameUiLayout?.dialogNameGroup ?? new Konva.Group({
-        skewX: config["game-ui"].dialog.title.skew,
+        skewX: isPortrait ? 0 : config["game-ui"].dialog.title.skew,
     });
     nameGroup.setAttrs({
-        skewX: config["game-ui"].dialog.title.skew,
+        skewX: isPortrait ? 0 : config["game-ui"].dialog.title.skew,
     });
 
     const nameContainerBG = compiledGameUiLayout?.nameBg ?? new Konva.Rect({
@@ -1054,7 +1080,7 @@ async function gameUI(config, fonts, navigate) {
         id: "name-bg",
         stroke: config.colors.primary,
         strokeWidth: 2,
-        cornerRadius: [12, 12, 4, 4],
+        cornerRadius: isPortrait ? [10, 10, 0, 0] : [12, 12, 4, 4],
         fillAfterStrokeEnabled: true,
         perfectDrawEnabled: false,
     });
@@ -1062,9 +1088,9 @@ async function gameUI(config, fonts, navigate) {
         fill: config.colors.menu,
         stroke: config.colors.primary,
         strokeWidth: 2,
-        cornerRadius: [12, 12, 4, 4],
+        cornerRadius: isPortrait ? [10, 10, 0, 0] : [12, 12, 4, 4],
         fillAfterStrokeEnabled: true,
-        perfectDrawEnabled: false,
+        perfectDrawEnabled: false
     });
 
     const nameBorderB = compiledGameUiLayout?.dialogNameBorder ?? new Konva.Rect({
@@ -1084,13 +1110,13 @@ async function gameUI(config, fonts, navigate) {
 
     const name_text = compiledGameUiLayout?.dialogName ?? new Konva.Text({
         align: "center",
-        padding: isPortrait ? 12 : 14,
+        padding: isPortrait ? 7 : (isMobileLandscape ? 8 : 14),
         verticalAlign: "middle",
-        x: isPortrait ? 0 : (isAndroid ? 100 : 160),
+        x: isPortrait ? 16 : (isMobileLandscape ? 20 : (isAndroid ? 100 : 160)),
         text: "Alex",
         fontFamily: fonts["other"],
         fontStyle: "bold",
-        fontSize: scaleFontSize(isPortrait ? 24 : (isAndroid ? 23 : 27)),
+        fontSize: scaleFontSize(isPortrait ? 16 : (isMobileLandscape ? 16 : (isAndroid ? 23 : 27))),
         fill: config.colors.text,
         fillAfterStrokeEnabled: true,
         wrap: "none",
@@ -1100,7 +1126,7 @@ async function gameUI(config, fonts, navigate) {
         text: "Alex",
         fontFamily: fonts["other"],
         fontStyle: "bold",
-        fontSize: scaleFontSize(isPortrait ? 24 : (isAndroid ? 23 : 27)),
+        fontSize: scaleFontSize(isPortrait ? 16 : (isMobileLandscape ? 16 : (isAndroid ? 23 : 27))),
         fill: config.colors.text,
         fillAfterStrokeEnabled: true,
     });
@@ -1115,14 +1141,14 @@ async function gameUI(config, fonts, navigate) {
     const dialog_text = compiledGameUiLayout?.dialogMessage ?? new Konva.Text({
         align: config["game-ui"].dialog.speech.align,
         verticalAlign: "middle",
-        padding: isPortrait ? 12 : 16,
-        width: isPortrait ? (dialogContainerWidth - 30) : (dialogContainerWidth - 240),
-        x: isPortrait ? 15 : 120,
+        padding: isPortrait ? 10 : (isMobileLandscape ? 10 : 16),
+        width: isPortrait ? (dialogContainerWidth - 32) : (isMobileLandscape ? (dialogContainerWidth - 40) : (dialogContainerWidth - 240)),
+        x: isPortrait ? 16 : (isMobileLandscape ? 20 : 120),
         y: name_text.height() + dialogPadding,
         text: "",
         fontFamily: fonts["other"],
-        fontSize: scaleFontSize(isPortrait ? 24 : (isAndroid ? 23 : 28)),
-        lineHeight: 1.6,
+        fontSize: scaleFontSize(isPortrait ? 17 : (isMobileLandscape ? 17 : (isAndroid ? 23 : 28))),
+        lineHeight: isMobileLandscape ? 1.45 : (isPortrait ? 1.45 : 1.6),
         fill: config.colors.text,
         fillAfterStrokeEnabled: true,
         wrap: "word",
@@ -1133,10 +1159,10 @@ async function gameUI(config, fonts, navigate) {
         y: name_text.height() + dialogPadding,
         text: "",
         fontFamily: fonts["other"],
-        fontSize: scaleFontSize(isPortrait ? 24 : (isAndroid ? 23 : 28)),
-        lineHeight: 1.6,
+        fontSize: scaleFontSize(isPortrait ? 17 : (isMobileLandscape ? 17 : (isAndroid ? 23 : 28))),
+        lineHeight: isMobileLandscape ? 1.45 : (isPortrait ? 1.45 : 1.6),
         fill: config.colors.text,
-        fillAfterStrokeEnabled: true,
+        fillAfterStrokeEnabled: true
     });
 
     dialogContainer.height(name_text.height() + dialog_text.height() + 2 * dialogPadding);
@@ -1207,7 +1233,9 @@ async function gameUI(config, fonts, navigate) {
         } else {
             dialogContainer.visible(true);
         }
-        const height = Math.max(name_text.height() + dialog_text.height() + 2 * dialogPadding, (isPortrait ? 230 : (isAndroid ? 150 : 230)));
+        const minDialogHeight = isPortrait ? 120 : (isMobileLandscape ? 110 : (isAndroid ? 150 : 230));
+        const extraSafetyPad = isPortrait ? 8 : 0;
+        const height = Math.max(name_text.height() + dialog_text.height() + 2 * dialogPadding + extraSafetyPad, minDialogHeight);
         dialogContainerBG.to({
             height: height - name_text.height(),
             y: name_text.height() + 3,
@@ -1215,7 +1243,8 @@ async function gameUI(config, fonts, navigate) {
             easing: Konva?.Easings?.EaseOut,
             opacity: 0.9
         });
-        const name_width = Math.max(name_text.width(), 200);
+        const minNameWidth = isPortrait ? 90 : (isMobileLandscape ? 110 : 200);
+        const name_width = Math.max(name_text.width(), minNameWidth);
         if (name_text.width() !== name_width) name_text.width(name_width);
         const name_x = name_text.x() - (name_width - name_text.width()) / 2;
         nameBorderB.y(name_text.height() - 1);
@@ -1305,7 +1334,7 @@ async function gameUI(config, fonts, navigate) {
         height: endGroup.height(),
         text: "The End",
         fontFamily: fonts["other"],
-        fontSize: scaleFontSize(isPortrait ? 40 : (isAndroid ? 35 : 40)),
+        fontSize: scaleFontSize(isPortrait ? 40 : (isMobileLandscape ? 28 : (isAndroid ? 35 : 40))),
         fill: config.colors.text,
         fillAfterStrokeEnabled: true,
         wrap: "none"
@@ -1335,33 +1364,33 @@ async function gameUI(config, fonts, navigate) {
         height: chapterEndGroup.height(),
         text: "Chapter Complete",
         fontFamily: fonts["other"],
-        fontSize: scaleFontSize(isPortrait ? 38 : (isAndroid ? 34 : 38)),
+        fontSize: scaleFontSize(isPortrait ? 38 : (isMobileLandscape ? 26 : (isAndroid ? 34 : 38))),
         fill: config.colors.text,
         fillAfterStrokeEnabled: true,
         wrap: "none",
-        offsetY: isPortrait ? 48 : 54
+        offsetY: isPortrait ? 48 : (isMobileLandscape ? 36 : 54)
     });
 
     const chapterEndSubtitle = new Konva.Text({
         align: "center",
         width: width,
-        y: Math.round(chapterEndGroup.height() * 0.56),
+        y: Math.round(chapterEndGroup.height() * (isMobileLandscape ? 0.52 : 0.56)),
         text: "",
         fontFamily: fonts["other"],
-        fontSize: scaleFontSize(isPortrait ? 22 : (isAndroid ? 20 : 22)),
+        fontSize: scaleFontSize(isPortrait ? 22 : (isMobileLandscape ? 16 : (isAndroid ? 20 : 22))),
         fill: config.colors.primary,
         fillAfterStrokeEnabled: true,
         wrap: "word",
-        padding: isPortrait ? 18 : 28
+        padding: isPortrait ? 18 : (isMobileLandscape ? 16 : 28)
     });
 
     const chapterEndHint = new Konva.Text({
         align: "center",
         width: width,
-        y: chapterEndGroup.height() - (isPortrait ? 44 : 48),
+        y: chapterEndGroup.height() - (isPortrait ? 44 : (isMobileLandscape ? 36 : 48)),
         text: "Tap / Enter to continue",
         fontFamily: fonts["other"],
-        fontSize: scaleFontSize(isPortrait ? 18 : (isAndroid ? 16 : 18)),
+        fontSize: scaleFontSize(isPortrait ? 18 : (isMobileLandscape ? 14 : (isAndroid ? 16 : 18))),
         fill: config.colors["menu-border"],
         fillAfterStrokeEnabled: true,
         wrap: "none",
